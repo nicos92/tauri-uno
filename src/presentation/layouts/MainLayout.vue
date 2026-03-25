@@ -17,6 +17,7 @@ const menuItems = computed(() => {
     { name: "categorias", label: "Categorías", icon: "📁", permission: "ver_categorias" },
     { name: "sub-categorias", label: "Sub Categorías", icon: "📂", permission: "ver_sub_categorias" },
     { name: "articulos", label: "Artículos", icon: "📦", permission: "ver_articulos" },
+    { name: "stock", label: "Stock", icon: "📊", permission: "ver_stock" },
     { name: "permissions", label: "Permisos", icon: "🔑", permission: "ver_permisos" },
     { name: "settings", label: "Configuración", icon: "⚙️", permission: null },
   ];

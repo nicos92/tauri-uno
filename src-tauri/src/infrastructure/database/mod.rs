@@ -49,6 +49,11 @@ const PERMISSIONS: &[&str] = &[
     "crear_articulos",
     "modificar_articulos",
     "eliminar_articulos",
+    // Stock
+    "ver_stock",
+    "crear_stock",
+    "modificar_stock",
+    "eliminar_stock",
 ];
 
 pub fn init_database() -> Result<Connection, rusqlite::Error> {

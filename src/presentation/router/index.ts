@@ -50,6 +50,12 @@ const routes = [
         meta: { permission: PERMISSIONS.VIEW_ARTICULOS },
       },
       {
+        path: "stock",
+        name: "stock",
+        component: () => import("../pages/StockPage.vue"),
+        meta: { permission: PERMISSIONS.VIEW_STOCK },
+      },
+      {
         path: "permissions",
         name: "permissions",
         component: () => import("../pages/PermissionsPage.vue"),

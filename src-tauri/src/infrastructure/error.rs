@@ -62,6 +62,12 @@ pub enum AppError {
     #[error("Codigo de articulo already exists")]
     CodArticuloExists,
 
+    #[error("Stock not found")]
+    StockNotFound,
+
+    #[error("Stock already exists for this articulo")]
+    StockExistsForArticulo,
+
     #[error("Internal error: {0}")]
     Internal(String),
 }

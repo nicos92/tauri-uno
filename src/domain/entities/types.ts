@@ -123,3 +123,25 @@ export interface UpdateArticuloRequest {
   id_sub_categoria: number;
   id_proveedor: number;
 }
+
+export interface Stock {
+  id: number;
+  id_articulo: number;
+  cantidad: number;
+  costo: number;
+  ganancia: number;
+}
+
+export interface CreateStockRequest {
+  id_articulo: number;
+  cantidad: number;
+  costo: number;
+  ganancia: number;
+}
+
+export interface UpdateStockRequest {
+  id: number;
+  cantidad: number;
+  costo: number;
+  ganancia: number;
+}

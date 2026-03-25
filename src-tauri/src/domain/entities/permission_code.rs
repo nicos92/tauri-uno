@@ -26,6 +26,10 @@ pub enum PermissionCode {
     CreateArticulo,
     UpdateArticulo,
     DeleteArticulo,
+    ViewStock,
+    CreateStock,
+    UpdateStock,
+    DeleteStock,
 }
 
 impl PermissionCode {
@@ -54,6 +58,10 @@ impl PermissionCode {
             PermissionCode::CreateArticulo => "crear_articulos",
             PermissionCode::UpdateArticulo => "modificar_articulos",
             PermissionCode::DeleteArticulo => "eliminar_articulos",
+            PermissionCode::ViewStock => "ver_stock",
+            PermissionCode::CreateStock => "crear_stock",
+            PermissionCode::UpdateStock => "modificar_stock",
+            PermissionCode::DeleteStock => "eliminar_stock",
         }
     }
 
@@ -82,6 +90,10 @@ impl PermissionCode {
             PermissionCode::CreateArticulo,
             PermissionCode::UpdateArticulo,
             PermissionCode::DeleteArticulo,
+            PermissionCode::ViewStock,
+            PermissionCode::CreateStock,
+            PermissionCode::UpdateStock,
+            PermissionCode::DeleteStock,
         ]
     }
 }

@@ -103,6 +103,22 @@ export function usePermissions() {
     return can(PERMISSIONS.DELETE_ARTICULO);
   }
 
+  function canViewStock(): boolean {
+    return can(PERMISSIONS.VIEW_STOCK);
+  }
+
+  function canCreateStock(): boolean {
+    return can(PERMISSIONS.CREATE_STOCK);
+  }
+
+  function canUpdateStock(): boolean {
+    return can(PERMISSIONS.UPDATE_STOCK);
+  }
+
+  function canDeleteStock(): boolean {
+    return can(PERMISSIONS.DELETE_STOCK);
+  }
+
   return {
     allPermissions,
     can,
@@ -129,5 +145,9 @@ export function usePermissions() {
     canCreateArticulo,
     canUpdateArticulo,
     canDeleteArticulo,
+    canViewStock,
+    canCreateStock,
+    canUpdateStock,
+    canDeleteStock,
   };
 }

@@ -8,6 +8,7 @@ use crate::infrastructure::error::AppError;
 pub mod articulo_commands;
 pub mod categoria_commands;
 pub mod proveedor_commands;
+pub mod stock_commands;
 pub mod sub_categoria_commands;
 
 pub use articulo_commands::{
@@ -19,6 +20,10 @@ pub use categoria_commands::{
 pub use proveedor_commands::{
     create_proveedor, delete_proveedor, get_all_proveedores, get_proveedor_by_id, update_proveedor,
     ProveedorAppState,
+};
+pub use stock_commands::{
+    create_stock, delete_stock, get_all_stock, get_precio_venta, get_stock_by_articulo,
+    get_stock_by_id, update_stock, StockAppState,
 };
 pub use sub_categoria_commands::{
     create_sub_categoria, delete_sub_categoria, get_all_sub_categorias,
