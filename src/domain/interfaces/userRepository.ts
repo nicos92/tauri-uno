@@ -1,4 +1,4 @@
-import type { User, Permission, LoginRequest, CreateUserRequest, UpdateUserRequest, AddPermissionRequest } from "../../domain/entities";
+import type { User, Permission, UserPermission, LoginRequest, CreateUserRequest, UpdateUserRequest, AddPermissionRequest } from "../../domain/entities";
 
 export interface LoginResponse {
   user: User;
@@ -13,7 +13,7 @@ export interface IUserRepository {
   deleteUser(id: number): Promise<void>;
   addPermissionToUser(request: AddPermissionRequest): Promise<void>;
   removePermissionFromUser(request: AddPermissionRequest): Promise<void>;
-  getUserPermissions(userId: number): Promise<Permission[]>;
+  getUserPermissions(userId: number): Promise<UserPermission[]>;
   getAllPermissions(): Promise<Permission[]>;
   createPermission(name: string): Promise<Permission>;
 }

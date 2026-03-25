@@ -1,4 +1,4 @@
-import type { Permission, AddPermissionRequest } from "../../domain/entities";
+import type { Permission, UserPermission, AddPermissionRequest } from "../../domain/entities";
 import type { IUserRepository } from "../../domain/interfaces";
 
 export class ManagePermissionsUseCase {
@@ -14,7 +14,7 @@ export class ManagePermissionsUseCase {
     return await this.repository.removePermissionFromUser(request);
   }
 
-  async getUserPermissions(userId: number): Promise<Permission[]> {
+  async getUserPermissions(userId: number): Promise<UserPermission[]> {
     return await this.repository.getUserPermissions(userId);
   }
 

@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use rusqlite::params;
 
-use crate::domain::entities::{Permission, User};
+use crate::domain::entities::{Permission, User, UserPermission};
 use crate::domain::repositories::UserRepository;
 use crate::infrastructure::database::DB;
 use crate::infrastructure::error::AppError;
@@ -110,10 +110,11 @@ impl UserRepository for SqliteUserRepository {
 
     fn add_permission(&self, user_id: i64, permission_id: i64) -> Result<(), AppError> {
         let conn = DB.lock().map_err(|e| AppError::Internal(e.to_string()))?;
+        let now = Utc::now().to_rfc3339();
 
         conn.execute(
-            "INSERT OR IGNORE INTO user_permissions (user_id, permission_id) VALUES (?1, ?2)",
-            params![user_id, permission_id],
+            "INSERT OR IGNORE INTO user_permissions (user_id, permission_id, assigned_at) VALUES (?1, ?2, ?3)",
+            params![user_id, permission_id, now],
         )?;
 
         Ok(())
@@ -130,11 +131,11 @@ impl UserRepository for SqliteUserRepository {
         Ok(())
     }
 
-    fn get_user_permissions(&self, user_id: i64) -> Result<Vec<Permission>, AppError> {
+    fn get_user_permissions(&self, user_id: i64) -> Result<Vec<UserPermission>, AppError> {
         let conn = DB.lock().map_err(|e| AppError::Internal(e.to_string()))?;
 
         let mut stmt = conn.prepare(
-            "SELECT p.id, p.permission, p.created 
+            "SELECT p.id, p.permission, p.created, up.assigned_at
              FROM permissions p 
              INNER JOIN user_permissions up ON p.id = up.permission_id 
              WHERE up.user_id = ?1",
@@ -144,10 +145,13 @@ impl UserRepository for SqliteUserRepository {
         let mut rows = stmt.query(params![user_id])?;
 
         while let Some(row) = rows.next()? {
-            permissions.push(Permission {
+            permissions.push(UserPermission {
                 id: row.get(0)?,
                 permission: row.get(1)?,
                 created: DateTime::parse_from_rfc3339(&row.get::<_, String>(2)?)
+                    .map(|dt| dt.with_timezone(&Utc))
+                    .unwrap_or_else(|_| Utc::now()),
+                assigned_at: DateTime::parse_from_rfc3339(&row.get::<_, String>(3)?)
                     .map(|dt| dt.with_timezone(&Utc))
                     .unwrap_or_else(|_| Utc::now()),
             });

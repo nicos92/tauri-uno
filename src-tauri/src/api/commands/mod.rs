@@ -2,7 +2,7 @@ use std::sync::Mutex;
 use tauri::State;
 
 use crate::application::services::UserService;
-use crate::domain::entities::{Permission, PermissionCode, User};
+use crate::domain::entities::{Permission, PermissionCode, User, UserPermission};
 use crate::infrastructure::error::AppError;
 
 pub struct AppState {
@@ -187,7 +187,7 @@ pub fn get_user_permissions(
     user_id: i64,
     target_user_id: i64,
     state: State<AppState>,
-) -> Result<Vec<Permission>, AppError> {
+) -> Result<Vec<UserPermission>, AppError> {
     let service = state
         .user_service
         .lock()

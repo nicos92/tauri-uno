@@ -1,7 +1,7 @@
 use bcrypt::{hash, verify, DEFAULT_COST};
 use std::sync::Arc;
 
-use crate::domain::entities::{Permission, User};
+use crate::domain::entities::{Permission, User, UserPermission};
 use crate::domain::repositories::UserRepository;
 use crate::infrastructure::error::AppError;
 use crate::infrastructure::repositories::SqliteUserRepository;
@@ -103,7 +103,7 @@ impl UserService {
         self.repository.remove_permission(user_id, permission_id)
     }
 
-    pub fn get_user_permissions(&self, user_id: i64) -> Result<Vec<Permission>, AppError> {
+    pub fn get_user_permissions(&self, user_id: i64) -> Result<Vec<UserPermission>, AppError> {
         self.repository.get_user_permissions(user_id)
     }
 

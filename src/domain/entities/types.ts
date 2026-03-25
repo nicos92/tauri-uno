@@ -13,6 +13,13 @@ export interface Permission {
   created: string;
 }
 
+export interface UserPermission {
+  id: number;
+  permission: string;
+  created: string;
+  assigned_at: string;
+}
+
 export interface LoginRequest {
   username: string;
   password: string;

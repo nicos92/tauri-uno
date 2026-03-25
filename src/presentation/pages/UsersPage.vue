@@ -193,7 +193,10 @@ async function removePermission(permissionId: number) {
             <h3>Permisos Asignados</h3>
             <ul class="permission-list">
               <li v-for="perm in selectedUserAssignedPermissions" :key="perm.id">
-                {{ perm.permission }}
+                <div class="perm-info">
+                  <span class="perm-name">{{ perm.permission }}</span>
+                  <span class="perm-date">Asignado: {{ new Date(perm.assigned_at).toLocaleString() }}</span>
+                </div>
                 <button @click="removePermission(perm.id)" class="btn-remove">×</button>
               </li>
               <li v-if="selectedUserAssignedPermissions.length === 0" class="empty">
@@ -401,6 +404,26 @@ async function removePermission(permissionId: number) {
 .permission-list li.empty {
   color: #999;
   font-style: italic;
+}
+
+.permission-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.perm-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.perm-name {
+  font-weight: 500;
+}
+
+.perm-date {
+  font-size: 0.75rem;
+  color: #888;
 }
 
 .btn-add {

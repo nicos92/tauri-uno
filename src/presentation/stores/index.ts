@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
-import type { User, Permission } from "../../domain/entities";
+import type { User, Permission, UserPermission } from "../../domain/entities";
 import { UserApiRepository } from "../../infrastructure/api";
 import { LoginUseCase, CreateUserUseCase, GetAllUsersUseCase, UpdateUserUseCase, DeleteUserUseCase, ManagePermissionsUseCase } from "../../application/usecases";
 
@@ -138,7 +138,7 @@ export const useUsersStore = defineStore("users", () => {
 
 export const usePermissionsStore = defineStore("permissions", () => {
   const allPermissions = ref<Permission[]>([]);
-  const userPermissions = ref<Map<number, Permission[]>>(new Map());
+  const userPermissions = ref<Map<number, UserPermission[]>>(new Map());
   const loading = ref(false);
   const error = ref<string | null>(null);
 
@@ -202,7 +202,7 @@ export const usePermissionsStore = defineStore("permissions", () => {
     }
   }
 
-  function getUserPermissions(userId: number): Permission[] {
+  function getUserPermissions(userId: number): UserPermission[] {
     return userPermissions.value.get(userId) || [];
   }
 

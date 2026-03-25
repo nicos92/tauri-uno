@@ -17,3 +17,11 @@ impl Permission {
         }
     }
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UserPermission {
+    pub id: i64,
+    pub permission: String,
+    pub created: DateTime<Utc>,
+    pub assigned_at: DateTime<Utc>,
+}

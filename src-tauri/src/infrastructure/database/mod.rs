@@ -54,6 +54,7 @@ pub fn init_database() -> Result<Connection, rusqlite::Error> {
         CREATE TABLE IF NOT EXISTS user_permissions (
             user_id INTEGER NOT NULL,
             permission_id INTEGER NOT NULL,
+            assigned_at TEXT NOT NULL,
             PRIMARY KEY (user_id, permission_id),
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
             FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE
@@ -82,6 +83,7 @@ fn seed_permissions(conn: &Connection) -> Result<(), rusqlite::Error> {
 
 fn seed_admin_user(conn: &Connection) -> Result<(), rusqlite::Error> {
     let username = "admin";
+    let now = chrono::Utc::now().to_rfc3339();
 
     let exists: bool = conn.query_row(
         "SELECT EXISTS(SELECT 1 FROM users WHERE username = ?1)",
@@ -92,7 +94,6 @@ fn seed_admin_user(conn: &Connection) -> Result<(), rusqlite::Error> {
     if !exists {
         let bcrypt_hash =
             bcrypt::hash("admin123", bcrypt::DEFAULT_COST).expect("Failed to hash password");
-        let now = chrono::Utc::now().to_rfc3339();
 
         conn.execute(
             "INSERT INTO users (username, password, active, created_at, modified_at) VALUES (?1, ?2, 1, ?3, ?3)",
@@ -112,8 +113,8 @@ fn seed_admin_user(conn: &Connection) -> Result<(), rusqlite::Error> {
     while let Some(row) = rows.next()? {
         let perm_id: i64 = row.get(0)?;
         conn.execute(
-            "INSERT OR IGNORE INTO user_permissions (user_id, permission_id) VALUES (?1, ?2)",
-            rusqlite::params![admin_id, perm_id],
+            "INSERT OR IGNORE INTO user_permissions (user_id, permission_id, assigned_at) VALUES (?1, ?2, ?3)",
+            rusqlite::params![admin_id, perm_id, now],
         )?;
     }
 
