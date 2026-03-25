@@ -83,3 +83,20 @@ export interface UpdateCategoriaRequest {
   id: number;
   categoria: string;
 }
+
+export interface SubCategoria {
+  id: number;
+  sub_categoria: string;
+  id_categoria: number;
+}
+
+export interface CreateSubCategoriaRequest {
+  sub_categoria: string;
+  id_categoria: number;
+}
+
+export interface UpdateSubCategoriaRequest {
+  id: number;
+  sub_categoria: string;
+  id_categoria: number;
+}

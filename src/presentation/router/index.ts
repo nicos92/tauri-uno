@@ -38,6 +38,12 @@ const routes = [
         meta: { permission: PERMISSIONS.VIEW_CATEGORIAS },
       },
       {
+        path: "sub-categorias",
+        name: "sub-categorias",
+        component: () => import("../pages/SubCategoriasPage.vue"),
+        meta: { permission: PERMISSIONS.VIEW_SUB_CATEGORIAS },
+      },
+      {
         path: "permissions",
         name: "permissions",
         component: () => import("../pages/PermissionsPage.vue"),

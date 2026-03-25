@@ -47,6 +47,15 @@ pub enum AppError {
     #[error("Categoria has sub-categorias")]
     CategoriaHasSubCategorias,
 
+    #[error("Sub categoria not found")]
+    SubCategoriaNotFound,
+
+    #[error("Sub categoria already exists")]
+    SubCategoriaExists,
+
+    #[error("Sub categoria has articulos")]
+    SubCategoriaHasArticulos,
+
     #[error("Internal error: {0}")]
     Internal(String),
 }
