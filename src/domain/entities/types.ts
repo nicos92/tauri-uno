@@ -20,6 +20,16 @@ export interface UserPermission {
   assigned_at: string;
 }
 
+export interface Proveedor {
+  id: number;
+  cuit?: string;
+  proveedor: string;
+  nombre: string;
+  tel?: string;
+  email?: string;
+  observacion?: string;
+}
+
 export interface LoginRequest {
   username: string;
   password: string;
@@ -39,4 +49,23 @@ export interface UpdateUserRequest {
 export interface AddPermissionRequest {
   user_id: number;
   permission_id: number;
+}
+
+export interface CreateProveedorRequest {
+  proveedor: string;
+  nombre: string;
+  cuit?: string;
+  tel?: string;
+  email?: string;
+  observacion?: string;
+}
+
+export interface UpdateProveedorRequest {
+  id: number;
+  proveedor: string;
+  nombre: string;
+  cuit?: string;
+  tel?: string;
+  email?: string;
+  observacion?: string;
 }

@@ -5,6 +5,13 @@ use crate::application::services::UserService;
 use crate::domain::entities::{Permission, PermissionCode, User, UserPermission};
 use crate::infrastructure::error::AppError;
 
+pub mod proveedor_commands;
+
+pub use proveedor_commands::{
+    create_proveedor, delete_proveedor, get_all_proveedores, get_proveedor_by_id, update_proveedor,
+    ProveedorAppState,
+};
+
 pub struct AppState {
     pub user_service: Mutex<UserService>,
 }

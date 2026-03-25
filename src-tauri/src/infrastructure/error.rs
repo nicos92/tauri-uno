@@ -32,6 +32,12 @@ pub enum AppError {
     #[error("Permission denied")]
     PermissionDenied,
 
+    #[error("Proveedor not found")]
+    ProveedorNotFound,
+
+    #[error("CUIT already exists")]
+    DuplicateCuit,
+
     #[error("Internal error: {0}")]
     Internal(String),
 }

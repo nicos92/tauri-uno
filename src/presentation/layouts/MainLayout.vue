@@ -13,6 +13,7 @@ const menuItems = computed(() => {
   const items = [
     { name: "home", label: "Inicio", icon: "🏠", permission: null },
     { name: "users", label: "Usuarios", icon: "👥", permission: "ver_usuarios" },
+    { name: "proveedores", label: "Proveedores", icon: "🏢", permission: "ver_proveedor" },
     { name: "permissions", label: "Permisos", icon: "🔑", permission: "ver_permisos" },
     { name: "settings", label: "Configuración", icon: "⚙️", permission: null },
   ];
