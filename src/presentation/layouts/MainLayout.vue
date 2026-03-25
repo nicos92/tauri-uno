@@ -202,7 +202,7 @@ function handleLogout() {
 }
 
 .nav-item.active {
-    background: #667eea;
+    background: #667e99;
     color: white;
 }
 
