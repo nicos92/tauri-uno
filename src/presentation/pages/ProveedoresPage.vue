@@ -143,7 +143,7 @@ async function handleDelete(id: number) {
                             class="btn-icon"
                             title="Editar"
                         >
-                            ✏️
+                            <img src="/svg/edit.svg" alt="Editar" />
                         </button>
                         <button
                             v-if="canDeleteProveedor()"
@@ -151,7 +151,7 @@ async function handleDelete(id: number) {
                             class="btn-icon btn-danger"
                             title="Eliminar"
                         >
-                            🗑️
+                            <img src="/svg/trash.svg" alt="Eliminar" />
                         </button>
                     </td>
                 </tr>
@@ -337,8 +337,12 @@ async function handleDelete(id: number) {
     background: none;
     border: none;
     cursor: pointer;
-    font-size: 1.2rem;
     padding: 0.25rem;
+}
+
+.btn-icon img {
+    width: 18px;
+    height: 18px;
 }
 
 .btn-danger:hover {

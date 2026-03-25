@@ -116,13 +116,13 @@ async function removePermission(permissionId: number) {
           <td>{{ new Date(user.created_at).toLocaleDateString() }}</td>
           <td class="actions">
             <button v-if="canAssignPermission() || canRemovePermission()" @click="openPermissionsModal(user)" class="btn-icon" title="Permisos">
-              🔑
+              <img src="/svg/permissions.svg" alt="Permisos" />
             </button>
             <button v-if="canUpdateUser()" @click="openEditModal(user)" class="btn-icon" title="Editar">
-              ✏️
+              <img src="/svg/edit.svg" alt="Editar" />
             </button>
             <button v-if="canDeleteUser()" @click="handleDelete(user.id)" class="btn-icon btn-danger" title="Eliminar">
-              🗑️
+              <img src="/svg/trash.svg" alt="Eliminar" />
             </button>
           </td>
         </tr>
@@ -303,8 +303,12 @@ async function removePermission(permissionId: number) {
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 1.2rem;
   padding: 0.25rem;
+}
+
+.btn-icon img {
+  width: 18px;
+  height: 18px;
 }
 
 .btn-danger:hover {

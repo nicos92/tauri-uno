@@ -3,6 +3,23 @@
 version = 4
 
 [[package]]
+name = "Calise-App"
+version = "0.1.0"
+dependencies = [
+ "bcrypt",
+ "chrono",
+ "directories",
+ "once_cell",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-opener",
+ "thiserror 1.0.69",
+]
+
+[[package]]
 name = "adler2"
 version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3961,23 +3978,6 @@ dependencies = [
  "webview2-com",
  "windows",
  "wry",
-]
-
-[[package]]
-name = "tauri-uno"
-version = "0.1.0"
-dependencies = [
- "bcrypt",
- "chrono",
- "directories",
- "once_cell",
- "rusqlite",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-opener",
- "thiserror 1.0.69",
 ]
 
 [[package]]
