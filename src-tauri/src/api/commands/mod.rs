@@ -5,8 +5,12 @@ use crate::application::services::UserService;
 use crate::domain::entities::{Permission, PermissionCode, User, UserPermission};
 use crate::infrastructure::error::AppError;
 
+pub mod categoria_commands;
 pub mod proveedor_commands;
 
+pub use categoria_commands::{
+    create_categoria, delete_categoria, get_all_categorias, update_categoria, CategoriaAppState,
+};
 pub use proveedor_commands::{
     create_proveedor, delete_proveedor, get_all_proveedores, get_proveedor_by_id, update_proveedor,
     ProveedorAppState,

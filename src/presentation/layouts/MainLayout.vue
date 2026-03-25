@@ -14,6 +14,7 @@ const menuItems = computed(() => {
     { name: "home", label: "Inicio", icon: "🏠", permission: null },
     { name: "users", label: "Usuarios", icon: "👥", permission: "ver_usuarios" },
     { name: "proveedores", label: "Proveedores", icon: "🏢", permission: "ver_proveedor" },
+    { name: "categorias", label: "Categorías", icon: "📁", permission: "ver_categorias" },
     { name: "permissions", label: "Permisos", icon: "🔑", permission: "ver_permisos" },
     { name: "settings", label: "Configuración", icon: "⚙️", permission: null },
   ];

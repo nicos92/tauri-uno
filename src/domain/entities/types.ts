@@ -30,6 +30,11 @@ export interface Proveedor {
   observacion?: string;
 }
 
+export interface Categoria {
+  id: number;
+  categoria: string;
+}
+
 export interface LoginRequest {
   username: string;
   password: string;
@@ -68,4 +73,13 @@ export interface UpdateProveedorRequest {
   tel?: string;
   email?: string;
   observacion?: string;
+}
+
+export interface CreateCategoriaRequest {
+  categoria: string;
+}
+
+export interface UpdateCategoriaRequest {
+  id: number;
+  categoria: string;
 }

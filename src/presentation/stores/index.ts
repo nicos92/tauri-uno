@@ -291,3 +291,75 @@ export const useProveedoresStore = defineStore("proveedores", () => {
     deleteProveedor,
   };
 });
+
+import { CategoriaApiRepository } from "../../infrastructure/api/CategoriaRepository";
+import type { Categoria, CreateCategoriaRequest, UpdateCategoriaRequest } from "../../domain/entities";
+
+const categoriaRepository = new CategoriaApiRepository();
+
+export const useCategoriasStore = defineStore("categorias", () => {
+  const categorias = ref<Categoria[]>([]);
+  const loading = ref(false);
+  const error = ref<string | null>(null);
+
+  async function fetchCategorias() {
+    loading.value = true;
+    error.value = null;
+    try {
+      categorias.value = await categoriaRepository.getAllCategorias();
+    } catch (e) {
+      error.value = e as string;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function createCategoria(request: CreateCategoriaRequest): Promise<boolean> {
+    error.value = null;
+    try {
+      const newCategoria = await categoriaRepository.createCategoria(request);
+      categorias.value.push(newCategoria);
+      return true;
+    } catch (e) {
+      error.value = e as string;
+      return false;
+    }
+  }
+
+  async function updateCategoria(request: UpdateCategoriaRequest): Promise<boolean> {
+    error.value = null;
+    try {
+      const updated = await categoriaRepository.updateCategoria(request);
+      const index = categorias.value.findIndex((c) => c.id === request.id);
+      if (index !== -1) {
+        categorias.value[index] = updated;
+      }
+      return true;
+    } catch (e) {
+      error.value = e as string;
+      return false;
+    }
+  }
+
+  async function deleteCategoria(id: number): Promise<boolean> {
+    error.value = null;
+    try {
+      await categoriaRepository.deleteCategoria(id);
+      categorias.value = categorias.value.filter((c) => c.id !== id);
+      return true;
+    } catch (e) {
+      error.value = e as string;
+      return false;
+    }
+  }
+
+  return {
+    categorias,
+    loading,
+    error,
+    fetchCategorias,
+    createCategoria,
+    updateCategoria,
+    deleteCategoria,
+  };
+});

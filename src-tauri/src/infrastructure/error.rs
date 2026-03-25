@@ -38,6 +38,15 @@ pub enum AppError {
     #[error("CUIT already exists")]
     DuplicateCuit,
 
+    #[error("Categoria not found")]
+    CategoriaNotFound,
+
+    #[error("Categoria already exists")]
+    CategoriaExists,
+
+    #[error("Categoria has sub-categorias")]
+    CategoriaHasSubCategorias,
+
     #[error("Internal error: {0}")]
     Internal(String),
 }
