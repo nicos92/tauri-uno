@@ -59,6 +59,47 @@ pub fn init_database() -> Result<Connection, rusqlite::Error> {
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
             FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE
         );
+        
+        CREATE TABLE IF NOT EXISTS proveedores (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            cuit TEXT UNIQUE,
+            proveedor TEXT NOT NULL,
+            nombre TEXT NOT NULL,
+            tel TEXT,
+            email TEXT,
+            observacion TEXT
+        );
+        
+        CREATE TABLE IF NOT EXISTS categorias (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            categoria TEXT NOT NULL UNIQUE
+        );
+        
+        CREATE TABLE IF NOT EXISTS sub_categorias (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            sub_categoria TEXT NOT NULL UNIQUE,
+            id_categoria INTEGER NOT NULL,
+            FOREIGN KEY (id_categoria) REFERENCES categorias(id)
+        );
+        
+        CREATE TABLE IF NOT EXISTS articulos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            articulo TEXT NOT NULL UNIQUE,
+            cod_articulo TEXT NOT NULL UNIQUE,
+            id_sub_categoria INTEGER NOT NULL,
+            id_proveedor INTEGER NOT NULL,
+            FOREIGN KEY (id_sub_categoria) REFERENCES sub_categorias(id),
+            FOREIGN KEY (id_proveedor) REFERENCES proveedores(id)
+        );
+        
+        CREATE TABLE IF NOT EXISTS stock (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_articulo INTEGER NOT NULL,
+            cantidad REAL NOT NULL,
+            costo REAL NOT NULL,
+            ganancia REAL NOT NULL,
+            FOREIGN KEY (id_articulo) REFERENCES articulos(id)
+        );
         ",
     )?;
 
