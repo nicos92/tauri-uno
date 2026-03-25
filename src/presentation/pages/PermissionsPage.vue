@@ -4,7 +4,7 @@ import { usePermissionsStore } from "../stores";
 import { usePermissions } from "../composables/usePermissions";
 
 const permissionsStore = usePermissionsStore();
-const { canCreatePermission } = usePermissions();
+const { canCreateCategoria } = usePermissions();
 
 const newPermissionName = ref("");
 
@@ -27,8 +27,8 @@ async function handleCreatePermission() {
       <h1>Gestión de Permisos</h1>
     </div>
     
-    <div v-if="canCreatePermission()" class="create-section">
-      <h3>Crear Nuevo Permiso</h3>
+    <div v-if="canCreateCategoria()" class="create-section">
+      <h3>Crear Nueva Categoria</h3>
       <form @submit.prevent="handleCreatePermission" class="create-form">
         <input
           v-model="newPermissionName"

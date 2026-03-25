@@ -20,14 +20,35 @@ pub fn get_db_path() -> PathBuf {
 }
 
 const PERMISSIONS: &[&str] = &[
+    // Usuarios
+    "ver_usuarios",
     "crear_usuario",
     "modificar_usuario",
     "eliminar_usuario",
+    // Permisos
+    "ver_permisos",
     "asignar_permiso_a_usuario",
     "quitar_permiso_a_usuario",
-    "ver_usuarios",
-    "ver_permisos",
-    "crear_permiso",
+    // Proveedores
+    "ver_proveedor",
+    "crear_proveedor",
+    "modificar_proveedor",
+    "eliminar_proveedor",
+    // Categorias
+    "ver_categorias",
+    "crear_categorias",
+    "modificar_categorias",
+    "eliminar_categorias",
+    // Sub Categorias
+    "ver_sub_categorias",
+    "crear_sub_categorias",
+    "modificar_sub_categorias",
+    "eliminar_sub_categorias",
+    // Articulos
+    "ver_articulos",
+    "crear_articulos",
+    "modificar_articulos",
+    "eliminar_articulos",
 ];
 
 pub fn init_database() -> Result<Connection, rusqlite::Error> {

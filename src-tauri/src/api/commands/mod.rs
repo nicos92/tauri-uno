@@ -219,6 +219,6 @@ pub fn create_permission(
         .user_service
         .lock()
         .map_err(|e| AppError::Internal(e.to_string()))?;
-    check_permission(&service, user_id, PermissionCode::CreatePermission)?;
+    check_permission(&service, user_id, PermissionCode::CreateCategoria)?;
     service.create_permission(name)
 }
