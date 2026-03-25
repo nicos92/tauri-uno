@@ -5,10 +5,14 @@ use crate::application::services::UserService;
 use crate::domain::entities::{Permission, PermissionCode, User, UserPermission};
 use crate::infrastructure::error::AppError;
 
+pub mod articulo_commands;
 pub mod categoria_commands;
 pub mod proveedor_commands;
 pub mod sub_categoria_commands;
 
+pub use articulo_commands::{
+    create_articulo, delete_articulo, get_all_articulos, update_articulo, ArticuloAppState,
+};
 pub use categoria_commands::{
     create_categoria, delete_categoria, get_all_categorias, update_categoria, CategoriaAppState,
 };

@@ -100,3 +100,26 @@ export interface UpdateSubCategoriaRequest {
   sub_categoria: string;
   id_categoria: number;
 }
+
+export interface Articulo {
+  id: number;
+  articulo: string;
+  cod_articulo: string;
+  id_sub_categoria: number;
+  id_proveedor: number;
+}
+
+export interface CreateArticuloRequest {
+  articulo: string;
+  cod_articulo: string;
+  id_sub_categoria: number;
+  id_proveedor: number;
+}
+
+export interface UpdateArticuloRequest {
+  id: number;
+  articulo: string;
+  cod_articulo: string;
+  id_sub_categoria: number;
+  id_proveedor: number;
+}
