@@ -69,7 +69,7 @@ impl UserRepository for SqliteUserRepository {
         let conn = DB.lock().map_err(|e| AppError::Internal(e.to_string()))?;
 
         let mut stmt = conn
-            .prepare("SELECT id, username, password, active, created_at, modified_at FROM users")?;
+            .prepare("SELECT id, username, password, active, created_at, modified_at FROM users WHERE username != 'admin'")?;
 
         let mut users = Vec::new();
         let mut rows = stmt.query([])?;
