@@ -176,6 +176,40 @@ impl UserRepository for SqliteUserRepository {
 
         Ok(permissions)
     }
+
+    fn has_permission(&self, user_id: i64, permission_name: &str) -> Result<bool, AppError> {
+        let conn = DB.lock().map_err(|e| AppError::Internal(e.to_string()))?;
+
+        let count: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM user_permissions up
+             INNER JOIN permissions p ON up.permission_id = p.id
+             WHERE up.user_id = ?1 AND p.permission = ?2",
+            params![user_id, permission_name],
+            |row| row.get(0),
+        )?;
+
+        Ok(count > 0)
+    }
+
+    fn get_user_permissions_by_names(&self, user_id: i64) -> Result<Vec<String>, AppError> {
+        let conn = DB.lock().map_err(|e| AppError::Internal(e.to_string()))?;
+
+        let mut stmt = conn.prepare(
+            "SELECT p.permission 
+             FROM permissions p 
+             INNER JOIN user_permissions up ON p.id = up.permission_id 
+             WHERE up.user_id = ?1",
+        )?;
+
+        let mut permissions = Vec::new();
+        let mut rows = stmt.query(params![user_id])?;
+
+        while let Some(row) = rows.next()? {
+            permissions.push(row.get(0)?);
+        }
+
+        Ok(permissions)
+    }
 }
 
 impl SqliteUserRepository {

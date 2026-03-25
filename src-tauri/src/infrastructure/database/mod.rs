@@ -19,6 +19,17 @@ pub fn get_db_path() -> PathBuf {
     }
 }
 
+const PERMISSIONS: &[&str] = &[
+    "crear_usuario",
+    "modificar_usuario",
+    "eliminar_usuario",
+    "asignar_permiso_a_usuario",
+    "quitar_permiso_a_usuario",
+    "ver_usuarios",
+    "ver_permisos",
+    "crear_permiso",
+];
+
 pub fn init_database() -> Result<Connection, rusqlite::Error> {
     let db_path = get_db_path();
     let conn = Connection::open(&db_path)?;
@@ -50,9 +61,23 @@ pub fn init_database() -> Result<Connection, rusqlite::Error> {
         ",
     )?;
 
+    seed_permissions(&conn)?;
     seed_admin_user(&conn)?;
 
     Ok(conn)
+}
+
+fn seed_permissions(conn: &Connection) -> Result<(), rusqlite::Error> {
+    let now = chrono::Utc::now().to_rfc3339();
+
+    for permission in PERMISSIONS {
+        conn.execute(
+            "INSERT OR IGNORE INTO permissions (permission, created) VALUES (?1, ?2)",
+            rusqlite::params![permission, now],
+        )?;
+    }
+
+    Ok(())
 }
 
 fn seed_admin_user(conn: &Connection) -> Result<(), rusqlite::Error> {
@@ -72,6 +97,23 @@ fn seed_admin_user(conn: &Connection) -> Result<(), rusqlite::Error> {
         conn.execute(
             "INSERT INTO users (username, password, active, created_at, modified_at) VALUES (?1, ?2, 1, ?3, ?3)",
             rusqlite::params![username, bcrypt_hash, now],
+        )?;
+    }
+
+    let admin_id: i64 = conn.query_row(
+        "SELECT id FROM users WHERE username = ?1",
+        [username],
+        |row| row.get(0),
+    )?;
+
+    let mut stmt = conn.prepare("SELECT id FROM permissions")?;
+    let mut rows = stmt.query([])?;
+
+    while let Some(row) = rows.next()? {
+        let perm_id: i64 = row.get(0)?;
+        conn.execute(
+            "INSERT OR IGNORE INTO user_permissions (user_id, permission_id) VALUES (?1, ?2)",
+            rusqlite::params![admin_id, perm_id],
         )?;
     }
 

@@ -1,7 +1,12 @@
 import type { User, Permission, LoginRequest, CreateUserRequest, UpdateUserRequest, AddPermissionRequest } from "../../domain/entities";
 
+export interface LoginResponse {
+  user: User;
+  permissions: string[];
+}
+
 export interface IUserRepository {
-  login(request: LoginRequest): Promise<User>;
+  login(request: LoginRequest): Promise<LoginResponse>;
   createUser(request: CreateUserRequest): Promise<User>;
   getAllUsers(): Promise<User[]>;
   updateUser(request: UpdateUserRequest): Promise<User>;

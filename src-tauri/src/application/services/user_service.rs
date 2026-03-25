@@ -131,4 +131,12 @@ impl UserService {
         let id = conn.last_insert_rowid();
         Ok(Permission { id, ..permission })
     }
+
+    pub fn has_permission(&self, user_id: i64, permission_name: &str) -> Result<bool, AppError> {
+        self.repository.has_permission(user_id, permission_name)
+    }
+
+    pub fn get_user_permissions_by_names(&self, user_id: i64) -> Result<Vec<String>, AppError> {
+        self.repository.get_user_permissions_by_names(user_id)
+    }
 }

@@ -4,6 +4,7 @@ export interface User {
   active: boolean;
   created_at: string;
   modified_at: string;
+  permissions?: string[];
 }
 
 export interface Permission {

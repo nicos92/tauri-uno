@@ -12,4 +12,6 @@ pub trait UserRepository: Send + Sync {
     fn remove_permission(&self, user_id: i64, permission_id: i64) -> Result<(), AppError>;
     fn get_user_permissions(&self, user_id: i64) -> Result<Vec<Permission>, AppError>;
     fn get_all_permissions(&self) -> Result<Vec<Permission>, AppError>;
+    fn has_permission(&self, user_id: i64, permission_name: &str) -> Result<bool, AppError>;
+    fn get_user_permissions_by_names(&self, user_id: i64) -> Result<Vec<String>, AppError>;
 }

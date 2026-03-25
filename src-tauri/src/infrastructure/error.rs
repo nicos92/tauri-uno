@@ -29,6 +29,9 @@ pub enum AppError {
     #[error("Permission already assigned to user")]
     PermissionAlreadyAssigned,
 
+    #[error("Permission denied")]
+    PermissionDenied,
+
     #[error("Internal error: {0}")]
     Internal(String),
 }

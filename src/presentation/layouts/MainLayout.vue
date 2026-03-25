@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useAuthStore } from "../stores";
 
@@ -9,12 +9,19 @@ const authStore = useAuthStore();
 
 const isSidebarOpen = ref(true);
 
-const menuItems = [
-  { name: "home", label: "Inicio", icon: "🏠" },
-  { name: "users", label: "Usuarios", icon: "👥" },
-  { name: "permissions", label: "Permisos", icon: "🔑" },
-  { name: "settings", label: "Configuración", icon: "⚙️" },
-];
+const menuItems = computed(() => {
+  const items = [
+    { name: "home", label: "Inicio", icon: "🏠", permission: null },
+    { name: "users", label: "Usuarios", icon: "👥", permission: "ver_usuarios" },
+    { name: "permissions", label: "Permisos", icon: "🔑", permission: "ver_permisos" },
+    { name: "settings", label: "Configuración", icon: "⚙️", permission: null },
+  ];
+  
+  return items.filter(item => {
+    if (!item.permission) return true;
+    return authStore.hasPermission(item.permission);
+  });
+});
 
 function isActive(name: string): boolean {
   return route.name === name;

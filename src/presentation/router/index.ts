@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
 import { useAuthStore } from "../stores";
+import { PERMISSIONS } from "../../domain/entities";
 
 const routes = [
   {
@@ -22,11 +23,13 @@ const routes = [
         path: "users",
         name: "users",
         component: () => import("../pages/UsersPage.vue"),
+        meta: { permission: PERMISSIONS.VIEW_USERS },
       },
       {
         path: "permissions",
         name: "permissions",
         component: () => import("../pages/PermissionsPage.vue"),
+        meta: { permission: PERMISSIONS.VIEW_PERMISSIONS },
       },
       {
         path: "settings",
@@ -44,11 +47,18 @@ const router = createRouter({
 
 router.beforeEach((to, _from, next) => {
   const authStore = useAuthStore();
-  
+  authStore.loadFromStorage();
+
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next({ name: "login" });
   } else if (to.name === "login" && authStore.isAuthenticated) {
     next({ name: "home" });
+  } else if (to.meta.permission && typeof to.meta.permission === "string") {
+    if (authStore.hasPermission(to.meta.permission)) {
+      next();
+    } else {
+      next({ name: "home" });
+    }
   } else {
     next();
   }

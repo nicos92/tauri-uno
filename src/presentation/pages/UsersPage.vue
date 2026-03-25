@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useUsersStore, usePermissionsStore } from "../stores";
+import { usePermissions } from "../composables/usePermissions";
 import type { User } from "../../domain/entities";
 
 const usersStore = useUsersStore();
 const permissionsStore = usePermissionsStore();
+const { canCreateUser, canUpdateUser, canDeleteUser, canAssignPermission, canRemovePermission } = usePermissions();
 
 const showCreateModal = ref(false);
 const showEditModal = ref(false);
@@ -15,6 +17,15 @@ const newUsername = ref("");
 const newPassword = ref("");
 const editUsername = ref("");
 const editActive = ref(true);
+
+const selectedUserAssignedPermissions = computed(() => {
+  return permissionsStore.getUserPermissions(selectedUser.value?.id || 0);
+});
+
+const selectedUserAvailablePermissions = computed(() => {
+  const assignedIds = new Set(selectedUserAssignedPermissions.value.map(p => p.id));
+  return permissionsStore.allPermissions.filter(p => !assignedIds.has(p.id));
+});
 
 onMounted(async () => {
   await usersStore.fetchUsers();
@@ -66,21 +77,13 @@ async function removePermission(permissionId: number) {
   if (!selectedUser.value) return;
   await permissionsStore.removePermission(selectedUser.value.id, permissionId);
 }
-
-function getUserPermissionsList(userId: number) {
-  return permissionsStore.getUserPermissions(userId);
-}
-
-function hasPermission(userId: number, permissionId: number): boolean {
-  return getUserPermissionsList(userId).some(p => p.id === permissionId);
-}
 </script>
 
 <template>
   <div class="users-page">
     <div class="page-header">
       <h1>Gestión de Usuarios</h1>
-      <button @click="showCreateModal = true" class="btn-primary">
+      <button v-if="canCreateUser()" @click="showCreateModal = true" class="btn-primary">
         Crear Usuario
       </button>
     </div>
@@ -112,13 +115,13 @@ function hasPermission(userId: number, permissionId: number): boolean {
           </td>
           <td>{{ new Date(user.created_at).toLocaleDateString() }}</td>
           <td class="actions">
-            <button @click="openPermissionsModal(user)" class="btn-icon" title="Permisos">
+            <button v-if="canAssignPermission() || canRemovePermission()" @click="openPermissionsModal(user)" class="btn-icon" title="Permisos">
               🔑
             </button>
-            <button @click="openEditModal(user)" class="btn-icon" title="Editar">
+            <button v-if="canUpdateUser()" @click="openEditModal(user)" class="btn-icon" title="Editar">
               ✏️
             </button>
-            <button @click="handleDelete(user.id)" class="btn-icon btn-danger" title="Eliminar">
+            <button v-if="canDeleteUser()" @click="handleDelete(user.id)" class="btn-icon btn-danger" title="Eliminar">
               🗑️
             </button>
           </td>
@@ -189,11 +192,11 @@ function hasPermission(userId: number, permissionId: number): boolean {
           <div class="permission-section">
             <h3>Permisos Asignados</h3>
             <ul class="permission-list">
-              <li v-for="perm in getUserPermissionsList(selectedUser?.id || 0)" :key="perm.id">
+              <li v-for="perm in selectedUserAssignedPermissions" :key="perm.id">
                 {{ perm.permission }}
                 <button @click="removePermission(perm.id)" class="btn-remove">×</button>
               </li>
-              <li v-if="getUserPermissionsList(selectedUser?.id || 0).length === 0" class="empty">
+              <li v-if="selectedUserAssignedPermissions.length === 0" class="empty">
                 Sin permisos asignados
               </li>
             </ul>
@@ -201,11 +204,11 @@ function hasPermission(userId: number, permissionId: number): boolean {
           <div class="permission-section">
             <h3>Permisos Disponibles</h3>
             <ul class="permission-list">
-              <li v-for="perm in permissionsStore.allPermissions.filter(p => !hasPermission(selectedUser?.id || 0, p.id))" :key="perm.id">
+              <li v-for="perm in selectedUserAvailablePermissions" :key="perm.id">
                 {{ perm.permission }}
                 <button @click="addPermission(perm.id)" class="btn-add">+</button>
               </li>
-              <li v-if="permissionsStore.allPermissions.filter(p => !hasPermission(selectedUser?.id || 0, p.id)).length === 0" class="empty">
+              <li v-if="selectedUserAvailablePermissions.length === 0" class="empty">
                 Todos los permisos asignados
               </li>
             </ul>

@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
-import type { User } from "../../domain/entities";
+import type { User, Permission } from "../../domain/entities";
 import { UserApiRepository } from "../../infrastructure/api";
 import { LoginUseCase, CreateUserUseCase, GetAllUsersUseCase, UpdateUserUseCase, DeleteUserUseCase, ManagePermissionsUseCase } from "../../application/usecases";
 
@@ -8,16 +8,25 @@ const repository = new UserApiRepository();
 
 export const useAuthStore = defineStore("auth", () => {
   const user = ref<User | null>(null);
+  const permissions = ref<string[]>([]);
   const isAuthenticated = ref(false);
   const error = ref<string | null>(null);
 
   const loginUseCase = new LoginUseCase(repository);
 
+  function hasPermission(permission: string): boolean {
+    return permissions.value.includes(permission);
+  }
+
   async function login(username: string, password: string): Promise<boolean> {
     error.value = null;
     try {
-      user.value = await loginUseCase.execute(username, password);
+      const response = await loginUseCase.execute(username, password);
+      user.value = response.user;
+      permissions.value = response.permissions;
       isAuthenticated.value = true;
+      localStorage.setItem("currentUser", JSON.stringify(response.user));
+      localStorage.setItem("userPermissions", JSON.stringify(response.permissions));
       return true;
     } catch (e) {
       error.value = e as string;
@@ -27,15 +36,31 @@ export const useAuthStore = defineStore("auth", () => {
 
   function logout() {
     user.value = null;
+    permissions.value = [];
     isAuthenticated.value = false;
+    localStorage.removeItem("currentUser");
+    localStorage.removeItem("userPermissions");
+  }
+
+  function loadFromStorage() {
+    const storedUser = localStorage.getItem("currentUser");
+    const storedPermissions = localStorage.getItem("userPermissions");
+    if (storedUser && storedPermissions) {
+      user.value = JSON.parse(storedUser);
+      permissions.value = JSON.parse(storedPermissions);
+      isAuthenticated.value = true;
+    }
   }
 
   return {
     user,
+    permissions,
     isAuthenticated,
     error,
     login,
     logout,
+    hasPermission,
+    loadFromStorage,
   };
 });
 
@@ -112,8 +137,8 @@ export const useUsersStore = defineStore("users", () => {
 });
 
 export const usePermissionsStore = defineStore("permissions", () => {
-  const allPermissions = ref<{ id: number; permission: string; created: string }[]>([]);
-  const userPermissions = ref<Map<number, { id: number; permission: string; created: string }[]>>(new Map());
+  const allPermissions = ref<Permission[]>([]);
+  const userPermissions = ref<Map<number, Permission[]>>(new Map());
   const loading = ref(false);
   const error = ref<string | null>(null);
 
@@ -177,7 +202,7 @@ export const usePermissionsStore = defineStore("permissions", () => {
     }
   }
 
-  function getUserPermissions(userId: number) {
+  function getUserPermissions(userId: number): Permission[] {
     return userPermissions.value.get(userId) || [];
   }
 
