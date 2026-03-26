@@ -25,17 +25,20 @@ const editIdSubCategoria = ref<number | null>(null);
 const editIdProveedor = ref<number | null>(null);
 
 const articulosCompletos = computed(() => {
-  return articulosStore.articulos.map((a) => {
-    const subCat = subCategoriasStore.subCategorias.find((s) => s.id === a.id_sub_categoria);
-    const cat = subCat ? categoriasStore.categorias.find((c) => c.id === subCat.id_categoria) : null;
-    const prov = proveedoresStore.proveedores.find((p) => p.id === a.id_proveedor);
-    return {
-      ...a,
-      subCategoriaNombre: subCat?.sub_categoria || "Sin sub categoría",
-      categoriaNombre: cat?.categoria || "Sin categoría",
-      proveedorNombre: prov?.proveedor || "Sin proveedor",
-    };
-  });
+  return articulosStore.articulos
+    .slice()
+    .sort((a, b) => b.cod_articulo.localeCompare(a.cod_articulo))
+    .map((a) => {
+      const subCat = subCategoriasStore.subCategorias.find((s) => s.id === a.id_sub_categoria);
+      const cat = subCat ? categoriasStore.categorias.find((c) => c.id === subCat.id_categoria) : null;
+      const prov = proveedoresStore.proveedores.find((p) => p.id === a.id_proveedor);
+      return {
+        ...a,
+        subCategoriaNombre: subCat?.sub_categoria || "Sin sub categoría",
+        categoriaNombre: cat?.categoria || "Sin categoría",
+        proveedorNombre: prov?.proveedor || "Sin proveedor",
+      };
+    });
 });
 
 const subCategoriasConCategoria = computed(() => {
