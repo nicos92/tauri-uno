@@ -24,6 +24,21 @@ const editCodArticulo = ref("");
 const editIdSubCategoria = ref<number | null>(null);
 const editIdProveedor = ref<number | null>(null);
 
+const searchQuery = ref("");
+
+const filteredArticulos = computed(() => {
+  const query = searchQuery.value.toLowerCase().trim();
+  if (!query) return articulosCompletos.value;
+  return articulosCompletos.value.filter(
+    (art) =>
+      art.cod_articulo.toLowerCase().includes(query) ||
+      art.articulo.toLowerCase().includes(query) ||
+      art.categoriaNombre.toLowerCase().includes(query) ||
+      art.subCategoriaNombre.toLowerCase().includes(query) ||
+      art.proveedorNombre.toLowerCase().includes(query)
+  );
+});
+
 const articulosCompletos = computed(() => {
   return articulosStore.articulos
     .slice()
@@ -122,6 +137,15 @@ async function handleDelete(id: number) {
       </button>
     </div>
 
+    <div class="search-bar">
+      <input
+        v-model="searchQuery"
+        type="text"
+        placeholder="Buscar por código, artículo, categoría, subcategoría o proveedor..."
+        class="search-input"
+      />
+    </div>
+
     <div v-if="articulosStore.loading || subCategoriasStore.loading || proveedoresStore.loading" class="loading">
       Cargando...
     </div>
@@ -143,7 +167,7 @@ async function handleDelete(id: number) {
         </tr>
       </thead>
       <tbody>
-        <tr v-for="art in articulosCompletos" :key="art.id">
+        <tr v-for="art in filteredArticulos" :key="art.id">
           <td>{{ art.id }}</td>
           <td>{{ art.cod_articulo }}</td>
           <td>{{ art.articulo }}</td>
@@ -162,8 +186,8 @@ async function handleDelete(id: number) {
       </tbody>
     </table>
 
-    <div v-if="articulosStore.articulos.length === 0" class="empty-state">
-      No hay artículos registrados
+    <div v-if="filteredArticulos.length === 0" class="empty-state">
+      No hay artículos que coincidan con la búsqueda
     </div>
 
     <div v-if="showCreateModal" class="modal-overlay" @click.self="showCreateModal = false">
@@ -268,6 +292,24 @@ async function handleDelete(id: number) {
 
 .page-header h1 {
   margin: 0;
+}
+
+.search-bar {
+  margin-bottom: 1.5rem;
+}
+
+.search-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #667eea;
 }
 
 .btn-primary {
