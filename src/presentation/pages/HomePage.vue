@@ -183,6 +183,45 @@ const articulosBajoStock = computed(() => {
             </div>
 
             <div class="card full-width">
+                <h3>Stock Bajo</h3>
+                <p class="card-description">
+                    Artículos con menos de 10 unidades
+                </p>
+                <div class="table-container">
+                    <table
+                        v-if="articulosBajoStock.length > 0"
+                        class="low-stock-table"
+                    >
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Artículo</th>
+                                <th>Cantidad</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr
+                                v-for="item in articulosBajoStock"
+                                :key="item.id"
+                            >
+                                <td>{{ item.codArticulo }}</td>
+                                <td>{{ item.articuloNombre }}</td>
+                                <td
+                                    class="quantity-cell"
+                                    :class="{ critical: item.cantidad < 5 }"
+                                >
+                                    {{ item.cantidad }}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div v-else class="empty-state">
+                        No hay artículos con stock bajo
+                    </div>
+                </div>
+            </div>
+
+            <div class="card full-width">
                 <h3>Categorías y Sub Categorías</h3>
                 <div class="categories-list">
                     <div
@@ -222,49 +261,13 @@ const articulosBajoStock = computed(() => {
                             </span>
                         </div>
                     </div>
-                    <div v-if="categoriasConSubcategorias.length === 0" class="empty-state">
+                    <div
+                        v-if="categoriasConSubcategorias.length === 0"
+                        class="empty-state"
+                    >
                         No hay categorías registradas
                     </div>
                 </div>
-            </div>
-
-            <div class="card full-width">
-                <h3>Stock Bajo</h3>
-                <p class="card-description">Artículos con menos de 10 unidades</p>
-                <div class="table-container">
-                    <table v-if="articulosBajoStock.length > 0" class="low-stock-table">
-                        <thead>
-                            <tr>
-                                <th>Código</th>
-                                <th>Artículo</th>
-                                <th>Cantidad</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr
-                                v-for="item in articulosBajoStock"
-                                :key="item.id"
-                            >
-                                <td>{{ item.codArticulo }}</td>
-                                <td>{{ item.articuloNombre }}</td>
-                                <td class="quantity-cell" :class="{ 'critical': item.cantidad < 5 }">
-                                    {{ item.cantidad }}
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                    <div v-else class="empty-state">
-                        No hay artículos con stock bajo
-                    </div>
-                </div>
-            </div>
-
-            <div class="card full-width">
-                <h3>Configuración</h3>
-                <p>Ajustes generales del sistema</p>
-                <router-link to="/settings" class="card-link"
-                    >Ir a Configuración</router-link
-                >
             </div>
         </template>
     </div>
