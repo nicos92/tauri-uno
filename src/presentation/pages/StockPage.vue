@@ -170,7 +170,6 @@ async function handleDelete(id: number) {
         <table v-else class="stock-table">
             <thead>
                 <tr>
-                    <th>ID</th>
                     <th>Código</th>
                     <th>Artículo</th>
                     <th>Cantidad</th>
@@ -182,7 +181,6 @@ async function handleDelete(id: number) {
             </thead>
             <tbody>
                 <tr v-for="stock in filteredStock" :key="stock.id">
-                    <td>{{ stock.id }}</td>
                     <td>{{ stock.codArticulo }}</td>
                     <td>{{ stock.articuloNombre }}</td>
                     <td>{{ stock.cantidad }}</td>

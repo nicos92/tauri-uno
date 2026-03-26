@@ -97,7 +97,6 @@ async function removePermission(permissionId: number) {
     <table v-else class="users-table">
       <thead>
         <tr>
-          <th>ID</th>
           <th>Usuario</th>
           <th>Activo</th>
           <th>Fecha Creación</th>
@@ -106,7 +105,6 @@ async function removePermission(permissionId: number) {
       </thead>
       <tbody>
         <tr v-for="user in usersStore.users" :key="user.id">
-          <td>{{ user.id }}</td>
           <td>{{ user.username }}</td>
           <td>
             <span :class="user.active ? 'status-active' : 'status-inactive'">

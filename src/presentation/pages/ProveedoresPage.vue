@@ -116,7 +116,6 @@ async function handleDelete(id: number) {
         <table v-else class="proveedores-table">
             <thead>
                 <tr>
-                    <th>ID</th>
                     <th>Razón Social</th>
                     <th>Nombre</th>
                     <th>CUIT</th>
@@ -130,7 +129,6 @@ async function handleDelete(id: number) {
                     v-for="proveedor in proveedoresStore.proveedores"
                     :key="proveedor.id"
                 >
-                    <td>{{ proveedor.id }}</td>
                     <td>{{ proveedor.proveedor }}</td>
                     <td>{{ proveedor.nombre }}</td>
                     <td>{{ proveedor.cuit || "-" }}</td>

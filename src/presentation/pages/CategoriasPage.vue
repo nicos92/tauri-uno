@@ -76,14 +76,12 @@ async function handleDelete(id: number) {
     <table v-else class="categorias-table">
       <thead>
         <tr>
-          <th>ID</th>
           <th>Categoría</th>
           <th>Acciones</th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="categoria in categoriasStore.categorias" :key="categoria.id">
-          <td>{{ categoria.id }}</td>
           <td>{{ categoria.categoria }}</td>
           <td class="actions">
             <button v-if="canUpdateCategoria()" @click="openEditModal(categoria)" class="btn-icon" title="Editar">

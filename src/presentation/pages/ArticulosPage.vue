@@ -157,7 +157,6 @@ async function handleDelete(id: number) {
     <table v-else class="articulos-table">
       <thead>
         <tr>
-          <th>ID</th>
           <th>Código</th>
           <th>Artículo</th>
           <th>Categoría</th>
@@ -168,7 +167,6 @@ async function handleDelete(id: number) {
       </thead>
       <tbody>
         <tr v-for="art in filteredArticulos" :key="art.id">
-          <td>{{ art.id }}</td>
           <td>{{ art.cod_articulo }}</td>
           <td>{{ art.articulo }}</td>
           <td>{{ art.categoriaNombre }}</td>

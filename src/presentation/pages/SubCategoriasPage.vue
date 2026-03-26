@@ -98,7 +98,6 @@ async function handleDelete(id: number) {
     <table v-else class="sub-categorias-table">
       <thead>
         <tr>
-          <th>ID</th>
           <th>Sub Categoría</th>
           <th>Categoría</th>
           <th>Acciones</th>
@@ -106,7 +105,6 @@ async function handleDelete(id: number) {
       </thead>
       <tbody>
         <tr v-for="subCat in subCategoriasConCategoria" :key="subCat.id">
-          <td>{{ subCat.id }}</td>
           <td>{{ subCat.sub_categoria }}</td>
           <td>{{ subCat.categoriaNombre }}</td>
           <td class="actions">
