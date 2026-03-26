@@ -27,6 +27,18 @@ const editGanancia = ref(0);
 
 const preciosVenta = ref<Map<number, number>>(new Map());
 
+const searchQuery = ref("");
+
+const filteredStock = computed(() => {
+    const query = searchQuery.value.toLowerCase().trim();
+    if (!query) return stockCompletos.value;
+    return stockCompletos.value.filter(
+        (s) =>
+            s.codArticulo.toLowerCase().includes(query) ||
+            s.articuloNombre.toLowerCase().includes(query)
+    );
+});
+
 const editPreviewPrecioVenta = computed(() => {
     return stockStore.calcularPrecioVenta(editCosto.value, editGanancia.value);
 });
@@ -135,6 +147,15 @@ async function handleDelete(id: number) {
             </button>
         </div>
 
+        <div class="search-bar">
+            <input
+                v-model="searchQuery"
+                type="text"
+                placeholder="Buscar por código o artículo..."
+                class="search-input"
+            />
+        </div>
+
         <div
             v-if="stockStore.loading || articulosStore.loading"
             class="loading"
@@ -160,7 +181,7 @@ async function handleDelete(id: number) {
                 </tr>
             </thead>
             <tbody>
-                <tr v-for="stock in stockCompletos" :key="stock.id">
+                <tr v-for="stock in filteredStock" :key="stock.id">
                     <td>{{ stock.id }}</td>
                     <td>{{ stock.codArticulo }}</td>
                     <td>{{ stock.articuloNombre }}</td>
@@ -190,8 +211,8 @@ async function handleDelete(id: number) {
             </tbody>
         </table>
 
-        <div v-if="stockStore.stocks.length === 0" class="empty-state">
-            No hay stock registrado
+        <div v-if="filteredStock.length === 0" class="empty-state">
+            No hay stock que coincida con la búsqueda
         </div>
 
         <div
@@ -346,6 +367,24 @@ async function handleDelete(id: number) {
 
 .page-header h1 {
     margin: 0;
+}
+
+.search-bar {
+    margin-bottom: 1.5rem;
+}
+
+.search-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 1rem;
+    box-sizing: border-box;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #667eea;
 }
 
 .btn-primary {
