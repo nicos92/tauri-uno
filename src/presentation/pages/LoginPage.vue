@@ -73,6 +73,24 @@ async function handleLogin() {
     align-items: center;
     justify-content: center;
     background: linear-gradient(135deg, #1e293b 0%, #2e394b 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.login-container::before {
+    content: "";
+    position: absolute;
+    width: 520px;
+    height: 520px;
+    left: 50%;
+    top: 50%;
+    transform: translate(-70%, -50%);
+    background-image: url("/tauri.svg");
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-position: center;
+    opacity: 0.12;
+    pointer-events: none;
 }
 
 .login-card {
@@ -82,6 +100,8 @@ async function handleLogin() {
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
     width: 100%;
     max-width: 400px;
+    position: relative;
+    z-index: 1;
 }
 
 h1 {
