@@ -272,6 +272,8 @@ async function handleDelete(id: number) {
 <style scoped>
 .proveedores-page {
     padding: 2rem;
+    background: var(--color-bg);
+    min-height: 100%;
 }
 
 .page-header {
@@ -299,8 +301,8 @@ async function handleDelete(id: number) {
 }
 
 .btn-secondary {
-    background: #e2e8f0;
-    color: #333;
+    background: var(--color-surface-2);
+    color: var(--color-text);
     border: none;
     padding: 0.75rem 1.5rem;
     border-radius: 6px;
@@ -309,7 +311,7 @@ async function handleDelete(id: number) {
 
 .proveedores-table {
     width: 100%;
-    background: white;
+    background: var(--color-surface);
     border-radius: 12px;
     overflow: hidden;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -322,7 +324,7 @@ async function handleDelete(id: number) {
 }
 
 .proveedores-table th {
-    background: #f8fafc;
+    background: var(--color-surface-2);
     font-weight: 600;
 }
 
@@ -361,7 +363,7 @@ async function handleDelete(id: number) {
 }
 
 .modal {
-    background: white;
+    background: var(--color-surface);
     padding: 2rem;
     border-radius: 12px;
     width: 100%;
@@ -388,9 +390,11 @@ async function handleDelete(id: number) {
 .form-group textarea {
     width: 100%;
     padding: 0.75rem;
-    border: 1px solid #ddd;
+    border: 1px solid var(--color-border);
     border-radius: 6px;
     box-sizing: border-box;
+    background: var(--color-surface);
+    color: var(--color-text);
 }
 
 .modal-actions {
@@ -409,6 +413,6 @@ async function handleDelete(id: number) {
 .empty-state {
     text-align: center;
     padding: 2rem;
-    color: #666;
+    color: var(--color-text-muted);
 }
 </style>

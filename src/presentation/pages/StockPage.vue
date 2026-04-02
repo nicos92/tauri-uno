@@ -35,7 +35,7 @@ const filteredStock = computed(() => {
     return stockCompletos.value.filter(
         (s) =>
             s.codArticulo.toLowerCase().includes(query) ||
-            s.articuloNombre.toLowerCase().includes(query)
+            s.articuloNombre.toLowerCase().includes(query),
     );
 });
 
@@ -49,7 +49,8 @@ const stockCompletos = computed(() => {
             (a) => a.id === s.id_articulo,
         );
         const precioVenta =
-            preciosVenta.value.get(s.id) || stockStore.calcularPrecioVenta(s.costo, s.ganancia);
+            preciosVenta.value.get(s.id) ||
+            stockStore.calcularPrecioVenta(s.costo, s.ganancia);
         return {
             ...s,
             articuloNombre: articulo?.articulo || "Sin artículo",
@@ -122,7 +123,10 @@ async function handleUpdate() {
     };
     const success = await stockStore.updateStock(request);
     if (success) {
-        preciosVenta.value.set(selectedStock.value.id, editPreviewPrecioVenta.value);
+        preciosVenta.value.set(
+            selectedStock.value.id,
+            editPreviewPrecioVenta.value,
+        );
         showEditModal.value = false;
     }
 }
@@ -328,7 +332,9 @@ async function handleDelete(id: number) {
                         />
                     </div>
                     <div class="preview-precio">
-                        Precio de Venta: ${{ editPreviewPrecioVenta.toFixed(2) }}
+                        Precio de Venta: ${{
+                            editPreviewPrecioVenta.toFixed(2)
+                        }}
                     </div>
                     <div v-if="stockStore.error" class="error-message">
                         {{ stockStore.error }}
@@ -354,6 +360,9 @@ async function handleDelete(id: number) {
 <style scoped>
 .stock-page {
     padding: 2rem;
+    background: var(--color-bg);
+
+    min-height: 100%;
 }
 
 .page-header {
@@ -374,10 +383,12 @@ async function handleDelete(id: number) {
 .search-input {
     width: 100%;
     padding: 0.75rem 1rem;
-    border: 1px solid #ddd;
+    border: 1px solid var(--color-border);
     border-radius: 6px;
     font-size: 1rem;
     box-sizing: border-box;
+    background: var(--color-surface);
+    color: var(--color-text);
 }
 
 .search-input:focus {
@@ -404,8 +415,8 @@ async function handleDelete(id: number) {
 }
 
 .btn-secondary {
-    background: #e2e8f0;
-    color: #333;
+    background: var(--color-surface-2);
+    color: var(--color-text);
     border: none;
     padding: 0.75rem 1.5rem;
     border-radius: 6px;
@@ -414,7 +425,7 @@ async function handleDelete(id: number) {
 
 .stock-table {
     width: 100%;
-    background: white;
+    background: var(--color-surface);
     border-radius: 12px;
     overflow: hidden;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -427,7 +438,7 @@ async function handleDelete(id: number) {
 }
 
 .stock-table th {
-    background: #f8fafc;
+    background: var(--color-surface-2);
     font-weight: 600;
 }
 
@@ -466,7 +477,7 @@ async function handleDelete(id: number) {
 }
 
 .modal {
-    background: white;
+    background: var(--color-surface);
     padding: 2rem;
     border-radius: 12px;
     width: 100%;
@@ -493,9 +504,11 @@ async function handleDelete(id: number) {
 .form-group select {
     width: 100%;
     padding: 0.75rem;
-    border: 1px solid #ddd;
+    border: 1px solid var(--color-border);
     border-radius: 6px;
     box-sizing: border-box;
+    background: var(--color-surface);
+    color: var(--color-text);
 }
 
 .modal-actions {
@@ -506,7 +519,7 @@ async function handleDelete(id: number) {
 }
 
 .preview-precio {
-    background: #f0f4f8;
+    background: var(--color-surface-2);
     padding: 0.75rem;
     border-radius: 6px;
     text-align: center;
@@ -524,6 +537,6 @@ async function handleDelete(id: number) {
 .empty-state {
     text-align: center;
     padding: 2rem;
-    color: #666;
+    color: var(--color-text-muted);
 }
 </style>

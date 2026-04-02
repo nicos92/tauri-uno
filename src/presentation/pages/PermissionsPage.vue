@@ -45,6 +45,7 @@ onMounted(async () => {
 <style scoped>
 .permissions-page {
     padding: 2rem;
+    background: var(--color-bg);
 }
 
 .page-header {
@@ -56,7 +57,7 @@ onMounted(async () => {
 }
 
 .create-section {
-    background: white;
+    background: var(--color-surface);
     padding: 1.5rem;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -75,8 +76,10 @@ onMounted(async () => {
 .create-form input {
     flex: 1;
     padding: 0.75rem;
-    border: 1px solid #ddd;
+    border: 1px solid var(--color-border);
     border-radius: 6px;
+    background: var(--color-surface);
+    color: var(--color-text);
 }
 
 .btn-primary {
@@ -98,7 +101,7 @@ onMounted(async () => {
 }
 
 .permissions-list {
-    background: white;
+    background: var(--color-surface);
     padding: 1.5rem;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -118,7 +121,7 @@ onMounted(async () => {
     display: flex;
     justify-content: space-between;
     padding: 0.75rem 0;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--color-border);
 }
 
 .permissions-list li:last-child {
@@ -130,7 +133,7 @@ onMounted(async () => {
 }
 
 .permission-date {
-    color: #666;
+    color: var(--color-text-muted);
     font-size: 0.9rem;
 }
 
@@ -147,6 +150,6 @@ onMounted(async () => {
 .loading {
     text-align: center;
     padding: 1rem;
-    color: #666;
+    color: var(--color-text-muted);
 }
 </style>

@@ -276,22 +276,23 @@ const articulosBajoStock = computed(() => {
 <style scoped>
 .home-page {
     padding: 2rem;
+    background: var(--color-bg);
 }
 
 h1 {
     margin: 0 0 0.5rem;
-    color: #333;
+    color: var(--color-text);
 }
 
 p {
-    color: #666;
+    color: var(--color-text-muted);
     margin-bottom: 2rem;
 }
 
 .loading {
     text-align: center;
     padding: 2rem;
-    color: #666;
+    color: var(--color-text-muted);
 }
 
 .stats-cards {
@@ -302,7 +303,7 @@ p {
 }
 
 .stat-card {
-    background: white;
+    background: var(--color-surface);
     padding: 1.5rem;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -348,16 +349,16 @@ p {
 .stat-value {
     font-size: 1.75rem;
     font-weight: 700;
-    color: #333;
+    color: var(--color-text);
 }
 
 .stat-label {
     font-size: 0.875rem;
-    color: #666;
+    color: var(--color-text-muted);
 }
 
 .card {
-    background: white;
+    background: var(--color-surface);
     padding: 1.5rem;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -375,7 +376,7 @@ p {
 
 .card p {
     margin: 0 0 1rem;
-    color: #666;
+    color: var(--color-text-muted);
     font-size: 0.9rem;
 }
 
@@ -391,7 +392,7 @@ p {
 
 .category-item {
     padding: 0.75rem 0;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--color-border);
 }
 
 .category-item:last-child {
@@ -403,7 +404,7 @@ p {
     align-items: center;
     gap: 0.5rem;
     font-weight: 500;
-    color: #333;
+    color: var(--color-text);
     margin-bottom: 0.5rem;
 }
 
@@ -415,7 +416,7 @@ p {
 }
 
 .subcategory-tag {
-    background: #f0f4f8;
+    background: var(--color-surface-2);
     color: #667eea;
     padding: 0.25rem 0.75rem;
     border-radius: 20px;
@@ -442,18 +443,18 @@ p {
 .low-stock-table td {
     padding: 0.75rem;
     text-align: left;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--color-border);
 }
 
 .low-stock-table th {
     font-weight: 600;
-    color: #666;
+    color: var(--color-text-muted);
     font-size: 0.875rem;
-    background: #f8fafc;
+    background: var(--color-surface-2);
 }
 
 .low-stock-table td {
-    color: #333;
+    color: var(--color-text);
 }
 
 .quantity-cell {

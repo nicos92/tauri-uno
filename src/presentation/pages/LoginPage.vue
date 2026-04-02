@@ -72,7 +72,7 @@ async function handleLogin() {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #1e293b 0%, #2e394b 100%);
+    background: var(--color-bg);
     position: relative;
     overflow: hidden;
 }
@@ -94,7 +94,7 @@ async function handleLogin() {
 }
 
 .login-card {
-    background: white;
+    background: var(--color-surface);
     padding: 2rem;
     border-radius: 12px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
@@ -107,7 +107,7 @@ async function handleLogin() {
 h1 {
     margin: 0 0 1.5rem;
     text-align: center;
-    color: #333;
+    color: var(--color-text);
 }
 
 .form-group {
@@ -117,17 +117,19 @@ h1 {
 label {
     display: block;
     margin-bottom: 0.5rem;
-    color: #555;
+    color: var(--color-text);
     font-weight: 500;
 }
 
 input {
     width: 100%;
     padding: 0.75rem;
-    border: 1px solid #ddd;
+    border: 1px solid var(--color-border);
     border-radius: 6px;
     font-size: 1rem;
     box-sizing: border-box;
+    background: var(--color-surface);
+    color: var(--color-text);
 }
 
 input:focus {
