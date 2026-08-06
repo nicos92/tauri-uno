@@ -74,6 +74,7 @@ function handleLogout() {
     padding: 2rem;
     max-width: 100%;
     background: var(--color-bg);
+    min-height: 100%;
 }
 
 h1 {
