@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
+import { useRouter } from "vue-router";
+
 import { useAuthStore } from "../stores";
 import { useThemeStore } from "../stores/themeStore";
+
+const router = useRouter();
 
 const authStore = useAuthStore();
 const themeStore = useThemeStore();
@@ -15,6 +19,8 @@ const theme = computed({
 
 function handleLogout() {
     authStore.logout();
+    router.push({ name: "login" });
+
 }
 </script>
 

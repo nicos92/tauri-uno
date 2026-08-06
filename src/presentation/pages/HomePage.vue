@@ -277,6 +277,8 @@ const articulosBajoStock = computed(() => {
 .home-page {
     padding: 2rem;
     background: var(--color-bg);
+    min-height: 100%;
+
 }
 
 h1 {
