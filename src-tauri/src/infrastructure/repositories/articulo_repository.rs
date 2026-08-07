@@ -103,7 +103,6 @@ impl ArticuloRepository for SqliteArticuloRepository {
     fn delete(&self, id: i64) -> Result<(), AppError> {
         let conn = DB.lock().map_err(|e| AppError::Internal(e.to_string()))?;
 
-        conn.execute("DELETE FROM stock WHERE id_articulo = ?1", params![id])?;
         conn.execute("DELETE FROM articulos WHERE id = ?1", params![id])?;
         Ok(())
     }
