@@ -47,4 +47,58 @@ html[data-theme="dark"] {
   --color-text-muted: #94a3b8;
   --color-border: #1f2937;
 }
+
+.print-area {
+  display: none;
+}
+
+@media print {
+  body > * {
+    display: none !important;
+  }
+
+  body > .print-area {
+    display: block !important;
+  }
+
+  .print-area * {
+    display: revert !important;
+  }
+
+  .print-area {
+    padding: 1rem;
+  }
+
+  .print-summary {
+    border: 1px solid #000;
+    padding: 0.75rem 1rem;
+    margin: 0.75rem 0;
+  }
+
+  .print-area table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .print-area th,
+  .print-area td {
+    border: 1px solid #000;
+    padding: 0.5rem;
+    text-align: left;
+  }
+
+  .print-total {
+    font-weight: bold;
+    text-align: right;
+  }
+
+  .print-line {
+    text-align: right;
+    margin: 0.25rem 0;
+  }
+
+  .print-obs {
+    margin-top: 1rem;
+  }
+}
 </style>

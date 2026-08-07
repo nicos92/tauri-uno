@@ -440,10 +440,22 @@ function generarPdf() {
         <div v-if="ventasStore.error" class="error-banner">
             {{ ventasStore.error }}
         </div>
+    </div>
 
+    <Teleport to="body">
         <div class="print-area" id="print-area">
             <h1>Presupuesto</h1>
             <p>Fecha: {{ fechaHoy }}</p>
+            <div class="print-summary">
+                <p class="print-line">Subtotal: {{ formatMoney(carritoSubtotal) }}</p>
+                <p v-if="descuento > 0" class="print-line">
+                    Descuento ({{ descuento }}%): −{{ formatMoney(descuentoMonto) }}
+                </p>
+                <p class="print-total">Total: {{ formatMoney(carritoTotal) }}</p>
+                <p v-if="observacion" class="print-obs">
+                    Observación: {{ observacion }}
+                </p>
+            </div>
             <table>
                 <thead>
                     <tr>
@@ -464,16 +476,8 @@ function generarPdf() {
                     </tr>
                 </tbody>
             </table>
-            <p class="print-line">Subtotal: {{ formatMoney(carritoSubtotal) }}</p>
-            <p v-if="descuento > 0" class="print-line">
-                Descuento ({{ descuento }}%): −{{ formatMoney(descuentoMonto) }}
-            </p>
-            <p class="print-total">Total: {{ formatMoney(carritoTotal) }}</p>
-            <p v-if="observacion" class="print-obs">
-                Observación: {{ observacion }}
-            </p>
         </div>
-    </div>
+    </Teleport>
 </template>
 
 <style scoped>
@@ -774,55 +778,5 @@ function generarPdf() {
 
 .empty-state.small {
     padding: 1rem;
-}
-
-.print-area {
-    display: none;
-}
-
-@media print {
-    body * {
-        visibility: hidden;
-    }
-
-    .print-area,
-    .print-area * {
-        visibility: visible;
-    }
-
-    .print-area {
-        display: block;
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        padding: 1rem;
-    }
-
-    .print-area table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-
-    .print-area th,
-    .print-area td {
-        border: 1px solid #000;
-        padding: 0.5rem;
-        text-align: left;
-    }
-
-    .print-total {
-        font-weight: bold;
-        text-align: right;
-    }
-
-    .print-line {
-        text-align: right;
-        margin: 0.25rem 0;
-    }
-
-    .print-obs {
-        margin-top: 1rem;
-    }
 }
 </style>

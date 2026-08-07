@@ -9,7 +9,7 @@ import type { VentaWithDetalle } from "../../domain/entities";
 
 const router = useRouter();
 const ventasStore = useVentasStore();
-const { canCreateVenta, canAnularVenta } = usePermissions();
+const { canCreateVenta, canAnularVenta, canGenerarPresupuesto } = usePermissions();
 const { error: toastError, success: toastSuccess } = useToasts();
 
 const showDetailModal = ref(false);
@@ -54,6 +54,11 @@ async function handleAnular(id: number) {
     } else {
         toastError(ventasStore.error || "No se pudo anular la venta.");
     }
+}
+
+function generarPdfDetalle() {
+    if (!selectedVenta.value) return;
+    window.print();
 }
 </script>
 
@@ -207,6 +212,13 @@ async function handleAnular(id: number) {
                 </div>
                 <div class="modal-actions">
                     <button
+                        v-if="canGenerarPresupuesto()"
+                        @click="generarPdfDetalle"
+                        class="btn-secondary"
+                    >
+                        Generar PDF
+                    </button>
+                    <button
                         @click="showDetailModal = false"
                         class="btn-secondary"
                     >
@@ -216,6 +228,48 @@ async function handleAnular(id: number) {
             </div>
         </div>
     </div>
+
+    <Teleport to="body">
+        <div v-if="selectedVenta" class="print-area" id="print-area">
+            <h1>Venta N° {{ selectedVenta.id }}</h1>
+            <p>Fecha: {{ new Date(selectedVenta.fecha).toLocaleString() }}</p>
+            <p>Usuario: {{ selectedVenta.username }}</p>
+            <p v-if="selectedVenta.observacion">
+                Observación: {{ selectedVenta.observacion }}
+            </p>
+            <div class="print-summary">
+                <p class="print-line">Subtotal: {{ formatMoney(selectedVenta.subtotal) }}</p>
+                <p v-if="selectedVenta.descuento > 0" class="print-line">
+                    Descuento ({{ selectedVenta.descuento }}%):
+                    −{{ formatMoney((selectedVenta.subtotal * selectedVenta.descuento) / 100) }}
+                </p>
+                <p class="print-total">Total: {{ formatMoney(selectedVenta.total) }}</p>
+                <p class="print-obs">
+                    Estado: {{ selectedVenta.anulada ? "Anulada" : "Activa" }}
+                </p>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Artículo</th>
+                        <th>Cantidad</th>
+                        <th>Precio</th>
+                        <th>Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="item in selectedVenta.items" :key="item.id">
+                        <td>{{ item.cod_articulo }}</td>
+                        <td>{{ item.articulo }}</td>
+                        <td>{{ item.cantidad }}</td>
+                        <td>{{ formatMoney(item.precio_unitario) }}</td>
+                        <td>{{ formatMoney(item.subtotal) }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </Teleport>
 </template>
 
 <style scoped>
