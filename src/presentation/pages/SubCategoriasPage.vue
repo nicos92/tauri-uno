@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from "vue";
 import { useSubCategoriasStore, useCategoriasStore } from "../stores";
 import { usePermissions } from "../composables/usePermissions";
+import { useToasts } from "../composables/useToasts";
 import type {
     SubCategoria,
     CreateSubCategoriaRequest,
@@ -82,7 +83,13 @@ async function handleUpdate() {
 
 async function handleDelete(id: number) {
     if (confirm("¿Está seguro de eliminar esta subcategoría?")) {
-        await subCategoriasStore.deleteSubCategoria(id);
+        const success = await subCategoriasStore.deleteSubCategoria(id);
+        if (!success) {
+            useToasts().error(
+                subCategoriasStore.error ||
+                    "No se pudo eliminar la sub categoría.",
+            );
+        }
     }
 }
 </script>
@@ -107,11 +114,14 @@ async function handleDelete(id: number) {
             Cargando...
         </div>
 
-        <div v-else-if="subCategoriasStore.error" class="error-message">
+        <div v-if="subCategoriasStore.error" class="error-banner">
             {{ subCategoriasStore.error }}
         </div>
 
-        <table v-else class="sub-categorias-table">
+        <table
+            v-if="!(subCategoriasStore.loading || categoriasStore.loading)"
+            class="sub-categorias-table"
+        >
             <thead>
                 <tr>
                     <th>Sub Categoría</th>
@@ -394,6 +404,15 @@ async function handleDelete(id: number) {
 
 .error-message {
     color: #e53e3e;
+    margin-bottom: 1rem;
+}
+
+.error-banner {
+    color: #e53e3e;
+    background: rgba(229, 62, 62, 0.1);
+    border: 1px solid rgba(229, 62, 62, 0.3);
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
     margin-bottom: 1rem;
 }
 

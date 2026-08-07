@@ -109,6 +109,18 @@ impl ProveedorRepository for SqliteProveedorRepository {
         conn.execute("DELETE FROM proveedores WHERE id = ?1", params![id])?;
         Ok(())
     }
+
+    fn has_articulos(&self, id: i64) -> Result<bool, AppError> {
+        let conn = DB.lock().map_err(|e| AppError::Internal(e.to_string()))?;
+
+        let count: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM articulos WHERE id_proveedor = ?1",
+            params![id],
+            |row| row.get(0),
+        )?;
+
+        Ok(count > 0)
+    }
 }
 
 impl SqliteProveedorRepository {

@@ -2,6 +2,7 @@
 import { ref, onMounted } from "vue";
 import { useCategoriasStore } from "../stores";
 import { usePermissions } from "../composables/usePermissions";
+import { useToasts } from "../composables/useToasts";
 import type {
     Categoria,
     CreateCategoriaRequest,
@@ -58,7 +59,12 @@ async function handleUpdate() {
 
 async function handleDelete(id: number) {
     if (confirm("¿Está seguro de eliminar esta categoría?")) {
-        await categoriasStore.deleteCategoria(id);
+        const success = await categoriasStore.deleteCategoria(id);
+        if (!success) {
+            useToasts().error(
+                categoriasStore.error || "No se pudo eliminar la categoría.",
+            );
+        }
     }
 }
 </script>
@@ -78,11 +84,11 @@ async function handleDelete(id: number) {
 
         <div v-if="categoriasStore.loading" class="loading">Cargando...</div>
 
-        <div v-else-if="categoriasStore.error" class="error-message">
+        <div v-if="categoriasStore.error" class="error-banner">
             {{ categoriasStore.error }}
         </div>
 
-        <table v-else class="categorias-table">
+        <table v-if="!categoriasStore.loading" class="categorias-table">
             <thead>
                 <tr>
                     <th>Categoría</th>
@@ -317,6 +323,15 @@ async function handleDelete(id: number) {
 
 .error-message {
     color: #e53e3e;
+    margin-bottom: 1rem;
+}
+
+.error-banner {
+    color: #e53e3e;
+    background: rgba(229, 62, 62, 0.1);
+    border: 1px solid rgba(229, 62, 62, 0.3);
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
     margin-bottom: 1rem;
 }
 

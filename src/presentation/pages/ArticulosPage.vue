@@ -7,6 +7,7 @@ import {
     useCategoriasStore,
 } from "../stores";
 import { usePermissions } from "../composables/usePermissions";
+import { useToasts } from "../composables/useToasts";
 import type {
     Articulo,
     CreateArticuloRequest,
@@ -149,7 +150,12 @@ async function handleUpdate() {
 
 async function handleDelete(id: number) {
     if (confirm("¿Está seguro de eliminar este artículo?")) {
-        await articulosStore.deleteArticulo(id);
+        const success = await articulosStore.deleteArticulo(id);
+        if (!success) {
+            useToasts().error(
+                articulosStore.error || "No se pudo eliminar el artículo.",
+            );
+        }
     }
 }
 </script>
@@ -187,11 +193,20 @@ async function handleDelete(id: number) {
             Cargando...
         </div>
 
-        <div v-else-if="articulosStore.error" class="error-message">
+        <div v-if="articulosStore.error" class="error-banner">
             {{ articulosStore.error }}
         </div>
 
-        <table v-else class="articulos-table">
+        <table
+            v-if="
+                !(
+                    articulosStore.loading ||
+                    subCategoriasStore.loading ||
+                    proveedoresStore.loading
+                )
+            "
+            class="articulos-table"
+        >
             <thead>
                 <tr>
                     <th>Código</th>
@@ -527,6 +542,15 @@ async function handleDelete(id: number) {
 
 .error-message {
     color: #e53e3e;
+    margin-bottom: 1rem;
+}
+
+.error-banner {
+    color: #e53e3e;
+    background: rgba(229, 62, 62, 0.1);
+    border: 1px solid rgba(229, 62, 62, 0.3);
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
     margin-bottom: 1rem;
 }
 

@@ -90,6 +90,11 @@ impl ProveedorService {
             .find_by_id(id)?
             .ok_or(AppError::ProveedorNotFound)?;
 
+        let has_articulos = self.repository.has_articulos(id)?;
+        if has_articulos {
+            return Err(AppError::ProveedorHasArticulos);
+        }
+
         self.repository.delete(id)
     }
 }

@@ -2,6 +2,7 @@
 import { ref, onMounted } from "vue";
 import { useProveedoresStore } from "../stores";
 import { usePermissions } from "../composables/usePermissions";
+import { useToasts } from "../composables/useToasts";
 import type {
     Proveedor,
     CreateProveedorRequest,
@@ -89,7 +90,12 @@ async function handleUpdate() {
 
 async function handleDelete(id: number) {
     if (confirm("¿Está seguro de eliminar este proveedor?")) {
-        await proveedoresStore.deleteProveedor(id);
+        const success = await proveedoresStore.deleteProveedor(id);
+        if (!success) {
+            useToasts().error(
+                proveedoresStore.error || "No se pudo eliminar el proveedor.",
+            );
+        }
     }
 }
 </script>
@@ -109,11 +115,11 @@ async function handleDelete(id: number) {
 
         <div v-if="proveedoresStore.loading" class="loading">Cargando...</div>
 
-        <div v-else-if="proveedoresStore.error" class="error-message">
+        <div v-if="proveedoresStore.error" class="error-banner">
             {{ proveedoresStore.error }}
         </div>
 
-        <table v-else class="proveedores-table">
+        <table v-if="!proveedoresStore.loading" class="proveedores-table">
             <thead>
                 <tr>
                     <th>Razón Social</th>
@@ -406,6 +412,15 @@ async function handleDelete(id: number) {
 
 .error-message {
     color: #e53e3e;
+    margin-bottom: 1rem;
+}
+
+.error-banner {
+    color: #e53e3e;
+    background: rgba(229, 62, 62, 0.1);
+    border: 1px solid rgba(229, 62, 62, 0.3);
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
     margin-bottom: 1rem;
 }
 

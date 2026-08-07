@@ -176,7 +176,7 @@ pub fn delete_user(user_id: i64, id: i64, state: State<AppState>) -> Result<(), 
         .lock()
         .map_err(|e| AppError::Internal(e.to_string()))?;
     check_permission(&service, user_id, PermissionCode::DeleteUser)?;
-    service.delete_user(id)
+    service.delete_user(user_id, id)
 }
 
 #[tauri::command]

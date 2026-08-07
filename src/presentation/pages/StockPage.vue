@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from "vue";
 import { useStockStore, useArticulosStore } from "../stores";
 import { usePermissions } from "../composables/usePermissions";
+import { useToasts } from "../composables/useToasts";
 import type {
     Stock,
     CreateStockRequest,
@@ -133,7 +134,12 @@ async function handleUpdate() {
 
 async function handleDelete(id: number) {
     if (confirm("¿Está seguro de eliminar este stock?")) {
-        await stockStore.deleteStock(id);
+        const success = await stockStore.deleteStock(id);
+        if (!success) {
+            useToasts().error(
+                stockStore.error || "No se pudo eliminar el stock.",
+            );
+        }
     }
 }
 </script>
@@ -167,11 +173,14 @@ async function handleDelete(id: number) {
             Cargando...
         </div>
 
-        <div v-else-if="stockStore.error" class="error-message">
+        <div v-if="stockStore.error" class="error-banner">
             {{ stockStore.error }}
         </div>
 
-        <table v-else class="stock-table">
+        <table
+            v-if="!(stockStore.loading || articulosStore.loading)"
+            class="stock-table"
+        >
             <thead>
                 <tr>
                     <th>Código</th>
@@ -530,6 +539,15 @@ async function handleDelete(id: number) {
 
 .error-message {
     color: #e53e3e;
+    margin-bottom: 1rem;
+}
+
+.error-banner {
+    color: #e53e3e;
+    background: rgba(229, 62, 62, 0.1);
+    border: 1px solid rgba(229, 62, 62, 0.3);
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
     margin-bottom: 1rem;
 }
 

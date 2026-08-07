@@ -2,10 +2,12 @@
 import { ref, computed, onMounted } from "vue";
 import { useUsersStore, usePermissionsStore } from "../stores";
 import { usePermissions } from "../composables/usePermissions";
+import { useToasts } from "../composables/useToasts";
 import type { User } from "../../domain/entities";
 
 const usersStore = useUsersStore();
 const permissionsStore = usePermissionsStore();
+const { error: toastError, success: toastSuccess } = useToasts();
 const {
     canCreateUser,
     canUpdateUser,
@@ -75,7 +77,10 @@ async function handleUpdate() {
 
 async function handleDelete(id: number) {
     if (confirm("¿Está seguro de eliminar este usuario?")) {
-        await usersStore.deleteUser(id);
+        const success = await usersStore.deleteUser(id);
+        if (!success) {
+            toastError(usersStore.error || "No se pudo eliminar el usuario.");
+        }
     }
 }
 
@@ -87,15 +92,30 @@ async function openPermissionsModal(user: User) {
 
 async function addPermission(permissionId: number) {
     if (!selectedUser.value) return;
-    await permissionsStore.addPermission(selectedUser.value.id, permissionId);
+    const success = await permissionsStore.addPermission(
+        selectedUser.value.id,
+        permissionId,
+    );
+    if (success) {
+        toastSuccess("Permiso asignado correctamente.");
+    } else {
+        toastError(
+            permissionsStore.error || "No se pudo asignar el permiso.",
+        );
+    }
 }
 
 async function removePermission(permissionId: number) {
     if (!selectedUser.value) return;
-    await permissionsStore.removePermission(
+    const success = await permissionsStore.removePermission(
         selectedUser.value.id,
         permissionId,
     );
+    if (success) {
+        toastSuccess("Permiso removido correctamente.");
+    } else {
+        toastError(permissionsStore.error || "No se pudo quitar el permiso.");
+    }
 }
 </script>
 
@@ -114,11 +134,11 @@ async function removePermission(permissionId: number) {
 
         <div v-if="usersStore.loading" class="loading">Cargando...</div>
 
-        <div v-else-if="usersStore.error" class="error-message">
+        <div v-if="usersStore.error" class="error-banner">
             {{ usersStore.error }}
         </div>
 
-        <table v-else class="users-table">
+        <table v-if="!usersStore.loading" class="users-table">
             <thead>
                 <tr>
                     <th>Usuario</th>
@@ -482,6 +502,15 @@ async function removePermission(permissionId: number) {
 
 .error-message {
     color: #e53e3e;
+    margin-bottom: 1rem;
+}
+
+.error-banner {
+    color: #e53e3e;
+    background: rgba(229, 62, 62, 0.1);
+    border: 1px solid rgba(229, 62, 62, 0.3);
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
     margin-bottom: 1rem;
 }
 

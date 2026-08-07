@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import type { User, Permission, UserPermission } from "../../domain/entities";
+import { toErrorMessage } from "../../infrastructure/api/errorHandler";
 import { UserApiRepository } from "../../infrastructure/api";
 import { LoginUseCase, CreateUserUseCase, GetAllUsersUseCase, UpdateUserUseCase, DeleteUserUseCase, ManagePermissionsUseCase } from "../../application/usecases";
 
@@ -29,7 +30,7 @@ export const useAuthStore = defineStore("auth", () => {
       localStorage.setItem("userPermissions", JSON.stringify(response.permissions));
       return true;
     } catch (e) {
-      error.value = e as string;
+      error.value = toErrorMessage(e);
       return false;
     }
   }
@@ -80,7 +81,7 @@ export const useUsersStore = defineStore("users", () => {
     try {
       users.value = await getAllUsersUseCase.execute();
     } catch (e) {
-      error.value = e as string;
+      error.value = toErrorMessage(e);
     } finally {
       loading.value = false;
     }
@@ -93,7 +94,7 @@ export const useUsersStore = defineStore("users", () => {
       users.value.push(newUser);
       return true;
     } catch (e) {
-      error.value = e as string;
+      error.value = toErrorMessage(e);
       return false;
     }
   }
@@ -108,7 +109,7 @@ export const useUsersStore = defineStore("users", () => {
       }
       return true;
     } catch (e) {
-      error.value = e as string;
+      error.value = toErrorMessage(e);
       return false;
     }
   }
@@ -120,7 +121,7 @@ export const useUsersStore = defineStore("users", () => {
       users.value = users.value.filter((u) => u.id !== id);
       return true;
     } catch (e) {
-      error.value = e as string;
+      error.value = toErrorMessage(e);
       return false;
     }
   }
@@ -150,7 +151,7 @@ export const usePermissionsStore = defineStore("permissions", () => {
     try {
       allPermissions.value = await managePermissionsUseCase.getAllPermissions();
     } catch (e) {
-      error.value = e as string;
+      error.value = toErrorMessage(e);
     } finally {
       loading.value = false;
     }
@@ -162,7 +163,7 @@ export const usePermissionsStore = defineStore("permissions", () => {
       const perms = await managePermissionsUseCase.getUserPermissions(userId);
       userPermissions.value.set(userId, perms);
     } catch (e) {
-      error.value = e as string;
+      error.value = toErrorMessage(e);
     }
   }
 
@@ -173,7 +174,7 @@ export const usePermissionsStore = defineStore("permissions", () => {
       await fetchUserPermissions(userId);
       return true;
     } catch (e) {
-      error.value = e as string;
+      error.value = toErrorMessage(e);
       return false;
     }
   }
@@ -185,7 +186,7 @@ export const usePermissionsStore = defineStore("permissions", () => {
       await fetchUserPermissions(userId);
       return true;
     } catch (e) {
-      error.value = e as string;
+      error.value = toErrorMessage(e);
       return false;
     }
   }
@@ -197,7 +198,7 @@ export const usePermissionsStore = defineStore("permissions", () => {
       allPermissions.value.push(newPerm);
       return true;
     } catch (e) {
-      error.value = e as string;
+      error.value = toErrorMessage(e);
       return false;
     }
   }
@@ -236,7 +237,7 @@ export const useProveedoresStore = defineStore("proveedores", () => {
     try {
       proveedores.value = await proveedorRepository.getAllProveedores();
     } catch (e) {
-      error.value = e as string;
+      error.value = toErrorMessage(e);
     } finally {
       loading.value = false;
     }
@@ -249,7 +250,7 @@ export const useProveedoresStore = defineStore("proveedores", () => {
       proveedores.value.push(newProveedor);
       return true;
     } catch (e) {
-      error.value = e as string;
+      error.value = toErrorMessage(e);
       return false;
     }
   }
@@ -264,7 +265,7 @@ export const useProveedoresStore = defineStore("proveedores", () => {
       }
       return true;
     } catch (e) {
-      error.value = e as string;
+      error.value = toErrorMessage(e);
       return false;
     }
   }
@@ -276,7 +277,7 @@ export const useProveedoresStore = defineStore("proveedores", () => {
       proveedores.value = proveedores.value.filter((p) => p.id !== id);
       return true;
     } catch (e) {
-      error.value = e as string;
+      error.value = toErrorMessage(e);
       return false;
     }
   }
@@ -308,7 +309,7 @@ export const useCategoriasStore = defineStore("categorias", () => {
     try {
       categorias.value = await categoriaRepository.getAllCategorias();
     } catch (e) {
-      error.value = e as string;
+      error.value = toErrorMessage(e);
     } finally {
       loading.value = false;
     }
@@ -321,7 +322,7 @@ export const useCategoriasStore = defineStore("categorias", () => {
       categorias.value.push(newCategoria);
       return true;
     } catch (e) {
-      error.value = e as string;
+      error.value = toErrorMessage(e);
       return false;
     }
   }
@@ -336,7 +337,7 @@ export const useCategoriasStore = defineStore("categorias", () => {
       }
       return true;
     } catch (e) {
-      error.value = e as string;
+      error.value = toErrorMessage(e);
       return false;
     }
   }
@@ -348,7 +349,7 @@ export const useCategoriasStore = defineStore("categorias", () => {
       categorias.value = categorias.value.filter((c) => c.id !== id);
       return true;
     } catch (e) {
-      error.value = e as string;
+      error.value = toErrorMessage(e);
       return false;
     }
   }
@@ -380,7 +381,7 @@ export const useSubCategoriasStore = defineStore("subCategorias", () => {
     try {
       subCategorias.value = await subCategoriaRepository.getAllSubCategorias();
     } catch (e) {
-      error.value = e as string;
+      error.value = toErrorMessage(e);
     } finally {
       loading.value = false;
     }
@@ -393,7 +394,7 @@ export const useSubCategoriasStore = defineStore("subCategorias", () => {
       subCategorias.value.push(newSubCategoria);
       return true;
     } catch (e) {
-      error.value = e as string;
+      error.value = toErrorMessage(e);
       return false;
     }
   }
@@ -408,7 +409,7 @@ export const useSubCategoriasStore = defineStore("subCategorias", () => {
       }
       return true;
     } catch (e) {
-      error.value = e as string;
+      error.value = toErrorMessage(e);
       return false;
     }
   }
@@ -420,7 +421,7 @@ export const useSubCategoriasStore = defineStore("subCategorias", () => {
       subCategorias.value = subCategorias.value.filter((s) => s.id !== id);
       return true;
     } catch (e) {
-      error.value = e as string;
+      error.value = toErrorMessage(e);
       return false;
     }
   }
@@ -452,7 +453,7 @@ export const useArticulosStore = defineStore("articulos", () => {
     try {
       articulos.value = await articuloRepository.getAllArticulos();
     } catch (e) {
-      error.value = e as string;
+      error.value = toErrorMessage(e);
     } finally {
       loading.value = false;
     }
@@ -465,7 +466,7 @@ export const useArticulosStore = defineStore("articulos", () => {
       articulos.value.push(newArticulo);
       return true;
     } catch (e) {
-      error.value = e as string;
+      error.value = toErrorMessage(e);
       return false;
     }
   }
@@ -480,7 +481,7 @@ export const useArticulosStore = defineStore("articulos", () => {
       }
       return true;
     } catch (e) {
-      error.value = e as string;
+      error.value = toErrorMessage(e);
       return false;
     }
   }
@@ -492,7 +493,7 @@ export const useArticulosStore = defineStore("articulos", () => {
       articulos.value = articulos.value.filter((a) => a.id !== id);
       return true;
     } catch (e) {
-      error.value = e as string;
+      error.value = toErrorMessage(e);
       return false;
     }
   }
@@ -524,7 +525,7 @@ export const useStockStore = defineStore("stock", () => {
     try {
       stocks.value = await stockRepository.getAllStock();
     } catch (e) {
-      error.value = e as string;
+      error.value = toErrorMessage(e);
     } finally {
       loading.value = false;
     }
@@ -534,7 +535,7 @@ export const useStockStore = defineStore("stock", () => {
     try {
       return await stockRepository.getStockByArticulo(idArticulo);
     } catch (e) {
-      error.value = e as string;
+      error.value = toErrorMessage(e);
       return null;
     }
   }
@@ -546,7 +547,7 @@ export const useStockStore = defineStore("stock", () => {
       stocks.value.push(newStock);
       return true;
     } catch (e) {
-      error.value = e as string;
+      error.value = toErrorMessage(e);
       return false;
     }
   }
@@ -561,7 +562,7 @@ export const useStockStore = defineStore("stock", () => {
       }
       return true;
     } catch (e) {
-      error.value = e as string;
+      error.value = toErrorMessage(e);
       return false;
     }
   }
@@ -573,7 +574,7 @@ export const useStockStore = defineStore("stock", () => {
       stocks.value = stocks.value.filter((s) => s.id !== id);
       return true;
     } catch (e) {
-      error.value = e as string;
+      error.value = toErrorMessage(e);
       return false;
     }
   }
@@ -582,7 +583,7 @@ export const useStockStore = defineStore("stock", () => {
     try {
       return await stockRepository.getPrecioVenta(id);
     } catch (e) {
-      error.value = e as string;
+      error.value = toErrorMessage(e);
       return null;
     }
   }

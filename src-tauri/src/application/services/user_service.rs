@@ -77,7 +77,20 @@ impl UserService {
         self.repository.update(&user)
     }
 
-    pub fn delete_user(&self, id: i64) -> Result<(), AppError> {
+    pub fn delete_user(&self, actor_id: i64, id: i64) -> Result<(), AppError> {
+        if actor_id == id {
+            return Err(AppError::CannotDeleteSelf);
+        }
+
+        let user = self
+            .repository
+            .find_by_id(id)?
+            .ok_or(AppError::UserNotFound)?;
+
+        if user.username == "admin" {
+            return Err(AppError::CannotDeleteAdmin);
+        }
+
         self.repository.delete(id)
     }
 

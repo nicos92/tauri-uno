@@ -8,4 +8,5 @@ pub trait ProveedorRepository: Send + Sync {
     fn find_all(&self) -> Result<Vec<Proveedor>, AppError>;
     fn update(&self, proveedor: &Proveedor) -> Result<Proveedor, AppError>;
     fn delete(&self, id: i64) -> Result<(), AppError>;
+    fn has_articulos(&self, id: i64) -> Result<bool, AppError>;
 }
