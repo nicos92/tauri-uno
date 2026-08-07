@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { ref, watchEffect, onMounted } from "vue";
+import { ref, watchEffect } from "vue";
 
 export type ThemeMode = "light" | "dark" | "system";
 
@@ -13,6 +13,18 @@ function getSystemPrefersDark(): boolean {
   return window.matchMedia("(prefers-color-scheme: dark)").matches;
 }
 
+function readStoredMode(): ThemeMode {
+  try {
+    const stored = localStorage.getItem(THEME_STORAGE_KEY);
+    if (stored === "light" || stored === "dark" || stored === "system") {
+      return stored;
+    }
+  } catch {
+    // localStorage no disponible
+  }
+  return "system";
+}
+
 function applyThemeClass(mode: ThemeMode) {
   if (typeof document === "undefined") return;
 
@@ -23,38 +35,31 @@ function applyThemeClass(mode: ThemeMode) {
 }
 
 export const useThemeStore = defineStore("theme", () => {
-  const mode = ref<ThemeMode>("system");
+  const mode = ref<ThemeMode>(readStoredMode());
 
   function loadFromStorage() {
-    const stored = localStorage.getItem(THEME_STORAGE_KEY) as ThemeMode | null;
-    if (stored === "light" || stored === "dark" || stored === "system") {
-      mode.value = stored;
-    } else {
-      mode.value = "system";
-    }
+    mode.value = readStoredMode();
     applyThemeClass(mode.value);
   }
 
   function setMode(newMode: ThemeMode) {
     mode.value = newMode;
-    localStorage.setItem(THEME_STORAGE_KEY, newMode);
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, newMode);
+    } catch {
+      // localStorage no disponible
+    }
     applyThemeClass(newMode);
   }
 
-  if (typeof window !== "undefined") {
-    onMounted(() => {
-      loadFromStorage();
-
-      if (window.matchMedia) {
-        const media = window.matchMedia("(prefers-color-scheme: dark)");
-        const handler = () => {
-          if (mode.value === "system") {
-            applyThemeClass("system");
-          }
-        };
-        media.addEventListener("change", handler);
+  if (typeof window !== "undefined" && window.matchMedia) {
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const handler = () => {
+      if (mode.value === "system") {
+        applyThemeClass("system");
       }
-    });
+    };
+    media.addEventListener("change", handler);
   }
 
   watchEffect(() => {
@@ -67,4 +72,3 @@ export const useThemeStore = defineStore("theme", () => {
     loadFromStorage,
   };
 });
-
