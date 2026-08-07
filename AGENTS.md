@@ -354,7 +354,7 @@ const result = await invoke<UserResponse>("create_user", {
 9. **Registrar comandos y estados en `lib.rs`** - `.manage(...)` + `tauri::generate_handler!` en `src-tauri/src/lib.rs`
 10. **Auth en frontend** - Usuario y permisos se persisten en `localStorage` (`currentUser`, `userPermissions`). Los repos leen `getCurrentUserId()` y lo pasan como `userId` a cada `invoke`. El guard del router llama `authStore.loadFromStorage()`
 11. **Repos no uniformes** - Solo `UserApiRepository` implementa `IUserRepository` y pasa por usecases; Articulo/Categoria/Proveedor/Stock/SubCategoria son clases directas invocadas desde los stores. `infrastructure/api/index.ts` solo re-exporta `userRepository` (los demás se importan por ruta completa)
-12. **Nombres de archivo Rust PascalCase** (`Categoria_commands.rs`, `Categoria_service.rs`, `Categoria_repository.rs`) mientras `mod.rs` declara módulos en minúscula — solo compila en filesystems case-insensitive (Windows/macOS); en Linux falla. No renombrar sin avisar
+12. **Archivos Rust en snake_case** - El nombre de archivo debe coincidir exactamente con el módulo declarado en `mod.rs` (ej. `categoria_repository.rs` para `pub mod categoria_repository;`). Un desajuste de mayúsculas compila en Windows/macOS por filesystem case-insensitive, pero rompe rust-analyzer y falla en Linux. Al renombrar solo mayúsculas usar `git mv` en dos pasos (nombre temporal → destino) porque `core.ignorecase=true`
 13. **Código generado** - `src-tauri/gen/**` (proyecto Android) no se edita a mano
 
 ---
