@@ -6,18 +6,20 @@ pub struct Venta {
     pub user_id: i64,
     pub fecha: String,
     pub total: f64,
+    pub descuento: f64,
     pub anulada: bool,
     pub observacion: Option<String>,
     pub created_at: String,
 }
 
 impl Venta {
-    pub fn new(user_id: i64, fecha: String, observacion: Option<String>) -> Self {
+    pub fn new(user_id: i64, fecha: String, descuento: f64, observacion: Option<String>) -> Self {
         Self {
             id: 0,
             user_id,
             fecha,
             total: 0.0,
+            descuento,
             anulada: false,
             observacion,
             created_at: String::new(),
@@ -73,6 +75,8 @@ pub struct VentaWithDetalle {
     pub user_id: i64,
     pub username: String,
     pub fecha: String,
+    pub subtotal: f64,
+    pub descuento: f64,
     pub total: f64,
     pub anulada: bool,
     pub observacion: Option<String>,

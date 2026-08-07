@@ -156,6 +156,7 @@ pub fn init_database() -> Result<Connection, rusqlite::Error> {
             user_id INTEGER NOT NULL,
             fecha TEXT NOT NULL,
             total REAL NOT NULL,
+            descuento REAL NOT NULL DEFAULT 0,
             anulada INTEGER NOT NULL DEFAULT 0,
             observacion TEXT,
             created_at TEXT NOT NULL,
@@ -178,10 +179,34 @@ pub fn init_database() -> Result<Connection, rusqlite::Error> {
         ",
     )?;
 
+    ensure_column(&conn, "ventas", "descuento", "REAL NOT NULL DEFAULT 0")?;
+
     seed_permissions(&conn)?;
     seed_admin_user(&conn)?;
 
     Ok(conn)
+}
+
+fn ensure_column(
+    conn: &Connection,
+    table: &str,
+    column: &str,
+    column_ddl: &str,
+) -> Result<(), rusqlite::Error> {
+    let mut stmt = conn.prepare(&format!("PRAGMA table_info({})", table))?;
+    let mut rows = stmt.query([])?;
+
+    while let Some(row) = rows.next()? {
+        let name: String = row.get(1)?;
+        if name == column {
+            return Ok(());
+        }
+    }
+
+    conn.execute_batch(&format!(
+        "ALTER TABLE {} ADD COLUMN {} {};",
+        table, column, column_ddl
+    ))
 }
 
 fn seed_permissions(conn: &Connection) -> Result<(), rusqlite::Error> {

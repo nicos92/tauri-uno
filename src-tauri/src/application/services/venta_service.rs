@@ -20,10 +20,20 @@ impl VentaService {
         &self,
         user_id: i64,
         detalles: Vec<VentaDetalle>,
+        descuento: f64,
         observacion: Option<String>,
         allow_negative_stock: bool,
     ) -> Result<VentaWithDetalle, AppError> {
-        let venta = Venta::new(user_id, chrono::Utc::now().to_rfc3339(), observacion);
+        if !(0.0..=100.0).contains(&descuento) {
+            return Err(AppError::DescuentoInvalido);
+        }
+
+        let venta = Venta::new(
+            user_id,
+            chrono::Utc::now().to_rfc3339(),
+            descuento,
+            observacion,
+        );
         self.repository.create(&venta, &detalles, allow_negative_stock)
     }
 

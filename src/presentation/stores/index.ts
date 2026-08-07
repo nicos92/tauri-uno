@@ -666,16 +666,18 @@ export const useVentasStore = defineStore("ventas", () => {
     }
   }
 
-  async function createVenta(request: CreateVentaRequest): Promise<boolean> {
+  async function createVenta(
+    request: CreateVentaRequest,
+  ): Promise<VentaWithDetalle | null> {
     error.value = null;
     try {
       const venta = await ventasRepository.createVenta(request);
       ventas.value.unshift(venta);
       await useStockStore().fetchStock();
-      return true;
+      return venta;
     } catch (e) {
       error.value = toErrorMessage(e);
-      return false;
+      return null;
     }
   }
 

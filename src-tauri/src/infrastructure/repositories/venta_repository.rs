@@ -68,9 +68,10 @@ impl VentaRepository for SqliteVentaRepository {
         }
 
         let now = chrono::Utc::now().to_rfc3339();
+        total = (total * (1.0 - venta.descuento / 100.0) * 100.0).round() / 100.0;
         tx.execute(
-            "INSERT INTO ventas (user_id, fecha, total, anulada, observacion, created_at) VALUES (?1, ?2, ?3, 0, ?4, ?5)",
-            params![venta.user_id, now, total, &venta.observacion, now],
+            "INSERT INTO ventas (user_id, fecha, total, descuento, anulada, observacion, created_at) VALUES (?1, ?2, ?3, ?4, 0, ?5, ?6)",
+            params![venta.user_id, now, total, venta.descuento, &venta.observacion, now],
         )?;
         let venta_id = tx.last_insert_rowid();
 
@@ -95,8 +96,12 @@ impl VentaRepository for SqliteVentaRepository {
 
         tx.commit()?;
 
-        self.load_venta(&conn, venta_id)?
-            .ok_or(AppError::VentaNotFound)
+        let mut venta = self
+            .load_venta(&conn, venta_id)?
+            .ok_or(AppError::VentaNotFound)?;
+        venta.items = self.load_items(&conn, venta_id)?;
+        venta.subtotal = venta.items.iter().map(|i| i.subtotal).sum();
+        Ok(venta)
     }
 
     fn find_by_id(&self, id: i64) -> Result<Option<VentaWithDetalle>, AppError> {
@@ -105,6 +110,7 @@ impl VentaRepository for SqliteVentaRepository {
         let mut venta = self.load_venta(&conn, id)?;
         if let Some(v) = venta.as_mut() {
             v.items = self.load_items(&conn, id)?;
+            v.subtotal = v.items.iter().map(|i| i.subtotal).sum();
         }
         Ok(venta)
     }
@@ -113,7 +119,7 @@ impl VentaRepository for SqliteVentaRepository {
         let conn = DB.lock().map_err(|e| AppError::Internal(e.to_string()))?;
 
         let mut stmt = conn.prepare(
-            "SELECT v.id, v.user_id, COALESCE(u.username, ''), v.fecha, v.total, v.anulada, v.observacion, v.created_at
+            "SELECT v.id, v.user_id, COALESCE(u.username, ''), v.fecha, v.total, v.descuento, v.anulada, v.observacion, v.created_at
              FROM ventas v
              LEFT JOIN users u ON u.id = v.user_id
              ORDER BY v.id DESC",
@@ -125,6 +131,7 @@ impl VentaRepository for SqliteVentaRepository {
         while let Some(row) = rows.next()? {
             let mut venta = self.row_to_venta(row)?;
             venta.items = self.load_items(&conn, venta.id)?;
+            venta.subtotal = venta.items.iter().map(|i| i.subtotal).sum();
             ventas.push(venta);
         }
 
@@ -180,10 +187,12 @@ impl SqliteVentaRepository {
             user_id: row.get(1)?,
             username: row.get(2)?,
             fecha: row.get(3)?,
+            subtotal: 0.0,
+            descuento: row.get(5)?,
             total: row.get(4)?,
-            anulada: row.get(5)?,
-            observacion: row.get(6)?,
-            created_at: row.get(7)?,
+            anulada: row.get(6)?,
+            observacion: row.get(7)?,
+            created_at: row.get(8)?,
             items: Vec::new(),
         })
     }
@@ -194,7 +203,7 @@ impl SqliteVentaRepository {
         id: i64,
     ) -> Result<Option<VentaWithDetalle>, AppError> {
         let mut stmt = conn.prepare(
-            "SELECT v.id, v.user_id, COALESCE(u.username, ''), v.fecha, v.total, v.anulada, v.observacion, v.created_at
+            "SELECT v.id, v.user_id, COALESCE(u.username, ''), v.fecha, v.total, v.descuento, v.anulada, v.observacion, v.created_at
              FROM ventas v
              LEFT JOIN users u ON u.id = v.user_id
              WHERE v.id = ?1",

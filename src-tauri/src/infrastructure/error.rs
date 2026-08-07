@@ -96,6 +96,9 @@ pub enum AppError {
     #[error("Articulo has no stock")]
     ArticuloWithoutStock,
 
+    #[error("Descuento inválido")]
+    DescuentoInvalido,
+
     #[error("Internal error: {0}")]
     Internal(String),
 }
@@ -157,6 +160,7 @@ impl AppError {
             AppError::VentaAlreadyAnulada => "venta_already_anulada",
             AppError::InsufficientStock => "insufficient_stock",
             AppError::ArticuloWithoutStock => "articulo_without_stock",
+            AppError::DescuentoInvalido => "descuento_invalido",
             AppError::Internal(_) => "internal_error",
         }
     }
@@ -229,6 +233,9 @@ impl AppError {
             }
             AppError::ArticuloWithoutStock => {
                 "Uno de los artículos no tiene stock registrado.".to_string()
+            }
+            AppError::DescuentoInvalido => {
+                "El descuento debe estar entre 0 y 100.".to_string()
             }
             AppError::Internal(_) => {
                 "Ocurrió un error inesperado. Intente nuevamente.".to_string()

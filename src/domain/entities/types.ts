@@ -171,6 +171,7 @@ export interface Venta {
   user_id: number;
   fecha: string;
   total: number;
+  descuento: number;
   anulada: boolean;
   observacion: string | null;
   created_at: string;
@@ -202,6 +203,8 @@ export interface VentaWithDetalle {
   user_id: number;
   username: string;
   fecha: string;
+  subtotal: number;
+  descuento: number;
   total: number;
   anulada: boolean;
   observacion: string | null;
@@ -217,5 +220,6 @@ export interface CreateVentaDetalleRequest {
 
 export interface CreateVentaRequest {
   items: CreateVentaDetalleRequest[];
+  descuento?: number;
   observacion?: string;
 }

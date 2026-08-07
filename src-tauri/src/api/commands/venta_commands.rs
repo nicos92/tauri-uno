@@ -29,6 +29,7 @@ pub struct CreateVentaDetalleRequest {
 #[derive(serde::Deserialize)]
 pub struct CreateVentaRequest {
     pub items: Vec<CreateVentaDetalleRequest>,
+    pub descuento: Option<f64>,
     pub observacion: Option<String>,
 }
 
@@ -85,7 +86,13 @@ pub fn create_venta(
         })
         .collect();
 
-    let venta = service.create(user_id, detalles, request.observacion, allow_negative_stock)?;
+    let venta = service.create(
+        user_id,
+        detalles,
+        request.descuento.unwrap_or(0.0),
+        request.observacion,
+        allow_negative_stock,
+    )?;
     log_audit(
         user_id,
         AuditScreen::Ventas,
