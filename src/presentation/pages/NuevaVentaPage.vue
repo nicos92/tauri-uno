@@ -112,15 +112,23 @@ function addArticuloById(idArticulo: number) {
     (a) => a.id_articulo === idArticulo,
   );
   if (!articulo) return;
-  cart.value.push({
-    id_articulo: articulo.id_articulo,
-    cod_articulo: articulo.cod_articulo,
-    articulo: articulo.articulo,
-    stockDisponible: articulo.stockDisponible,
-    cantidad: 1,
-    precio: articulo.precioVenta,
-    subtotal: articulo.precioVenta,
-  });
+
+  const existing = cart.value.find((c) => c.id_articulo === idArticulo);
+  if (existing) {
+    existing.cantidad += 1;
+    existing.subtotal = existing.cantidad * existing.precio;
+  } else {
+    cart.value.push({
+      id_articulo: articulo.id_articulo,
+      cod_articulo: articulo.cod_articulo,
+      articulo: articulo.articulo,
+      stockDisponible: articulo.stockDisponible,
+      cantidad: 1,
+      precio: articulo.precioVenta,
+      subtotal: articulo.precioVenta,
+    });
+  }
+
   searchQuery.value = "";
   focusSearch();
 }

@@ -255,7 +255,6 @@ async function handleDelete(id: number) {
                             v-model.number="newCantidad"
                             type="number"
                             step="0.01"
-                            min="0"
                             required
                         />
                     </div>
@@ -316,7 +315,6 @@ async function handleDelete(id: number) {
                             v-model.number="editCantidad"
                             type="number"
                             step="0.01"
-                            min="0"
                             required
                         />
                     </div>
