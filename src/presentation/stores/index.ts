@@ -511,7 +511,6 @@ export const useArticulosStore = defineStore("articulos", () => {
 
 import { StockApiRepository } from "../../infrastructure/api/stockRepository";
 import type { Stock, CreateStockRequest, UpdateStockRequest } from "../../domain/entities";
-
 const stockRepository = new StockApiRepository();
 
 export const useStockStore = defineStore("stock", () => {
@@ -603,5 +602,35 @@ export const useStockStore = defineStore("stock", () => {
     deleteStock,
     getPrecioVenta,
     calcularPrecioVenta,
+  };
+});
+
+import { AuditApiRepository } from "../../infrastructure/api/auditRepository";
+import type { AuditLog, AuditLogFilters } from "../../domain/entities";
+
+const auditRepository = new AuditApiRepository();
+
+export const useAuditStore = defineStore("audit", () => {
+  const logs = ref<AuditLog[]>([]);
+  const loading = ref(false);
+  const error = ref<string | null>(null);
+
+  async function fetchLogs(filters: AuditLogFilters): Promise<void> {
+    loading.value = true;
+    error.value = null;
+    try {
+      logs.value = await auditRepository.getAuditLogs(filters);
+    } catch (e) {
+      error.value = toErrorMessage(e);
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  return {
+    logs,
+    loading,
+    error,
+    fetchLogs,
   };
 });

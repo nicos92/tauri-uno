@@ -62,6 +62,12 @@ const routes = [
         meta: { permission: PERMISSIONS.VIEW_PERMISSIONS },
       },
       {
+        path: "auditoria",
+        name: "auditoria",
+        component: () => import("../pages/AuditoriaPage.vue"),
+        meta: { permission: PERMISSIONS.VIEW_AUDITORIA },
+      },
+      {
         path: "settings",
         name: "settings",
         component: () => import("../pages/SettingsPage.vue"),

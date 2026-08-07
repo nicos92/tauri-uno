@@ -1,8 +1,8 @@
 use std::sync::Mutex;
 use tauri::State;
 
-use crate::application::services::StockService;
-use crate::domain::entities::{PermissionCode, Stock};
+use crate::application::services::{log_audit, StockService};
+use crate::domain::entities::{AuditAction, AuditScreen, PermissionCode, Stock};
 use crate::infrastructure::error::AppError;
 
 pub struct StockAppState {
@@ -101,12 +101,19 @@ pub fn create_stock(
         .lock()
         .map_err(|e| AppError::Internal(e.to_string()))?;
     check_permission(user_id, PermissionCode::CreateStock)?;
-    service.create(
+    let result = service.create(
         request.id_articulo,
         request.cantidad,
         request.costo,
         request.ganancia,
-    )
+    )?;
+    log_audit(
+        user_id,
+        AuditScreen::Stock,
+        AuditAction::Create,
+        Some(format!("Stock artículo {} (id {})", result.id_articulo, result.id)),
+    )?;
+    Ok(result)
 }
 
 #[tauri::command]
@@ -120,12 +127,19 @@ pub fn update_stock(
         .lock()
         .map_err(|e| AppError::Internal(e.to_string()))?;
     check_permission(user_id, PermissionCode::UpdateStock)?;
-    service.update(
+    let result = service.update(
         request.id,
         request.cantidad,
         request.costo,
         request.ganancia,
-    )
+    )?;
+    log_audit(
+        user_id,
+        AuditScreen::Stock,
+        AuditAction::Update,
+        Some(format!("Stock artículo {} (id {})", result.id_articulo, result.id)),
+    )?;
+    Ok(result)
 }
 
 #[tauri::command]
@@ -135,7 +149,14 @@ pub fn delete_stock(user_id: i64, id: i64, state: State<StockAppState>) -> Resul
         .lock()
         .map_err(|e| AppError::Internal(e.to_string()))?;
     check_permission(user_id, PermissionCode::DeleteStock)?;
-    service.delete(id)
+    service.delete(id)?;
+    log_audit(
+        user_id,
+        AuditScreen::Stock,
+        AuditAction::Delete,
+        Some(format!("Stock (id {})", id)),
+    )?;
+    Ok(())
 }
 
 #[tauri::command]

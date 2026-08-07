@@ -1,8 +1,8 @@
 use std::sync::Mutex;
 use tauri::State;
 
-use crate::application::services::ArticuloService;
-use crate::domain::entities::{Articulo, PermissionCode};
+use crate::application::services::{log_audit, ArticuloService};
+use crate::domain::entities::{Articulo, AuditAction, AuditScreen, PermissionCode};
 use crate::infrastructure::error::AppError;
 
 pub struct ArticuloAppState {
@@ -77,12 +77,19 @@ pub fn create_articulo(
         .lock()
         .map_err(|e| AppError::Internal(e.to_string()))?;
     check_permission(user_id, PermissionCode::CreateArticulo)?;
-    service.create(
+    let result = service.create(
         request.articulo,
         request.cod_articulo,
         request.id_sub_categoria,
         request.id_proveedor,
-    )
+    )?;
+    log_audit(
+        user_id,
+        AuditScreen::Articulos,
+        AuditAction::Create,
+        Some(format!("Artículo: {} ({}) (id {})", result.articulo, result.cod_articulo, result.id)),
+    )?;
+    Ok(result)
 }
 
 #[tauri::command]
@@ -96,13 +103,20 @@ pub fn update_articulo(
         .lock()
         .map_err(|e| AppError::Internal(e.to_string()))?;
     check_permission(user_id, PermissionCode::UpdateArticulo)?;
-    service.update(
+    let result = service.update(
         request.id,
         request.articulo,
         request.cod_articulo,
         request.id_sub_categoria,
         request.id_proveedor,
-    )
+    )?;
+    log_audit(
+        user_id,
+        AuditScreen::Articulos,
+        AuditAction::Update,
+        Some(format!("Artículo: {} ({}) (id {})", result.articulo, result.cod_articulo, result.id)),
+    )?;
+    Ok(result)
 }
 
 #[tauri::command]
@@ -116,5 +130,12 @@ pub fn delete_articulo(
         .lock()
         .map_err(|e| AppError::Internal(e.to_string()))?;
     check_permission(user_id, PermissionCode::DeleteArticulo)?;
-    service.delete(id)
+    service.delete(id)?;
+    log_audit(
+        user_id,
+        AuditScreen::Articulos,
+        AuditAction::Delete,
+        Some(format!("Artículo (id {})", id)),
+    )?;
+    Ok(())
 }

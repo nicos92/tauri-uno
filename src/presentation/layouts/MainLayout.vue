@@ -55,6 +55,12 @@ const menuItems = computed(() => {
             permission: "ver_permisos",
         },
         {
+            name: "auditoria",
+            label: "Auditoría",
+            icon: "audit",
+            permission: "ver_auditoria",
+        },
+        {
             name: "settings",
             label: "Configuración",
             icon: "settigns",

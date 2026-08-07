@@ -145,3 +145,23 @@ export interface UpdateStockRequest {
   costo: number;
   ganancia: number;
 }
+
+export interface AuditLog {
+  id: number;
+  user_id: number;
+  username: string;
+  screen: string;
+  action: string;
+  detail: string | null;
+  created_at: string;
+}
+
+export interface AuditLogFilters {
+  user_id?: number;
+  screen?: string;
+  action?: string;
+  from?: string;
+  to?: string;
+  limit?: number;
+  offset?: number;
+}

@@ -54,6 +54,8 @@ const PERMISSIONS: &[&str] = &[
     "crear_stock",
     "modificar_stock",
     "eliminar_stock",
+    // Auditoria
+    "ver_auditoria",
 ];
 
 pub fn init_database() -> Result<Connection, rusqlite::Error> {
@@ -128,6 +130,20 @@ pub fn init_database() -> Result<Connection, rusqlite::Error> {
             ganancia REAL NOT NULL,
             FOREIGN KEY (id_articulo) REFERENCES articulos(id)
         );
+        
+        CREATE TABLE IF NOT EXISTS audit_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            username TEXT NOT NULL,
+            screen TEXT NOT NULL,
+            action TEXT NOT NULL,
+            detail TEXT,
+            created_at TEXT NOT NULL
+        );
+        
+        CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at);
+        CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id ON audit_logs(user_id);
+        CREATE INDEX IF NOT EXISTS idx_audit_logs_screen_action ON audit_logs(screen, action);
         ",
     )?;
 

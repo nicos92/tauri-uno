@@ -1,8 +1,8 @@
 use std::sync::Mutex;
 use tauri::State;
 
-use crate::application::services::SubCategoriaService;
-use crate::domain::entities::{PermissionCode, SubCategoria};
+use crate::application::services::{log_audit, SubCategoriaService};
+use crate::domain::entities::{AuditAction, AuditScreen, PermissionCode, SubCategoria};
 use crate::infrastructure::error::AppError;
 
 pub struct SubCategoriaAppState {
@@ -87,7 +87,17 @@ pub fn create_sub_categoria(
         .lock()
         .map_err(|e| AppError::Internal(e.to_string()))?;
     check_permission(user_id, PermissionCode::CreateSubCategoria)?;
-    service.create(request.sub_categoria, request.id_categoria)
+    let result = service.create(request.sub_categoria, request.id_categoria)?;
+    log_audit(
+        user_id,
+        AuditScreen::SubCategorias,
+        AuditAction::Create,
+        Some(format!(
+            "Sub categoría: {} (id {}) de categoría {}",
+            result.sub_categoria, result.id, result.id_categoria
+        )),
+    )?;
+    Ok(result)
 }
 
 #[tauri::command]
@@ -101,7 +111,17 @@ pub fn update_sub_categoria(
         .lock()
         .map_err(|e| AppError::Internal(e.to_string()))?;
     check_permission(user_id, PermissionCode::UpdateSubCategoria)?;
-    service.update(request.id, request.sub_categoria, request.id_categoria)
+    let result = service.update(request.id, request.sub_categoria, request.id_categoria)?;
+    log_audit(
+        user_id,
+        AuditScreen::SubCategorias,
+        AuditAction::Update,
+        Some(format!(
+            "Sub categoría: {} (id {}) de categoría {}",
+            result.sub_categoria, result.id, result.id_categoria
+        )),
+    )?;
+    Ok(result)
 }
 
 #[tauri::command]
@@ -115,5 +135,12 @@ pub fn delete_sub_categoria(
         .lock()
         .map_err(|e| AppError::Internal(e.to_string()))?;
     check_permission(user_id, PermissionCode::DeleteSubCategoria)?;
-    service.delete(id)
+    service.delete(id)?;
+    log_audit(
+        user_id,
+        AuditScreen::SubCategorias,
+        AuditAction::Delete,
+        Some(format!("Sub categoría (id {})", id)),
+    )?;
+    Ok(())
 }

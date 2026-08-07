@@ -26,6 +26,7 @@ export const PERMISSIONS = {
   CREATE_STOCK: "crear_stock",
   UPDATE_STOCK: "modificar_stock",
   DELETE_STOCK: "eliminar_stock",
+  VIEW_AUDITORIA: "ver_auditoria",
 } as const;
 
 export type PermissionKey = keyof typeof PERMISSIONS;

@@ -1,8 +1,8 @@
 use std::sync::Mutex;
 use tauri::State;
 
-use crate::application::services::ProveedorService;
-use crate::domain::entities::{PermissionCode, Proveedor};
+use crate::application::services::{log_audit, ProveedorService};
+use crate::domain::entities::{AuditAction, AuditScreen, PermissionCode, Proveedor};
 use crate::infrastructure::error::AppError;
 
 pub struct ProveedorAppState {
@@ -99,14 +99,24 @@ pub fn create_proveedor(
         .lock()
         .map_err(|e| AppError::Internal(e.to_string()))?;
     check_permission(&*service, user_id, PermissionCode::CreateProveedor)?;
-    service.create(
+    let result = service.create(
         request.proveedor,
         request.nombre,
         request.cuit,
         request.tel,
         request.email,
         request.observacion,
-    )
+    )?;
+    log_audit(
+        user_id,
+        AuditScreen::Proveedores,
+        AuditAction::Create,
+        Some(format!(
+            "Proveedor: {} ({}) (id {})",
+            result.proveedor, result.nombre, result.id
+        )),
+    )?;
+    Ok(result)
 }
 
 #[tauri::command]
@@ -120,7 +130,7 @@ pub fn update_proveedor(
         .lock()
         .map_err(|e| AppError::Internal(e.to_string()))?;
     check_permission(&*service, user_id, PermissionCode::UpdateProveedor)?;
-    service.update(
+    let result = service.update(
         request.id,
         request.proveedor,
         request.nombre,
@@ -128,7 +138,17 @@ pub fn update_proveedor(
         request.tel,
         request.email,
         request.observacion,
-    )
+    )?;
+    log_audit(
+        user_id,
+        AuditScreen::Proveedores,
+        AuditAction::Update,
+        Some(format!(
+            "Proveedor: {} ({}) (id {})",
+            result.proveedor, result.nombre, result.id
+        )),
+    )?;
+    Ok(result)
 }
 
 #[tauri::command]
@@ -142,5 +162,12 @@ pub fn delete_proveedor(
         .lock()
         .map_err(|e| AppError::Internal(e.to_string()))?;
     check_permission(&*service, user_id, PermissionCode::DeleteProveedor)?;
-    service.delete(id)
+    service.delete(id)?;
+    log_audit(
+        user_id,
+        AuditScreen::Proveedores,
+        AuditAction::Delete,
+        Some(format!("Proveedor (id {})", id)),
+    )?;
+    Ok(())
 }

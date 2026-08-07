@@ -1,4 +1,5 @@
 pub mod articulo;
+pub mod audit_log;
 pub mod categoria;
 pub mod permission;
 pub mod permission_code;
@@ -8,6 +9,7 @@ pub mod sub_categoria;
 pub mod user;
 
 pub use articulo::Articulo;
+pub use audit_log::{AuditAction, AuditLog, AuditScreen};
 pub use categoria::Categoria;
 pub use permission::{Permission, UserPermission};
 pub use permission_code::PermissionCode;

@@ -1,11 +1,14 @@
 use std::sync::Mutex;
 use tauri::State;
 
-use crate::application::services::UserService;
-use crate::domain::entities::{Permission, PermissionCode, User, UserPermission};
+use crate::application::services::{log_audit, UserService};
+use crate::domain::entities::{
+    AuditAction, AuditScreen, Permission, PermissionCode, User, UserPermission,
+};
 use crate::infrastructure::error::AppError;
 
 pub mod articulo_commands;
+pub mod audit_log_commands;
 pub mod categoria_commands;
 pub mod proveedor_commands;
 pub mod stock_commands;
@@ -14,6 +17,7 @@ pub mod sub_categoria_commands;
 pub use articulo_commands::{
     create_articulo, delete_articulo, get_all_articulos, update_articulo, ArticuloAppState,
 };
+pub use audit_log_commands::{get_audit_logs, AuditLogAppState};
 pub use categoria_commands::{
     create_categoria, delete_categoria, get_all_categorias, update_categoria, CategoriaAppState,
 };
@@ -140,6 +144,12 @@ pub fn create_user(
         .map_err(|e| AppError::Internal(e.to_string()))?;
     check_permission(&service, user_id, PermissionCode::CreateUser)?;
     let user = service.create_user(request.username, request.password)?;
+    log_audit(
+        user_id,
+        AuditScreen::Usuarios,
+        AuditAction::Create,
+        Some(format!("Usuario: {} (id {})", user.username, user.id)),
+    )?;
     Ok(user.into())
 }
 
@@ -166,6 +176,12 @@ pub fn update_user(
         .map_err(|e| AppError::Internal(e.to_string()))?;
     check_permission(&service, user_id, PermissionCode::UpdateUser)?;
     let user = service.update_user(request.id, request.username, request.active)?;
+    log_audit(
+        user_id,
+        AuditScreen::Usuarios,
+        AuditAction::Update,
+        Some(format!("Usuario: {} (id {})", user.username, user.id)),
+    )?;
     Ok(user.into())
 }
 
@@ -176,7 +192,14 @@ pub fn delete_user(user_id: i64, id: i64, state: State<AppState>) -> Result<(), 
         .lock()
         .map_err(|e| AppError::Internal(e.to_string()))?;
     check_permission(&service, user_id, PermissionCode::DeleteUser)?;
-    service.delete_user(user_id, id)
+    service.delete_user(user_id, id)?;
+    log_audit(
+        user_id,
+        AuditScreen::Usuarios,
+        AuditAction::Delete,
+        Some(format!("Usuario (id {})", id)),
+    )?;
+    Ok(())
 }
 
 #[tauri::command]
@@ -190,7 +213,17 @@ pub fn add_permission_to_user(
         .lock()
         .map_err(|e| AppError::Internal(e.to_string()))?;
     check_permission(&service, user_id, PermissionCode::AssignPermission)?;
-    service.add_permission_to_user(request.user_id, request.permission_id)
+    service.add_permission_to_user(request.user_id, request.permission_id)?;
+    log_audit(
+        user_id,
+        AuditScreen::Permisos,
+        AuditAction::Update,
+        Some(format!(
+            "Permiso (id {}) asignado al usuario (id {})",
+            request.permission_id, request.user_id
+        )),
+    )?;
+    Ok(())
 }
 
 #[tauri::command]
@@ -204,7 +237,17 @@ pub fn remove_permission_from_user(
         .lock()
         .map_err(|e| AppError::Internal(e.to_string()))?;
     check_permission(&service, user_id, PermissionCode::RemovePermission)?;
-    service.remove_permission_from_user(request.user_id, request.permission_id)
+    service.remove_permission_from_user(request.user_id, request.permission_id)?;
+    log_audit(
+        user_id,
+        AuditScreen::Permisos,
+        AuditAction::Update,
+        Some(format!(
+            "Permiso (id {}) quitado al usuario (id {})",
+            request.permission_id, request.user_id
+        )),
+    )?;
+    Ok(())
 }
 
 #[tauri::command]
@@ -245,5 +288,12 @@ pub fn create_permission(
         .lock()
         .map_err(|e| AppError::Internal(e.to_string()))?;
     check_permission(&service, user_id, PermissionCode::CreateCategoria)?;
-    service.create_permission(name)
+    let permission = service.create_permission(name)?;
+    log_audit(
+        user_id,
+        AuditScreen::Permisos,
+        AuditAction::Create,
+        Some(format!("Permiso: {} (id {})", permission.permission, permission.id)),
+    )?;
+    Ok(permission)
 }

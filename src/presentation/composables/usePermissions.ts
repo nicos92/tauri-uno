@@ -119,6 +119,10 @@ export function usePermissions() {
     return can(PERMISSIONS.DELETE_STOCK);
   }
 
+  function canViewAuditoria(): boolean {
+    return can(PERMISSIONS.VIEW_AUDITORIA);
+  }
+
   return {
     allPermissions,
     can,
@@ -149,5 +153,6 @@ export function usePermissions() {
     canCreateStock,
     canUpdateStock,
     canDeleteStock,
+    canViewAuditoria,
   };
 }

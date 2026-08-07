@@ -8,11 +8,11 @@ use api::commands::{
     create_stock, create_sub_categoria, create_user, delete_articulo, delete_categoria,
     delete_proveedor, delete_stock, delete_sub_categoria, delete_user, get_all_articulos,
     get_all_categorias, get_all_permissions, get_all_proveedores, get_all_stock,
-    get_all_sub_categorias, get_all_users, get_precio_venta, get_proveedor_by_id,
+    get_all_sub_categorias, get_all_users, get_audit_logs, get_precio_venta, get_proveedor_by_id,
     get_stock_by_articulo, get_stock_by_id, get_sub_categorias_by_categoria, get_user_permissions,
     login, remove_permission_from_user, update_articulo, update_categoria, update_proveedor,
-    update_stock, update_sub_categoria, update_user, AppState, ArticuloAppState, CategoriaAppState,
-    ProveedorAppState, StockAppState, SubCategoriaAppState,
+    update_stock, update_sub_categoria, update_user, AppState, ArticuloAppState, AuditLogAppState,
+    CategoriaAppState, ProveedorAppState, StockAppState, SubCategoriaAppState,
 };
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -22,6 +22,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .manage(AppState::new())
+        .manage(AuditLogAppState::new())
         .manage(ProveedorAppState::new())
         .manage(CategoriaAppState::new())
         .manage(SubCategoriaAppState::new())
@@ -62,7 +63,8 @@ pub fn run() {
             create_stock,
             update_stock,
             delete_stock,
-            get_precio_venta
+            get_precio_venta,
+            get_audit_logs
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
