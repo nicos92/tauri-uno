@@ -22,6 +22,7 @@ const screens = [
     "Articulos",
     "Stock",
     "Ventas",
+    "Tipos de Venta",
     "Permisos",
     "Auditoria",
 ];

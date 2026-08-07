@@ -70,8 +70,16 @@ impl VentaRepository for SqliteVentaRepository {
         let now = chrono::Utc::now().to_rfc3339();
         total = (total * (1.0 - venta.descuento / 100.0) * 100.0).round() / 100.0;
         tx.execute(
-            "INSERT INTO ventas (user_id, fecha, total, descuento, anulada, observacion, created_at) VALUES (?1, ?2, ?3, ?4, 0, ?5, ?6)",
-            params![venta.user_id, now, total, venta.descuento, &venta.observacion, now],
+            "INSERT INTO ventas (user_id, fecha, total, descuento, anulada, observacion, id_tipo_venta, created_at) VALUES (?1, ?2, ?3, ?4, 0, ?5, ?6, ?7)",
+            params![
+                venta.user_id,
+                now,
+                total,
+                venta.descuento,
+                &venta.observacion,
+                venta.id_tipo_venta,
+                now
+            ],
         )?;
         let venta_id = tx.last_insert_rowid();
 
@@ -119,9 +127,10 @@ impl VentaRepository for SqliteVentaRepository {
         let conn = DB.lock().map_err(|e| AppError::Internal(e.to_string()))?;
 
         let mut stmt = conn.prepare(
-            "SELECT v.id, v.user_id, COALESCE(u.username, ''), v.fecha, v.total, v.descuento, v.anulada, v.observacion, v.created_at
+            "SELECT v.id, v.user_id, COALESCE(u.username, ''), v.fecha, v.total, v.descuento, v.anulada, v.observacion, COALESCE(t.nombre, 'Efectivo'), v.created_at
              FROM ventas v
              LEFT JOIN users u ON u.id = v.user_id
+             LEFT JOIN tipos_venta t ON t.id = v.id_tipo_venta
              ORDER BY v.id DESC",
         )?;
 
@@ -192,7 +201,8 @@ impl SqliteVentaRepository {
             total: row.get(4)?,
             anulada: row.get(6)?,
             observacion: row.get(7)?,
-            created_at: row.get(8)?,
+            tipo_venta: row.get(8)?,
+            created_at: row.get(9)?,
             items: Vec::new(),
         })
     }
@@ -203,9 +213,10 @@ impl SqliteVentaRepository {
         id: i64,
     ) -> Result<Option<VentaWithDetalle>, AppError> {
         let mut stmt = conn.prepare(
-            "SELECT v.id, v.user_id, COALESCE(u.username, ''), v.fecha, v.total, v.descuento, v.anulada, v.observacion, v.created_at
+            "SELECT v.id, v.user_id, COALESCE(u.username, ''), v.fecha, v.total, v.descuento, v.anulada, v.observacion, COALESCE(t.nombre, 'Efectivo'), v.created_at
              FROM ventas v
              LEFT JOIN users u ON u.id = v.user_id
+             LEFT JOIN tipos_venta t ON t.id = v.id_tipo_venta
              WHERE v.id = ?1",
         )?;
 

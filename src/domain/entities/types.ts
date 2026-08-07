@@ -35,6 +35,24 @@ export interface Categoria {
   categoria: string;
 }
 
+export interface TipoVenta {
+  id: number;
+  nombre: string;
+  hacia_donde: string | null;
+  created_at: string;
+}
+
+export interface CreateTipoVentaRequest {
+  nombre: string;
+  hacia_donde?: string;
+}
+
+export interface UpdateTipoVentaRequest {
+  id: number;
+  nombre: string;
+  hacia_donde?: string;
+}
+
 export interface LoginRequest {
   username: string;
   password: string;
@@ -208,6 +226,7 @@ export interface VentaWithDetalle {
   total: number;
   anulada: boolean;
   observacion: string | null;
+  tipo_venta: string | null;
   created_at: string;
   items: VentaDetalleConArticulo[];
 }
@@ -222,4 +241,5 @@ export interface CreateVentaRequest {
   items: CreateVentaDetalleRequest[];
   descuento?: number;
   observacion?: string;
+  id_tipo_venta?: number;
 }

@@ -99,6 +99,18 @@ pub enum AppError {
     #[error("Descuento inválido")]
     DescuentoInvalido,
 
+    #[error("Tipo de venta not found")]
+    TipoVentaNotFound,
+
+    #[error("Tipo de venta already exists")]
+    TipoVentaExists,
+
+    #[error("Tipo de venta in use")]
+    TipoVentaInUse,
+
+    #[error("Tipo de venta nombre inválido")]
+    TipoVentaNombreInvalido,
+
     #[error("Internal error: {0}")]
     Internal(String),
 }
@@ -161,6 +173,10 @@ impl AppError {
             AppError::InsufficientStock => "insufficient_stock",
             AppError::ArticuloWithoutStock => "articulo_without_stock",
             AppError::DescuentoInvalido => "descuento_invalido",
+            AppError::TipoVentaNotFound => "tipo_venta_not_found",
+            AppError::TipoVentaExists => "tipo_venta_exists",
+            AppError::TipoVentaInUse => "tipo_venta_in_use",
+            AppError::TipoVentaNombreInvalido => "tipo_venta_nombre_invalido",
             AppError::Internal(_) => "internal_error",
         }
     }
@@ -236,6 +252,17 @@ impl AppError {
             }
             AppError::DescuentoInvalido => {
                 "El descuento debe estar entre 0 y 100.".to_string()
+            }
+            AppError::TipoVentaNotFound => "El tipo de venta no existe.".to_string(),
+            AppError::TipoVentaExists => {
+                "Ya existe un tipo de venta con ese nombre.".to_string()
+            }
+            AppError::TipoVentaInUse => {
+                "No se puede eliminar el tipo de venta porque tiene ventas asociadas."
+                    .to_string()
+            }
+            AppError::TipoVentaNombreInvalido => {
+                "El nombre del tipo de venta no puede estar vacío.".to_string()
             }
             AppError::Internal(_) => {
                 "Ocurrió un error inesperado. Intente nuevamente.".to_string()

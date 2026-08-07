@@ -139,6 +139,22 @@ export function usePermissions() {
     return can(PERMISSIONS.GENERAR_PRESUPUESTO);
   }
 
+  function canViewTiposVenta(): boolean {
+    return can(PERMISSIONS.VIEW_TIPOS_VENTA);
+  }
+
+  function canCreateTipoVenta(): boolean {
+    return can(PERMISSIONS.CREATE_TIPO_VENTA);
+  }
+
+  function canUpdateTipoVenta(): boolean {
+    return can(PERMISSIONS.UPDATE_TIPO_VENTA);
+  }
+
+  function canDeleteTipoVenta(): boolean {
+    return can(PERMISSIONS.DELETE_TIPO_VENTA);
+  }
+
   function canViewAuditoria(): boolean {
     return can(PERMISSIONS.VIEW_AUDITORIA);
   }
@@ -178,6 +194,10 @@ export function usePermissions() {
     canAnularVenta,
     canVenderSinStock,
     canGenerarPresupuesto,
+    canViewTiposVenta,
+    canCreateTipoVenta,
+    canUpdateTipoVenta,
+    canDeleteTipoVenta,
     canViewAuditoria,
   };
 }

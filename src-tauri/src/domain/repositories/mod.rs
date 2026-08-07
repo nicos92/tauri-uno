@@ -4,6 +4,7 @@ pub mod categoria_repository;
 pub mod proveedor_repository;
 pub mod stock_repository;
 pub mod sub_categoria_repository;
+pub mod tipo_venta_repository;
 pub mod user_repository;
 pub mod venta_repository;
 
@@ -13,5 +14,6 @@ pub use categoria_repository::CategoriaRepository;
 pub use proveedor_repository::ProveedorRepository;
 pub use stock_repository::StockRepository;
 pub use sub_categoria_repository::SubCategoriaRepository;
+pub use tipo_venta_repository::TipoVentaRepository;
 pub use user_repository::UserRepository;
 pub use venta_repository::VentaRepository;

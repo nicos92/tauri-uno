@@ -35,6 +35,10 @@ pub enum PermissionCode {
     AnularVenta,
     VenderSinStock,
     GenerarPresupuesto,
+    ViewTiposVenta,
+    CreateTipoVenta,
+    UpdateTipoVenta,
+    DeleteTipoVenta,
     ViewAuditoria,
 }
 
@@ -73,6 +77,10 @@ impl PermissionCode {
             PermissionCode::AnularVenta => "anular_venta",
             PermissionCode::VenderSinStock => "vender_sin_stock",
             PermissionCode::GenerarPresupuesto => "generar_presupuesto",
+            PermissionCode::ViewTiposVenta => "ver_tipos_venta",
+            PermissionCode::CreateTipoVenta => "crear_tipo_venta",
+            PermissionCode::UpdateTipoVenta => "modificar_tipo_venta",
+            PermissionCode::DeleteTipoVenta => "eliminar_tipo_venta",
             PermissionCode::ViewAuditoria => "ver_auditoria",
         }
     }
@@ -111,6 +119,10 @@ impl PermissionCode {
             PermissionCode::AnularVenta,
             PermissionCode::VenderSinStock,
             PermissionCode::GenerarPresupuesto,
+            PermissionCode::ViewTiposVenta,
+            PermissionCode::CreateTipoVenta,
+            PermissionCode::UpdateTipoVenta,
+            PermissionCode::DeleteTipoVenta,
             PermissionCode::ViewAuditoria,
         ]
     }

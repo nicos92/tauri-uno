@@ -13,6 +13,7 @@ pub mod categoria_commands;
 pub mod proveedor_commands;
 pub mod stock_commands;
 pub mod sub_categoria_commands;
+pub mod tipo_venta_commands;
 pub mod venta_commands;
 
 pub use articulo_commands::{
@@ -33,6 +34,10 @@ pub use stock_commands::{
 pub use sub_categoria_commands::{
     create_sub_categoria, delete_sub_categoria, get_all_sub_categorias,
     get_sub_categorias_by_categoria, update_sub_categoria, SubCategoriaAppState,
+};
+pub use tipo_venta_commands::{
+    create_tipo_venta, delete_tipo_venta, get_all_tipos_venta, update_tipo_venta,
+    TipoVentaAppState,
 };
 pub use venta_commands::{
     anular_venta, create_venta, get_all_ventas, get_venta_by_id, VentaAppState,

@@ -68,6 +68,12 @@ const routes = [
         meta: { permission: PERMISSIONS.CREATE_VENTA },
       },
       {
+        path: "tipos-venta",
+        name: "tipos-venta",
+        component: () => import("../pages/TiposVentaPage.vue"),
+        meta: { permission: PERMISSIONS.VIEW_TIPOS_VENTA },
+      },
+      {
         path: "permissions",
         name: "permissions",
         component: () => import("../pages/PermissionsPage.vue"),

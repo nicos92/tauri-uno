@@ -1,7 +1,12 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick } from "vue";
+import { ref, computed, onMounted, nextTick, watch } from "vue";
 import { useRouter } from "vue-router";
-import { useVentasStore, useStockStore, useArticulosStore } from "../stores";
+import {
+  useVentasStore,
+  useStockStore,
+  useArticulosStore,
+  useTiposVentaStore,
+} from "../stores";
 import { usePermissions } from "../composables/usePermissions";
 import { useToasts } from "../composables/useToasts";
 import { formatMoney } from "../utils/format";
@@ -11,6 +16,7 @@ const router = useRouter();
 const ventasStore = useVentasStore();
 const stockStore = useStockStore();
 const articulosStore = useArticulosStore();
+const tiposVentaStore = useTiposVentaStore();
 const { canVenderSinStock, canGenerarPresupuesto } = usePermissions();
 const { error: toastError, success: toastSuccess } = useToasts();
 
@@ -37,6 +43,18 @@ const searchInput = ref<HTMLInputElement | null>(null);
 const observacion = ref("");
 const descuento = ref<number>(0);
 const cart = ref<CartItem[]>([]);
+const tipoVentaId = ref<number | null>(null);
+
+watch(
+    () => tiposVentaStore.tipos,
+    (tipos) => {
+        if (tipoVentaId.value === null && tipos.length > 0) {
+            const efectivo = tipos.find((t) => t.nombre === "Efectivo");
+            tipoVentaId.value = efectivo ? efectivo.id : tipos[0].id;
+        }
+    },
+    { immediate: true },
+);
 
 const articulosVendibles = computed<StockArticulo[]>(() => {
   return stockStore.stocks.map((s) => {
@@ -88,6 +106,7 @@ const carritoValido = computed(
   () =>
     cart.value.length > 0 &&
     descuentoValido.value &&
+    tipoVentaId.value !== null &&
     cart.value.every((i) => i.cantidad > 0 && i.precio >= 0),
 );
 
@@ -97,6 +116,7 @@ onMounted(async () => {
   await Promise.all([
     stockStore.fetchStock(),
     articulosStore.fetchArticulos(),
+    tiposVentaStore.fetchTiposVenta(),
   ]);
   focusSearch();
 });
@@ -171,6 +191,10 @@ function resetForm() {
   descuento.value = 0;
   observacion.value = "";
   searchQuery.value = "";
+  const efectivo = tiposVentaStore.tipos.find((t) => t.nombre === "Efectivo");
+  tipoVentaId.value = efectivo
+    ? efectivo.id
+    : tiposVentaStore.tipos[0]?.id ?? null;
 }
 
 async function handleCreate() {
@@ -183,6 +207,7 @@ async function handleCreate() {
     })),
     descuento: descuento.value || 0,
     observacion: observacion.value.trim() || undefined,
+    id_tipo_venta: tipoVentaId.value || undefined,
   };
   const venta = await ventasStore.createVenta(request);
   if (venta) {
@@ -227,6 +252,18 @@ function generarPdf() {
                     type="text"
                     placeholder="Opcional"
                 />
+            </div>
+            <div class="form-group obs-group">
+                <label>Tipo de venta</label>
+                <select v-model.number="tipoVentaId" class="tipo-select">
+                    <option
+                        v-for="tipo in tiposVentaStore.tipos"
+                        :key="tipo.id"
+                        :value="tipo.id"
+                    >
+                        {{ tipo.nombre }}
+                    </option>
+                </select>
             </div>
             <div class="acciones">
                 <button
@@ -700,6 +737,16 @@ function generarPdf() {
 }
 
 .form-group input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    box-sizing: border-box;
+    background: var(--color-surface);
+    color: var(--color-text);
+}
+
+.tipo-select {
     width: 100%;
     padding: 0.75rem;
     border: 1px solid var(--color-border);

@@ -9,6 +9,7 @@ pub struct Venta {
     pub descuento: f64,
     pub anulada: bool,
     pub observacion: Option<String>,
+    pub id_tipo_venta: Option<i64>,
     pub created_at: String,
 }
 
@@ -22,6 +23,7 @@ impl Venta {
             descuento,
             anulada: false,
             observacion,
+            id_tipo_venta: None,
             created_at: String::new(),
         }
     }
@@ -80,6 +82,7 @@ pub struct VentaWithDetalle {
     pub total: f64,
     pub anulada: bool,
     pub observacion: Option<String>,
+    pub tipo_venta: Option<String>,
     pub created_at: String,
     pub items: Vec<VentaDetalleConArticulo>,
 }

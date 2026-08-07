@@ -91,6 +91,7 @@ async function handleAnular(id: number) {
                     <th>N°</th>
                     <th>Fecha</th>
                     <th>Usuario</th>
+                    <th>Tipo</th>
                     <th>Items</th>
                     <th>Subtotal</th>
                     <th>Desc.</th>
@@ -104,6 +105,7 @@ async function handleAnular(id: number) {
                     <td>{{ venta.id }}</td>
                     <td>{{ new Date(venta.fecha).toLocaleString() }}</td>
                     <td>{{ venta.username }}</td>
+                    <td>{{ venta.tipo_venta || "Efectivo" }}</td>
                     <td>{{ venta.items.length }}</td>
                     <td>{{ formatMoney(venta.subtotal) }}</td>
                     <td>{{ venta.descuento > 0 ? `${venta.descuento}%` : "—" }}</td>
@@ -166,6 +168,9 @@ async function handleAnular(id: number) {
                 </p>
                 <p v-if="selectedVenta.observacion" class="detail-meta">
                     Observación: {{ selectedVenta.observacion }}
+                </p>
+                <p v-if="selectedVenta.tipo_venta" class="detail-meta">
+                    Tipo de venta: {{ selectedVenta.tipo_venta }}
                 </p>
                 <table class="cart-table">
                     <thead>

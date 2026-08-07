@@ -31,6 +31,7 @@ pub enum AuditScreen {
     Articulos,
     Stock,
     Ventas,
+    TiposVenta,
     Permisos,
     Auditoria,
 }
@@ -45,6 +46,7 @@ impl AuditScreen {
             AuditScreen::Articulos => "Articulos",
             AuditScreen::Stock => "Stock",
             AuditScreen::Ventas => "Ventas",
+            AuditScreen::TiposVenta => "Tipos de Venta",
             AuditScreen::Permisos => "Permisos",
             AuditScreen::Auditoria => "Auditoria",
         }

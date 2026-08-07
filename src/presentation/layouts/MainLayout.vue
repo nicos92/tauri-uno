@@ -55,6 +55,12 @@ const menuItems = computed(() => {
             permission: "ver_ventas",
         },
         {
+            name: "tipos-venta",
+            label: "Tipos de Venta",
+            icon: "card",
+            permission: "ver_tipos_venta",
+        },
+        {
             name: "permissions",
             label: "Permisos",
             icon: "lock",

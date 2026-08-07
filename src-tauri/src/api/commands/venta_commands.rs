@@ -31,6 +31,7 @@ pub struct CreateVentaRequest {
     pub items: Vec<CreateVentaDetalleRequest>,
     pub descuento: Option<f64>,
     pub observacion: Option<String>,
+    pub id_tipo_venta: Option<i64>,
 }
 
 fn check_permission(user_id: i64, permission: PermissionCode) -> Result<(), AppError> {
@@ -91,6 +92,7 @@ pub fn create_venta(
         detalles,
         request.descuento.unwrap_or(0.0),
         request.observacion,
+        request.id_tipo_venta,
         allow_negative_stock,
     )?;
     log_audit(

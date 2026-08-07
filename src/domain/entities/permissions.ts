@@ -31,6 +31,10 @@ export const PERMISSIONS = {
   ANULAR_VENTA: "anular_venta",
   VENDER_SIN_STOCK: "vender_sin_stock",
   GENERAR_PRESUPUESTO: "generar_presupuesto",
+  VIEW_TIPOS_VENTA: "ver_tipos_venta",
+  CREATE_TIPO_VENTA: "crear_tipo_venta",
+  UPDATE_TIPO_VENTA: "modificar_tipo_venta",
+  DELETE_TIPO_VENTA: "eliminar_tipo_venta",
   VIEW_AUDITORIA: "ver_auditoria",
 } as const;
 

@@ -6,6 +6,7 @@ pub mod permission_code;
 pub mod proveedor;
 pub mod stock;
 pub mod sub_categoria;
+pub mod tipo_venta;
 pub mod user;
 pub mod venta;
 
@@ -17,5 +18,6 @@ pub use permission_code::PermissionCode;
 pub use proveedor::Proveedor;
 pub use stock::Stock;
 pub use sub_categoria::SubCategoria;
+pub use tipo_venta::TipoVenta;
 pub use user::User;
 pub use venta::{Venta, VentaDetalle, VentaDetalleConArticulo, VentaWithDetalle};

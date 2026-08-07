@@ -60,6 +60,11 @@ const PERMISSIONS: &[&str] = &[
     "anular_venta",
     "vender_sin_stock",
     "generar_presupuesto",
+    // Tipos de Venta
+    "ver_tipos_venta",
+    "crear_tipo_venta",
+    "modificar_tipo_venta",
+    "eliminar_tipo_venta",
     // Auditoria
     "ver_auditoria",
 ];
@@ -151,6 +156,13 @@ pub fn init_database() -> Result<Connection, rusqlite::Error> {
         CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id ON audit_logs(user_id);
         CREATE INDEX IF NOT EXISTS idx_audit_logs_screen_action ON audit_logs(screen, action);
 
+        CREATE TABLE IF NOT EXISTS tipos_venta (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre TEXT NOT NULL UNIQUE,
+            hacia_donde TEXT,
+            created_at TEXT NOT NULL
+        );
+
         CREATE TABLE IF NOT EXISTS ventas (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER NOT NULL,
@@ -159,6 +171,7 @@ pub fn init_database() -> Result<Connection, rusqlite::Error> {
             descuento REAL NOT NULL DEFAULT 0,
             anulada INTEGER NOT NULL DEFAULT 0,
             observacion TEXT,
+            id_tipo_venta INTEGER REFERENCES tipos_venta(id),
             created_at TEXT NOT NULL,
             FOREIGN KEY (user_id) REFERENCES users(id)
         );
@@ -180,6 +193,19 @@ pub fn init_database() -> Result<Connection, rusqlite::Error> {
     )?;
 
     ensure_column(&conn, "ventas", "descuento", "REAL NOT NULL DEFAULT 0")?;
+    ensure_column(
+        &conn,
+        "ventas",
+        "id_tipo_venta",
+        "INTEGER REFERENCES tipos_venta(id)",
+    )?;
+
+    seed_tipos_venta(&conn)?;
+
+    conn.execute(
+        "UPDATE ventas SET id_tipo_venta = (SELECT id FROM tipos_venta WHERE nombre = 'Efectivo') WHERE id_tipo_venta IS NULL",
+        [],
+    )?;
 
     seed_permissions(&conn)?;
     seed_admin_user(&conn)?;
@@ -207,6 +233,27 @@ fn ensure_column(
         "ALTER TABLE {} ADD COLUMN {} {};",
         table, column, column_ddl
     ))
+}
+
+const TIPOS_VENTA: &[(&str, Option<&str>)] = &[
+    ("Efectivo", None),
+    ("Tarjeta Crédito", None),
+    ("Tarjeta Débito", None),
+    ("Transferencia", None),
+    ("QR", None),
+];
+
+fn seed_tipos_venta(conn: &Connection) -> Result<(), rusqlite::Error> {
+    let now = chrono::Utc::now().to_rfc3339();
+
+    for (nombre, hacia_donde) in TIPOS_VENTA {
+        conn.execute(
+            "INSERT OR IGNORE INTO tipos_venta (nombre, hacia_donde, created_at) VALUES (?1, ?2, ?3)",
+            rusqlite::params![nombre, hacia_donde, now],
+        )?;
+    }
+
+    Ok(())
 }
 
 fn seed_permissions(conn: &Connection) -> Result<(), rusqlite::Error> {
