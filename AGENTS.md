@@ -1,27 +1,369 @@
-# AGENTS.md — Guía para Agentes de Código
+# AGENTS.md - Guía para Agentes de Código
 
-## Stack y setup
-- Tauri 2 + Vue 3 + TypeScript strict + Vite + Pinia + Vue Router. Gestor: `pnpm`.
-- **No hay ESLint/Prettier ni tests** (ni Rust ni TS). La verificación real es:
-  - `pnpm build` (corre `vue-tsc --noEmit && vite build` — es el typecheck)
-  - `cd src-tauri && cargo check` (y `cargo clippy`)
-- Comandos: `pnpm dev` (Vite, puerto fijo 1420, strictPort), `pnpm tauri dev` / `pnpm tauri build`.
+Este documento proporciona instrucciones y convenciones para agentes de código que operan en este repositorio.
 
-## Arquitectura (clean architecture espejada)
-- Backend `src-tauri/src/`: `domain` (entidades + traits de repositorio), `application/services`, `infrastructure/repositories` (impls `Sqlite*`), `infrastructure/database`, `api/commands` (comandos `#[tauri::command]`).
-- Frontend `src/`: `domain` (types + `PERMISSIONS`), `application/usecases`, `infrastructure/api`, `presentation` (layouts, pages, router, stores, composables).
-- Registrar comandos y estados en `src-tauri/src/lib.rs` (`.manage()` + `tauri::generate_handler!`).
+---
 
-## Gotchas críticos
-1. **DB global**: `infrastructure::database::DB` es un `static Lazy<Mutex<Connection>>` (rusqlite no es `Sync`); todos los repos lo bloquean. El esquema se crea en el primer arranque en el directorio de datos de `ProjectDirs` (`app.db`), sin migraciones. Se siembran 27 permisos y el usuario `admin` / `admin123` con todos los permisos.
-2. **Sincronizar permisos en 3 lugares** (strings en español snake_case, ej. `ver_usuarios`): Rust `PermissionCode::as_str()` (`domain/entities/permission_code.rs`), TS `PERMISSIONS` (`src/domain/entities/permissions.ts`), y la lista seed (`infrastructure/database/mod.rs`).
-3. **Chequeo de permisos backend**: todo comando recibe `user_id: i64` como primer argumento. Los comandos de usuarios/permisos (`api/commands/mod.rs`) usan `AppState` + `UserService::has_permission`; los de dominio (articulo/categoria/...) duplican un `check_permission` propio que consulta la DB directo. Respetar el patrón al agregar comandos.
-4. **Auth en frontend**: usuario y permisos se persisten en `localStorage` (`currentUser`, `userPermissions`). Los repos leen `getCurrentUserId()` de localStorage y lo pasan como `userId` a cada `invoke`. El guard del router llama `authStore.loadFromStorage()`.
-5. **Repos no uniformes**: solo `UserApiRepository` implementa `IUserRepository` y pasa por usecases; Articulo/Categoria/Proveedor/Stock/SubCategoria son clases directas invocadas desde los stores. `infrastructure/api/index.ts` solo re-exporta `userRepository` (los demás se importan por ruta completa).
-6. **Nombres de archivo Rust PascalCase** (`Categoria_commands.rs`, `Categoria_service.rs`, `Categoria_repository.rs`) mientras `mod.rs` declara módulos en minúscula — solo compila en filesystems case-insensitive (Windows/macOS); en Linux falla. No renombrar sin avisar.
-7. **Código generado**: `src-tauri/gen/**` (proyecto Android) no se edita a mano.
+## 1. Resumen del Proyecto
 
-## Convenciones
-- Texto de UI y commits en español; identificadores de código en inglés.
-- TS: comillas dobles, strict mode (`noUnusedLocals`/`noUnusedParameters`), sin `any`, recordar `.value` en refs.
-- Rust: indentación 4 espacios, snake_case, manejar `Result` con `?`; errores vía `AppError` (se serializa a string en las respuestas de invoke).
+- **Stack**: Tauri 2 + Vue 3 + TypeScript + Vite + Pinia + Vue Router
+- **Package Manager**: pnpm
+- **Frontend**: Vue 3 + TypeScript strict mode, con arquitectura limpia (Domain-Driven Design simplificado)
+- **Backend**: Rust con arquitectura limpia (Clean Architecture)
+- **Base de datos**: SQLite con rusqlite
+
+---
+
+## 2. Arquitectura del Proyecto
+
+### Backend Rust (Clean Architecture)
+
+```
+src-tauri/src/
+├── domain/           # Entidades y traits de repositorio
+│   ├── entities/     # User, Permission, PermissionCode, Proveedor, Categoria, SubCategoria, Articulo, Stock
+│   └── repositories/# UserRepository, ArticuloRepository, CategoriaRepository, ProveedorRepository, StockRepository, SubCategoriaRepository
+├── application/     # Casos de uso/Servicios
+│   └── services/    # UserService, ArticuloService, CategoriaService, ProveedorService, StockService, SubCategoriaService
+├── infrastructure/  # Implementaciones concretas
+│   ├── database/    # Conexión SQLite
+│   ├── repositories/# SqliteUserRepository, SqliteArticuloRepository, ...
+│   └── error.rs     # AppError enum
+└── api/             # Commands de Tauri
+    └── commands/    # invoke handlers
+```
+
+### Frontend Vue (Clean Architecture)
+
+```
+src/
+├── domain/           # Tipos e interfaces
+│   ├── entities/    # User, Permission, Proveedor, Categoria, SubCategoria, Articulo, Stock, PERMISSIONS
+│   └── interfaces/  # IUserRepository
+├── application/     # Casos de uso
+│   └── usecases/   # Login, CreateUser, GetAllUsers, UpdateUser, DeleteUser, ManagePermissions
+├── infrastructure/ # Implementaciones
+│   └── api/        # UserApiRepository, ArticuloApiRepository, CategoriaApiRepository, ProveedorApiRepository, StockApiRepository, SubCategoriaApiRepository
+└── presentation/   # Capa UI
+    ├── layouts/    # MainLayout con sidebar
+    ├── pages/      # Login, Home, Users, Proveedores, Categorias, SubCategorias, Articulos, Stock, Permissions, Settings
+    ├── stores/     # Pinia stores (auth, users, permissions, proveedores, categorias, subCategorias, articulos, stock, theme)
+    └── router/     # Vue Router config
+```
+
+---
+
+## 3. Comandos de Build y Desarrollo
+
+### Comandos principales (frontend)
+
+```bash
+pnpm dev                          # Inicia el servidor Vite en http://localhost:1420
+pnpm build                        # TypeScript check + build de producción
+pnpm preview                      # Previsualizar build de producción
+```
+
+> Nota: `pnpm build` corre `vue-tsc --noEmit` (typecheck) y luego `vite build`. No hay script de lint ni de tests.
+
+### Comandos Tauri
+
+```bash
+pnpm tauri dev                    # Desarrollo Tauri (frontend + backend)
+pnpm tauri build                  # Build de producción Tauri
+```
+
+### Comandos Rust (directos)
+
+```bash
+cd src-tauri && cargo check       # Verificar código sin compilar
+cd src-tauri && cargo build        # Compilar
+cd src-tauri && cargo test         # Ejecutar tests (no hay tests aún)
+cd src-tauri && cargo clippy       # Linter de Rust
+```
+
+---
+
+## 4. Convenciones de Código - TypeScript/Vue
+
+### Estructura de archivos
+
+- Componentes Vue: `PascalCase.vue`
+- Archivos TypeScript: `camelCase.ts`
+- Tipos/Interfaces: `camelCase.types.ts` o en el mismo archivo del módulo
+
+### Imports
+
+```typescript
+// Usar comillas dobles
+import { ref } from "vue";
+import { invoke } from "@tauri-apps/api/core";
+import type { User } from "../../domain/entities";
+
+// Importaciones de relativa
+import App from "./App.vue";
+import { helper } from "../utils/helper";
+```
+
+### Naming Conventions
+
+```typescript
+// Variables y funciones: camelCase
+const userName = "Juan";
+function getUserById(id: string): User {}
+
+// Constantes: UPPER_SNAKE_CASE (para valores de configuración)
+const MAX_RETRIES = 3;
+
+// Types/Interfaces/Enums: PascalCase
+interface UserProfile { ... }
+type ApiResponse<T> = { ... };
+enum Status { ... }
+
+// Componentes Vue: PascalCase en el template
+<UserCard />, <SettingsDialog />
+```
+
+### TypeScript Strict Mode
+
+El proyecto tiene `strict: true` en tsconfig.json. Reglas activas:
+
+- `noUnusedLocals: true` - No declarar variables sin usar
+- `noUnusedParameters: true` - No tener parámetros sin usar
+- `noFallthroughCasesInSwitch: true` - Todos los casos switch deben break/return
+
+### Componentes Vue 3
+
+```vue
+<script setup lang="ts">
+import { ref, computed } from "vue";
+import { invoke } from "@tauri-apps/api/core";
+
+const props = defineProps<{
+  title: string;
+  count?: number;
+}>();
+
+const isLoading = ref(false);
+
+const doubledCount = computed(() => (props.count ?? 0) * 2);
+
+async function fetchData() {
+  isLoading.value = true;
+  try {
+    const result = await invoke<string>("command_name", { id: 1 });
+  } catch (error) {
+    console.error(error);
+  } finally {
+    isLoading.value = false;
+  }
+}
+</script>
+
+<template>
+  <!-- Template aquí -->
+</template>
+
+<style scoped>
+/* Estilos scoped por defecto */
+</style>
+```
+
+---
+
+## 5. Convenciones de Código - Rust
+
+### Estructura de archivos
+
+```
+src-tauri/src/
+├── domain/entities/    # Structs con derive Serialize
+├── domain/repositories/# Traits
+├── application/services# Lógica de negocio
+├── infrastructure/    # Implementaciones concretas
+└── api/commands/       # Tauri commands
+```
+
+### Estilo de código
+
+- **Indentación**: 4 espacios (no tabs)
+- **Llaves**: Same-line para funciones, newline para structs/enums
+
+```rust
+fn greet(name: &str) -> String {
+    format!("Hola, {}!", name)
+}
+
+struct User {
+    name: String,
+    age: u32,
+}
+
+enum Status {
+    Active,
+    Inactive,
+}
+```
+
+### Naming Conventions
+
+- Funciones/variables: `snake_case`
+- Structs/Enums/Traits: `PascalCase`
+- Constantes: `SCREAMING_SNAKE_CASE`
+
+### Macros y Atributos
+
+```rust
+#[tauri::command]
+fn my_command(arg: String) -> Result<String, AppError> {
+    Ok(arg)
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct User {
+    pub id: i64,
+    pub username: String,
+}
+```
+
+---
+
+## 6. Integración Tauri (Frontend <-> Backend)
+
+### Llamar comandos Rust desde Vue
+
+```typescript
+import { invoke } from "@tauri-apps/api/core";
+
+const result = await invoke<UserResponse>("create_user", {
+  request: { username: "test", password: "123" }
+});
+```
+
+### Tipos compartidos
+
+- Definir tipos TypeScript que correspondan a las structs de Rust
+- Usar `serde` derive macros en Rust: `#[derive(Serialize, Deserialize)]`
+- Los errores se serializan como string: `AppError` implementa `serde::Serialize` y llega a `invoke` como rechazo de la promesa
+
+---
+
+## 7. Modelos de Base de Datos
+
+### Usuarios
+- `id`: INTEGER PRIMARY KEY
+- `username`: TEXT UNIQUE
+- `password`: TEXT (hashed con bcrypt)
+- `active`: INTEGER (0/1)
+- `created_at`: TEXT (ISO 8601)
+- `modified_at`: TEXT (ISO 8601)
+
+### Permisos
+- `id`: INTEGER PRIMARY KEY
+- `permission`: TEXT UNIQUE
+- `created`: TEXT (ISO 8601)
+
+### user_permissions (relación muchos a muchos)
+- `user_id`: INTEGER FK
+- `permission_id`: INTEGER FK
+- `assigned_at`: TEXT (ISO 8601)
+
+### Proveedores
+- `id`: INTEGER PRIMARY KEY
+- `cuit`: TEXT UNIQUE (opcional)
+- `proveedor`: TEXT NOT NULL
+- `nombre`: TEXT NOT NULL
+- `tel`, `email`, `observacion`: TEXT (opcionales)
+
+### Categorías
+- `id`: INTEGER PRIMARY KEY
+- `categoria`: TEXT UNIQUE
+
+### Sub Categorías
+- `id`: INTEGER PRIMARY KEY
+- `sub_categoria`: TEXT UNIQUE
+- `id_categoria`: INTEGER FK → categorias(id)
+
+### Artículos
+- `id`: INTEGER PRIMARY KEY
+- `articulo`: TEXT UNIQUE
+- `cod_articulo`: TEXT UNIQUE
+- `id_sub_categoria`: INTEGER FK → sub_categorias(id)
+- `id_proveedor`: INTEGER FK → proveedores(id)
+
+### Stock
+- `id`: INTEGER PRIMARY KEY
+- `id_articulo`: INTEGER FK → articulos(id)
+- `cantidad`: REAL
+- `costo`: REAL
+- `ganancia`: REAL
+
+---
+
+## 8. API Commands (Tauri)
+
+| Command | Descripción |
+|---------|-------------|
+| `login` | Autenticar usuario |
+| `create_user` | Crear nuevo usuario |
+| `get_all_users` | Listar todos los usuarios |
+| `update_user` | Actualizar usuario |
+| `delete_user` | Eliminar usuario |
+| `get_user_permissions` | Obtener permisos de un usuario |
+| `get_all_permissions` | Listar todos los permisos |
+| `add_permission_to_user` | Asignar permiso a usuario |
+| `remove_permission_from_user` | Quitar permiso a usuario |
+| `create_permission` | Crear nuevo permiso |
+| `get_all_proveedores` | Listar proveedores |
+| `get_proveedor_by_id` | Obtener proveedor por id |
+| `create_proveedor` | Crear proveedor |
+| `update_proveedor` | Actualizar proveedor |
+| `delete_proveedor` | Eliminar proveedor |
+| `get_all_categorias` | Listar categorías |
+| `create_categoria` | Crear categoría |
+| `update_categoria` | Actualizar categoría |
+| `delete_categoria` | Eliminar categoría |
+| `get_all_sub_categorias` | Listar sub categorías |
+| `get_sub_categorias_by_categoria` | Sub categorías de una categoría |
+| `create_sub_categoria` | Crear sub categoría |
+| `update_sub_categoria` | Actualizar sub categoría |
+| `delete_sub_categoria` | Eliminar sub categoría |
+| `get_all_articulos` | Listar artículos |
+| `create_articulo` | Crear artículo |
+| `update_articulo` | Actualizar artículo |
+| `delete_articulo` | Eliminar artículo |
+| `get_all_stock` | Listar stock |
+| `get_stock_by_id` | Obtener stock por id |
+| `get_stock_by_articulo` | Obtener stock de un artículo |
+| `create_stock` | Crear stock |
+| `update_stock` | Actualizar stock |
+| `delete_stock` | Eliminar stock |
+| `get_precio_venta` | Calcular precio de venta |
+
+---
+
+## 9. Errores Comunes a Evitar
+
+1. **No dejar variables sin usar** - TypeScript lo marca como error
+2. **No usar `any`** - Usar tipos específicos o `unknown`
+3. **No olvidar el `.value`** al acceder a refs de Vue
+4. **En Rust, siempre manejar `Result` con `?` o match**
+5. **No hardcodear secrets** - usar variables de entorno
+6. **DB global** - `infrastructure::database::DB` es un `Lazy<Mutex<Connection>>` (rusqlite no es `Sync`); todos los repos lo bloquean. El esquema se crea en el primer arranque en el directorio de datos de `ProjectDirs` (`app.db`), sin migraciones. Se siembran 27 permisos y el usuario `admin` / `admin123` con todos los permisos
+7. **Sincronizar permisos en 3 lugares** (strings en español snake_case, ej. `ver_usuarios`): Rust `PermissionCode::as_str()` (`domain/entities/permission_code.rs`), TS `PERMISSIONS` (`src/domain/entities/permissions.ts`) y la lista seed (`infrastructure/database/mod.rs`)
+8. **No olvidar `user_id` en los comandos** - Todo comando recibe `user_id: i64` como primer argumento. Los de usuarios/permisos usan `AppState` + `UserService::has_permission`; los de dominio (articulo/categoria/...) duplican un `check_permission` propio que consulta la DB directo. Respetar el patrón al agregar comandos
+9. **Registrar comandos y estados en `lib.rs`** - `.manage(...)` + `tauri::generate_handler!` en `src-tauri/src/lib.rs`
+10. **Auth en frontend** - Usuario y permisos se persisten en `localStorage` (`currentUser`, `userPermissions`). Los repos leen `getCurrentUserId()` y lo pasan como `userId` a cada `invoke`. El guard del router llama `authStore.loadFromStorage()`
+11. **Repos no uniformes** - Solo `UserApiRepository` implementa `IUserRepository` y pasa por usecases; Articulo/Categoria/Proveedor/Stock/SubCategoria son clases directas invocadas desde los stores. `infrastructure/api/index.ts` solo re-exporta `userRepository` (los demás se importan por ruta completa)
+12. **Nombres de archivo Rust PascalCase** (`Categoria_commands.rs`, `Categoria_service.rs`, `Categoria_repository.rs`) mientras `mod.rs` declara módulos en minúscula — solo compila en filesystems case-insensitive (Windows/macOS); en Linux falla. No renombrar sin avisar
+13. **Código generado** - `src-tauri/gen/**` (proyecto Android) no se edita a mano
+
+---
+
+## 10. IDE Recomendado
+
+- **VS Code** con extensiones:
+  - Vue - Official (Volar)
+  - Tauri
+  - rust-analyzer
+  - ESLint
+  - Prettier
