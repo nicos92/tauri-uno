@@ -783,3 +783,46 @@ export const useTiposVentaStore = defineStore("tiposVenta", () => {
     deleteTipoVenta,
   };
 });
+
+import { CierresApiRepository } from "../../infrastructure/api/cierreRepository";
+import type { CierreWithTipos } from "../../domain/entities";
+
+const cierresRepository = new CierresApiRepository();
+
+export const useCierresStore = defineStore("cierres", () => {
+  const cierres = ref<CierreWithTipos[]>([]);
+  const loading = ref(false);
+  const error = ref<string | null>(null);
+
+  async function fetchCierres() {
+    loading.value = true;
+    error.value = null;
+    try {
+      cierres.value = await cierresRepository.getAllCierres();
+    } catch (e) {
+      error.value = toErrorMessage(e);
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function crearCierre(fecha: string): Promise<boolean> {
+    error.value = null;
+    try {
+      const cierre = await cierresRepository.crearCierre({ fecha });
+      cierres.value.unshift(cierre);
+      return true;
+    } catch (e) {
+      error.value = toErrorMessage(e);
+      return false;
+    }
+  }
+
+  return {
+    cierres,
+    loading,
+    error,
+    fetchCierres,
+    crearCierre,
+  };
+});

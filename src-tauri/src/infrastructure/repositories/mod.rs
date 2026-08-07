@@ -1,6 +1,7 @@
 pub mod articulo_repository;
 pub mod audit_log_repository;
 pub mod categoria_repository;
+pub mod cierre_repository;
 pub mod proveedor_repository;
 pub mod stock_repository;
 pub mod sub_categoria_repository;
@@ -11,6 +12,7 @@ pub mod venta_repository;
 pub use articulo_repository::SqliteArticuloRepository;
 pub use audit_log_repository::SqliteAuditLogRepository;
 pub use categoria_repository::SqliteCategoriaRepository;
+pub use cierre_repository::SqliteCierreRepository;
 pub use proveedor_repository::SqliteProveedorRepository;
 pub use stock_repository::SqliteStockRepository;
 pub use sub_categoria_repository::SqliteSubCategoriaRepository;

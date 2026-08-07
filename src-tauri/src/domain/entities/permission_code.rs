@@ -40,6 +40,8 @@ pub enum PermissionCode {
     UpdateTipoVenta,
     DeleteTipoVenta,
     ViewAuditoria,
+    ViewCierres,
+    CreateCierre,
 }
 
 impl PermissionCode {
@@ -82,6 +84,8 @@ impl PermissionCode {
             PermissionCode::UpdateTipoVenta => "modificar_tipo_venta",
             PermissionCode::DeleteTipoVenta => "eliminar_tipo_venta",
             PermissionCode::ViewAuditoria => "ver_auditoria",
+            PermissionCode::ViewCierres => "ver_cierres",
+            PermissionCode::CreateCierre => "crear_cierre",
         }
     }
 
@@ -124,6 +128,8 @@ impl PermissionCode {
             PermissionCode::UpdateTipoVenta,
             PermissionCode::DeleteTipoVenta,
             PermissionCode::ViewAuditoria,
+            PermissionCode::ViewCierres,
+            PermissionCode::CreateCierre,
         ]
     }
 }

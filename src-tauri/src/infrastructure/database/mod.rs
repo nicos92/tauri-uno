@@ -67,6 +67,9 @@ const PERMISSIONS: &[&str] = &[
     "eliminar_tipo_venta",
     // Auditoria
     "ver_auditoria",
+    // Cierres del día
+    "ver_cierres",
+    "crear_cierre",
 ];
 
 pub fn init_database() -> Result<Connection, rusqlite::Error> {
@@ -189,6 +192,29 @@ pub fn init_database() -> Result<Connection, rusqlite::Error> {
         );
 
         CREATE INDEX IF NOT EXISTS idx_venta_detalle_id_venta ON venta_detalle(id_venta);
+
+        CREATE TABLE IF NOT EXISTS cierres (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            fecha TEXT NOT NULL UNIQUE,
+            dia INTEGER NOT NULL,
+            mes INTEGER NOT NULL,
+            anio INTEGER NOT NULL,
+            total_costo REAL NOT NULL,
+            total_ganancia REAL NOT NULL,
+            total_venta REAL NOT NULL,
+            created_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS cierre_tipos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_cierre INTEGER NOT NULL,
+            id_tipo_venta INTEGER NOT NULL,
+            total REAL NOT NULL,
+            FOREIGN KEY (id_cierre) REFERENCES cierres(id) ON DELETE CASCADE,
+            FOREIGN KEY (id_tipo_venta) REFERENCES tipos_venta(id)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_cierre_tipos_id_cierre ON cierre_tipos(id_cierre);
         ",
     )?;
 

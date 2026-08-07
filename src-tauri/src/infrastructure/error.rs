@@ -111,6 +111,12 @@ pub enum AppError {
     #[error("Tipo de venta nombre inválido")]
     TipoVentaNombreInvalido,
 
+    #[error("Cierre ya existe")]
+    CierreYaExiste,
+
+    #[error("Cierre not found")]
+    CierreNotFound,
+
     #[error("Internal error: {0}")]
     Internal(String),
 }
@@ -177,6 +183,8 @@ impl AppError {
             AppError::TipoVentaExists => "tipo_venta_exists",
             AppError::TipoVentaInUse => "tipo_venta_in_use",
             AppError::TipoVentaNombreInvalido => "tipo_venta_nombre_invalido",
+            AppError::CierreYaExiste => "cierre_ya_existe",
+            AppError::CierreNotFound => "cierre_not_found",
             AppError::Internal(_) => "internal_error",
         }
     }
@@ -264,6 +272,10 @@ impl AppError {
             AppError::TipoVentaNombreInvalido => {
                 "El nombre del tipo de venta no puede estar vacío.".to_string()
             }
+            AppError::CierreYaExiste => {
+                "Ya existe un cierre para esa fecha.".to_string()
+            }
+            AppError::CierreNotFound => "El cierre no existe.".to_string(),
             AppError::Internal(_) => {
                 "Ocurrió un error inesperado. Intente nuevamente.".to_string()
             }

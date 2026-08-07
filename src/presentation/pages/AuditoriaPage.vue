@@ -25,6 +25,7 @@ const screens = [
     "Tipos de Venta",
     "Permisos",
     "Auditoria",
+    "Cierres del día",
 ];
 
 const actions = ["nuevo", "modificar", "consultar", "eliminar"];

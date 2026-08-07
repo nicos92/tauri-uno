@@ -36,6 +36,8 @@ export const PERMISSIONS = {
   UPDATE_TIPO_VENTA: "modificar_tipo_venta",
   DELETE_TIPO_VENTA: "eliminar_tipo_venta",
   VIEW_AUDITORIA: "ver_auditoria",
+  VIEW_CIERRES: "ver_cierres",
+  CREATE_CIERRE: "crear_cierre",
 } as const;
 
 export type PermissionKey = keyof typeof PERMISSIONS;

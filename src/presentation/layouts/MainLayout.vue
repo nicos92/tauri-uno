@@ -73,6 +73,12 @@ const menuItems = computed(() => {
             permission: "ver_auditoria",
         },
         {
+            name: "cierres",
+            label: "Cierres del día",
+            icon: "calendar",
+            permission: "ver_cierres",
+        },
+        {
             name: "settings",
             label: "Configuración",
             icon: "settigns",

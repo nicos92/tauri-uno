@@ -159,6 +159,14 @@ export function usePermissions() {
     return can(PERMISSIONS.VIEW_AUDITORIA);
   }
 
+  function canViewCierres(): boolean {
+    return can(PERMISSIONS.VIEW_CIERRES);
+  }
+
+  function canCreateCierre(): boolean {
+    return can(PERMISSIONS.CREATE_CIERRE);
+  }
+
   return {
     allPermissions,
     can,
@@ -199,5 +207,7 @@ export function usePermissions() {
     canUpdateTipoVenta,
     canDeleteTipoVenta,
     canViewAuditoria,
+    canViewCierres,
+    canCreateCierre,
   };
 }

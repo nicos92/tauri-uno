@@ -1,6 +1,7 @@
 pub mod articulo;
 pub mod audit_log;
 pub mod categoria;
+pub mod cierre;
 pub mod permission;
 pub mod permission_code;
 pub mod proveedor;
@@ -13,6 +14,7 @@ pub mod venta;
 pub use articulo::Articulo;
 pub use audit_log::{AuditAction, AuditLog, AuditScreen};
 pub use categoria::Categoria;
+pub use cierre::{Cierre, CierreTipo, CierreWithTipos};
 pub use permission::{Permission, UserPermission};
 pub use permission_code::PermissionCode;
 pub use proveedor::Proveedor;

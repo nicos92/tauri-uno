@@ -243,3 +243,29 @@ export interface CreateVentaRequest {
   observacion?: string;
   id_tipo_venta?: number;
 }
+
+export interface Cierre {
+  id: number;
+  fecha: string;
+  dia: number;
+  mes: number;
+  anio: number;
+  total_costo: number;
+  total_ganancia: number;
+  total_venta: number;
+  created_at: string;
+}
+
+export interface CierreTipo {
+  id_tipo_venta: number;
+  tipo_venta: string;
+  total: number;
+}
+
+export interface CierreWithTipos extends Cierre {
+  tipos: CierreTipo[];
+}
+
+export interface CrearCierreRequest {
+  fecha: string;
+}
