@@ -3,7 +3,7 @@ import type { Articulo, CreateArticuloRequest, UpdateArticuloRequest } from "../
 
 export class ArticuloApiRepository {
   private getCurrentUserId(): number {
-    const stored = localStorage.getItem("currentUser");
+    const stored = sessionStorage.getItem("currentUser");
     if (stored) {
       const user = JSON.parse(stored);
       return user.id;

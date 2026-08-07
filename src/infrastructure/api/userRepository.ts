@@ -9,7 +9,7 @@ export interface LoginResponse {
 
 export class UserApiRepository implements IUserRepository {
   private getCurrentUserId(): number {
-    const stored = localStorage.getItem("currentUser");
+    const stored = sessionStorage.getItem("currentUser");
     if (stored) {
       const user = JSON.parse(stored) as User;
       return user.id;

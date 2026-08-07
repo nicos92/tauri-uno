@@ -3,7 +3,7 @@ import type { AuditLog, AuditLogFilters } from "../../domain/entities";
 
 export class AuditApiRepository {
   private getCurrentUserId(): number {
-    const stored = localStorage.getItem("currentUser");
+    const stored = sessionStorage.getItem("currentUser");
     if (stored) {
       const user = JSON.parse(stored);
       return user.id;

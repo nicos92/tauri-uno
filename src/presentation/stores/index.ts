@@ -26,8 +26,8 @@ export const useAuthStore = defineStore("auth", () => {
       user.value = response.user;
       permissions.value = response.permissions;
       isAuthenticated.value = true;
-      localStorage.setItem("currentUser", JSON.stringify(response.user));
-      localStorage.setItem("userPermissions", JSON.stringify(response.permissions));
+      sessionStorage.setItem("currentUser", JSON.stringify(response.user));
+      sessionStorage.setItem("userPermissions", JSON.stringify(response.permissions));
       return true;
     } catch (e) {
       error.value = toErrorMessage(e);
@@ -39,13 +39,13 @@ export const useAuthStore = defineStore("auth", () => {
     user.value = null;
     permissions.value = [];
     isAuthenticated.value = false;
-    localStorage.removeItem("currentUser");
-    localStorage.removeItem("userPermissions");
+    sessionStorage.removeItem("currentUser");
+    sessionStorage.removeItem("userPermissions");
   }
 
   function loadFromStorage() {
-    const storedUser = localStorage.getItem("currentUser");
-    const storedPermissions = localStorage.getItem("userPermissions");
+    const storedUser = sessionStorage.getItem("currentUser");
+    const storedPermissions = sessionStorage.getItem("userPermissions");
     if (storedUser && storedPermissions) {
       user.value = JSON.parse(storedUser);
       permissions.value = JSON.parse(storedPermissions);

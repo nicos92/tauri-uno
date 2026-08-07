@@ -3,7 +3,7 @@ import type { Categoria, CreateCategoriaRequest, UpdateCategoriaRequest } from "
 
 export class CategoriaApiRepository {
   private getCurrentUserId(): number {
-    const stored = localStorage.getItem("currentUser");
+    const stored = sessionStorage.getItem("currentUser");
     if (stored) {
       const user = JSON.parse(stored);
       return user.id;
