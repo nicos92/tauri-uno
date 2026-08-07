@@ -634,3 +634,74 @@ export const useAuditStore = defineStore("audit", () => {
     fetchLogs,
   };
 });
+
+import { VentasApiRepository } from "../../infrastructure/api/ventaRepository";
+import type { CreateVentaRequest, VentaWithDetalle } from "../../domain/entities";
+
+const ventasRepository = new VentasApiRepository();
+
+export const useVentasStore = defineStore("ventas", () => {
+  const ventas = ref<VentaWithDetalle[]>([]);
+  const loading = ref(false);
+  const error = ref<string | null>(null);
+
+  async function fetchVentas() {
+    loading.value = true;
+    error.value = null;
+    try {
+      ventas.value = await ventasRepository.getAllVentas();
+    } catch (e) {
+      error.value = toErrorMessage(e);
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function getVentaById(id: number): Promise<VentaWithDetalle | null> {
+    try {
+      return await ventasRepository.getVentaById(id);
+    } catch (e) {
+      error.value = toErrorMessage(e);
+      return null;
+    }
+  }
+
+  async function createVenta(request: CreateVentaRequest): Promise<boolean> {
+    error.value = null;
+    try {
+      const venta = await ventasRepository.createVenta(request);
+      ventas.value.unshift(venta);
+      await useStockStore().fetchStock();
+      return true;
+    } catch (e) {
+      error.value = toErrorMessage(e);
+      return false;
+    }
+  }
+
+  async function anularVenta(id: number): Promise<boolean> {
+    error.value = null;
+    try {
+      await ventasRepository.anularVenta(id);
+      const index = ventas.value.findIndex((v) => v.id === id);
+      if (index !== -1) {
+        ventas.value[index].anulada = true;
+      }
+      await useStockStore().fetchStock();
+      return true;
+    } catch (e) {
+      error.value = toErrorMessage(e);
+      return false;
+    }
+  }
+
+  return {
+    ventas,
+    loading,
+    error,
+    fetchVentas,
+    getVentaById,
+    createVenta,
+    anularVenta,
+  };
+});

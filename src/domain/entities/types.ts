@@ -165,3 +165,57 @@ export interface AuditLogFilters {
   limit?: number;
   offset?: number;
 }
+
+export interface Venta {
+  id: number;
+  user_id: number;
+  fecha: string;
+  total: number;
+  anulada: boolean;
+  observacion: string | null;
+  created_at: string;
+}
+
+export interface VentaDetalle {
+  id: number;
+  id_venta: number;
+  id_articulo: number;
+  cantidad: number;
+  costo_unitario: number;
+  precio_unitario: number;
+  subtotal: number;
+}
+
+export interface VentaDetalleConArticulo {
+  id: number;
+  id_articulo: number;
+  cod_articulo: string;
+  articulo: string;
+  cantidad: number;
+  costo_unitario: number;
+  precio_unitario: number;
+  subtotal: number;
+}
+
+export interface VentaWithDetalle {
+  id: number;
+  user_id: number;
+  username: string;
+  fecha: string;
+  total: number;
+  anulada: boolean;
+  observacion: string | null;
+  created_at: string;
+  items: VentaDetalleConArticulo[];
+}
+
+export interface CreateVentaDetalleRequest {
+  id_articulo: number;
+  cantidad: number;
+  precio_unitario?: number;
+}
+
+export interface CreateVentaRequest {
+  items: CreateVentaDetalleRequest[];
+  observacion?: string;
+}

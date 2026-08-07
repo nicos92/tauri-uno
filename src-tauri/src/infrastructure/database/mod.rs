@@ -54,6 +54,12 @@ const PERMISSIONS: &[&str] = &[
     "crear_stock",
     "modificar_stock",
     "eliminar_stock",
+    // Ventas
+    "ver_ventas",
+    "crear_venta",
+    "anular_venta",
+    "vender_sin_stock",
+    "generar_presupuesto",
     // Auditoria
     "ver_auditoria",
 ];
@@ -144,6 +150,31 @@ pub fn init_database() -> Result<Connection, rusqlite::Error> {
         CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at);
         CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id ON audit_logs(user_id);
         CREATE INDEX IF NOT EXISTS idx_audit_logs_screen_action ON audit_logs(screen, action);
+
+        CREATE TABLE IF NOT EXISTS ventas (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            fecha TEXT NOT NULL,
+            total REAL NOT NULL,
+            anulada INTEGER NOT NULL DEFAULT 0,
+            observacion TEXT,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS venta_detalle (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_venta INTEGER NOT NULL,
+            id_articulo INTEGER NOT NULL,
+            cantidad REAL NOT NULL,
+            costo_unitario REAL NOT NULL,
+            precio_unitario REAL NOT NULL,
+            subtotal REAL NOT NULL,
+            FOREIGN KEY (id_venta) REFERENCES ventas(id) ON DELETE CASCADE,
+            FOREIGN KEY (id_articulo) REFERENCES articulos(id)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_venta_detalle_id_venta ON venta_detalle(id_venta);
         ",
     )?;
 

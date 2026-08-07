@@ -13,6 +13,7 @@ pub mod categoria_commands;
 pub mod proveedor_commands;
 pub mod stock_commands;
 pub mod sub_categoria_commands;
+pub mod venta_commands;
 
 pub use articulo_commands::{
     create_articulo, delete_articulo, get_all_articulos, update_articulo, ArticuloAppState,
@@ -32,6 +33,9 @@ pub use stock_commands::{
 pub use sub_categoria_commands::{
     create_sub_categoria, delete_sub_categoria, get_all_sub_categorias,
     get_sub_categorias_by_categoria, update_sub_categoria, SubCategoriaAppState,
+};
+pub use venta_commands::{
+    anular_venta, create_venta, get_all_ventas, get_venta_by_id, VentaAppState,
 };
 
 pub struct AppState {

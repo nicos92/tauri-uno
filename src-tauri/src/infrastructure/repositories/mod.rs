@@ -5,6 +5,7 @@ pub mod proveedor_repository;
 pub mod stock_repository;
 pub mod sub_categoria_repository;
 pub mod user_repository;
+pub mod venta_repository;
 
 pub use articulo_repository::SqliteArticuloRepository;
 pub use audit_log_repository::SqliteAuditLogRepository;
@@ -13,3 +14,4 @@ pub use proveedor_repository::SqliteProveedorRepository;
 pub use stock_repository::SqliteStockRepository;
 pub use sub_categoria_repository::SqliteSubCategoriaRepository;
 pub use user_repository::SqliteUserRepository;
+pub use venta_repository::SqliteVentaRepository;

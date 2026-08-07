@@ -56,6 +56,12 @@ const routes = [
         meta: { permission: PERMISSIONS.VIEW_STOCK },
       },
       {
+        path: "ventas",
+        name: "ventas",
+        component: () => import("../pages/VentasPage.vue"),
+        meta: { permission: PERMISSIONS.VIEW_VENTAS },
+      },
+      {
         path: "permissions",
         name: "permissions",
         component: () => import("../pages/PermissionsPage.vue"),

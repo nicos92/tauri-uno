@@ -30,6 +30,11 @@ pub enum PermissionCode {
     CreateStock,
     UpdateStock,
     DeleteStock,
+    ViewVentas,
+    CreateVenta,
+    AnularVenta,
+    VenderSinStock,
+    GenerarPresupuesto,
     ViewAuditoria,
 }
 
@@ -63,6 +68,11 @@ impl PermissionCode {
             PermissionCode::CreateStock => "crear_stock",
             PermissionCode::UpdateStock => "modificar_stock",
             PermissionCode::DeleteStock => "eliminar_stock",
+            PermissionCode::ViewVentas => "ver_ventas",
+            PermissionCode::CreateVenta => "crear_venta",
+            PermissionCode::AnularVenta => "anular_venta",
+            PermissionCode::VenderSinStock => "vender_sin_stock",
+            PermissionCode::GenerarPresupuesto => "generar_presupuesto",
             PermissionCode::ViewAuditoria => "ver_auditoria",
         }
     }
@@ -96,6 +106,11 @@ impl PermissionCode {
             PermissionCode::CreateStock,
             PermissionCode::UpdateStock,
             PermissionCode::DeleteStock,
+            PermissionCode::ViewVentas,
+            PermissionCode::CreateVenta,
+            PermissionCode::AnularVenta,
+            PermissionCode::VenderSinStock,
+            PermissionCode::GenerarPresupuesto,
             PermissionCode::ViewAuditoria,
         ]
     }

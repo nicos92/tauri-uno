@@ -49,6 +49,12 @@ const menuItems = computed(() => {
             permission: "ver_stock",
         },
         {
+            name: "ventas",
+            label: "Ventas",
+            icon: "ventas",
+            permission: "ver_ventas",
+        },
+        {
             name: "permissions",
             label: "Permisos",
             icon: "lock",

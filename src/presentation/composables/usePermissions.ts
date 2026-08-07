@@ -119,6 +119,26 @@ export function usePermissions() {
     return can(PERMISSIONS.DELETE_STOCK);
   }
 
+  function canViewVentas(): boolean {
+    return can(PERMISSIONS.VIEW_VENTAS);
+  }
+
+  function canCreateVenta(): boolean {
+    return can(PERMISSIONS.CREATE_VENTA);
+  }
+
+  function canAnularVenta(): boolean {
+    return can(PERMISSIONS.ANULAR_VENTA);
+  }
+
+  function canVenderSinStock(): boolean {
+    return can(PERMISSIONS.VENDER_SIN_STOCK);
+  }
+
+  function canGenerarPresupuesto(): boolean {
+    return can(PERMISSIONS.GENERAR_PRESUPUESTO);
+  }
+
   function canViewAuditoria(): boolean {
     return can(PERMISSIONS.VIEW_AUDITORIA);
   }
@@ -153,6 +173,11 @@ export function usePermissions() {
     canCreateStock,
     canUpdateStock,
     canDeleteStock,
+    canViewVentas,
+    canCreateVenta,
+    canAnularVenta,
+    canVenderSinStock,
+    canGenerarPresupuesto,
     canViewAuditoria,
   };
 }

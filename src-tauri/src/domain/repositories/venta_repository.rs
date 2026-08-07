@@ -1,0 +1,14 @@
+use crate::domain::entities::{Venta, VentaDetalle, VentaWithDetalle};
+use crate::infrastructure::error::AppError;
+
+pub trait VentaRepository: Send + Sync {
+    fn create(
+        &self,
+        venta: &Venta,
+        detalles: &[VentaDetalle],
+        allow_negative_stock: bool,
+    ) -> Result<VentaWithDetalle, AppError>;
+    fn find_by_id(&self, id: i64) -> Result<Option<VentaWithDetalle>, AppError>;
+    fn find_all(&self) -> Result<Vec<VentaWithDetalle>, AppError>;
+    fn anular(&self, id: i64) -> Result<(), AppError>;
+}

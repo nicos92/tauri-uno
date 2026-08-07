@@ -21,6 +21,7 @@ const screens = [
     "SubCategorias",
     "Articulos",
     "Stock",
+    "Ventas",
     "Permisos",
     "Auditoria",
 ];

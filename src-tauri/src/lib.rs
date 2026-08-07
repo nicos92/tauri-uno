@@ -4,15 +4,16 @@ pub mod domain;
 pub mod infrastructure;
 
 use api::commands::{
-    add_permission_to_user, create_articulo, create_categoria, create_permission, create_proveedor,
-    create_stock, create_sub_categoria, create_user, delete_articulo, delete_categoria,
-    delete_proveedor, delete_stock, delete_sub_categoria, delete_user, get_all_articulos,
-    get_all_categorias, get_all_permissions, get_all_proveedores, get_all_stock,
-    get_all_sub_categorias, get_all_users, get_audit_logs, get_precio_venta, get_proveedor_by_id,
-    get_stock_by_articulo, get_stock_by_id, get_sub_categorias_by_categoria, get_user_permissions,
-    login, remove_permission_from_user, update_articulo, update_categoria, update_proveedor,
-    update_stock, update_sub_categoria, update_user, AppState, ArticuloAppState, AuditLogAppState,
-    CategoriaAppState, ProveedorAppState, StockAppState, SubCategoriaAppState,
+    add_permission_to_user, anular_venta, create_articulo, create_categoria, create_permission,
+    create_proveedor, create_stock, create_sub_categoria, create_user, create_venta,
+    delete_articulo, delete_categoria, delete_proveedor, delete_stock, delete_sub_categoria,
+    delete_user, get_all_articulos, get_all_categorias, get_all_permissions, get_all_proveedores,
+    get_all_stock, get_all_sub_categorias, get_all_users, get_all_ventas, get_audit_logs,
+    get_precio_venta, get_proveedor_by_id, get_stock_by_articulo, get_stock_by_id,
+    get_sub_categorias_by_categoria, get_user_permissions, get_venta_by_id, login,
+    remove_permission_from_user, update_articulo, update_categoria, update_proveedor, update_stock,
+    update_sub_categoria, update_user, AppState, ArticuloAppState, AuditLogAppState,
+    CategoriaAppState, ProveedorAppState, StockAppState, SubCategoriaAppState, VentaAppState,
 };
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -28,6 +29,7 @@ pub fn run() {
         .manage(SubCategoriaAppState::new())
         .manage(ArticuloAppState::new())
         .manage(StockAppState::new())
+        .manage(VentaAppState::new())
         .invoke_handler(tauri::generate_handler![
             login,
             create_user,
@@ -64,7 +66,11 @@ pub fn run() {
             update_stock,
             delete_stock,
             get_precio_venta,
-            get_audit_logs
+            get_audit_logs,
+            create_venta,
+            get_all_ventas,
+            get_venta_by_id,
+            anular_venta
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

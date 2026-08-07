@@ -1,0 +1,81 @@
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Venta {
+    pub id: i64,
+    pub user_id: i64,
+    pub fecha: String,
+    pub total: f64,
+    pub anulada: bool,
+    pub observacion: Option<String>,
+    pub created_at: String,
+}
+
+impl Venta {
+    pub fn new(user_id: i64, fecha: String, observacion: Option<String>) -> Self {
+        Self {
+            id: 0,
+            user_id,
+            fecha,
+            total: 0.0,
+            anulada: false,
+            observacion,
+            created_at: String::new(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VentaDetalle {
+    pub id: i64,
+    pub id_venta: i64,
+    pub id_articulo: i64,
+    pub cantidad: f64,
+    pub costo_unitario: f64,
+    pub precio_unitario: f64,
+    pub subtotal: f64,
+}
+
+impl VentaDetalle {
+    pub fn new(
+        id_articulo: i64,
+        cantidad: f64,
+        costo_unitario: f64,
+        precio_unitario: f64,
+    ) -> Self {
+        Self {
+            id: 0,
+            id_venta: 0,
+            id_articulo,
+            cantidad,
+            costo_unitario,
+            precio_unitario,
+            subtotal: cantidad * precio_unitario,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VentaDetalleConArticulo {
+    pub id: i64,
+    pub id_articulo: i64,
+    pub cod_articulo: String,
+    pub articulo: String,
+    pub cantidad: f64,
+    pub costo_unitario: f64,
+    pub precio_unitario: f64,
+    pub subtotal: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VentaWithDetalle {
+    pub id: i64,
+    pub user_id: i64,
+    pub username: String,
+    pub fecha: String,
+    pub total: f64,
+    pub anulada: bool,
+    pub observacion: Option<String>,
+    pub created_at: String,
+    pub items: Vec<VentaDetalleConArticulo>,
+}

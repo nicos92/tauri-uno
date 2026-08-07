@@ -7,6 +7,7 @@ pub mod proveedor;
 pub mod stock;
 pub mod sub_categoria;
 pub mod user;
+pub mod venta;
 
 pub use articulo::Articulo;
 pub use audit_log::{AuditAction, AuditLog, AuditScreen};
@@ -17,3 +18,4 @@ pub use proveedor::Proveedor;
 pub use stock::Stock;
 pub use sub_categoria::SubCategoria;
 pub use user::User;
+pub use venta::{Venta, VentaDetalle, VentaDetalleConArticulo, VentaWithDetalle};

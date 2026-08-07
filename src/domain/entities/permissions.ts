@@ -26,6 +26,11 @@ export const PERMISSIONS = {
   CREATE_STOCK: "crear_stock",
   UPDATE_STOCK: "modificar_stock",
   DELETE_STOCK: "eliminar_stock",
+  VIEW_VENTAS: "ver_ventas",
+  CREATE_VENTA: "crear_venta",
+  ANULAR_VENTA: "anular_venta",
+  VENDER_SIN_STOCK: "vender_sin_stock",
+  GENERAR_PRESUPUESTO: "generar_presupuesto",
   VIEW_AUDITORIA: "ver_auditoria",
 } as const;
 
