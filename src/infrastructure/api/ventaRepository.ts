@@ -37,4 +37,10 @@ export class VentasApiRepository {
       id,
     });
   }
+
+  async isDiaCerrado(): Promise<boolean> {
+    return await invoke<boolean>("is_dia_cerrado", {
+      userId: this.getCurrentUserId(),
+    });
+  }
 }

@@ -11,17 +11,13 @@ impl SqliteCierreRepository {
     pub fn new() -> Self {
         Self
     }
-}
 
-impl CierreRepository for SqliteCierreRepository {
-    fn create(
+    pub fn insert(
         &self,
+        tx: &rusqlite::Transaction,
         cierre: &Cierre,
         tipos: &[CierreTipo],
-    ) -> Result<CierreWithTipos, AppError> {
-        let mut conn = DB.lock().map_err(|e| AppError::Internal(e.to_string()))?;
-        let tx = conn.transaction()?;
-
+    ) -> Result<i64, AppError> {
         tx.execute(
             "INSERT INTO cierres (fecha, dia, mes, anio, total_costo, total_ganancia, total_venta, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
             params![
@@ -44,15 +40,23 @@ impl CierreRepository for SqliteCierreRepository {
             )?;
         }
 
-        tx.commit()?;
-
-        let mut result = self
-            .load_cierre(&conn, cierre_id)?
-            .ok_or(AppError::CierreNotFound)?;
-        result.tipos = self.load_tipos(&conn, cierre_id)?;
-        Ok(result)
+        Ok(cierre_id)
     }
 
+    pub fn load_by_id(
+        &self,
+        conn: &rusqlite::Connection,
+        id: i64,
+    ) -> Result<Option<CierreWithTipos>, AppError> {
+        let mut result = self.load_cierre(conn, id)?;
+        if let Some(cierre) = result.as_mut() {
+            cierre.tipos = self.load_tipos(conn, id)?;
+        }
+        Ok(result)
+    }
+}
+
+impl CierreRepository for SqliteCierreRepository {
     fn find_by_fecha(&self, fecha: &str) -> Result<Option<CierreWithTipos>, AppError> {
         let conn = DB.lock().map_err(|e| AppError::Internal(e.to_string()))?;
 
@@ -94,6 +98,19 @@ impl CierreRepository for SqliteCierreRepository {
         }
 
         Ok(cierres)
+    }
+
+    fn delete_by_fecha(&self, fecha: &str) -> Result<(), AppError> {
+        let mut conn = DB.lock().map_err(|e| AppError::Internal(e.to_string()))?;
+        let tx = conn.transaction()?;
+
+        let deleted = tx.execute("DELETE FROM cierres WHERE fecha = ?1", params![fecha])?;
+        if deleted == 0 {
+            return Err(AppError::CierreNotFound);
+        }
+
+        tx.commit()?;
+        Ok(())
     }
 }
 

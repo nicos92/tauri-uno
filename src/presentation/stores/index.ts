@@ -644,6 +644,15 @@ export const useVentasStore = defineStore("ventas", () => {
   const ventas = ref<VentaWithDetalle[]>([]);
   const loading = ref(false);
   const error = ref<string | null>(null);
+  const diaCerrado = ref(false);
+
+  async function checkDiaCerrado() {
+    try {
+      diaCerrado.value = await ventasRepository.isDiaCerrado();
+    } catch {
+      diaCerrado.value = false;
+    }
+  }
 
   async function fetchVentas() {
     loading.value = true;
@@ -701,10 +710,12 @@ export const useVentasStore = defineStore("ventas", () => {
     ventas,
     loading,
     error,
+    diaCerrado,
     fetchVentas,
     getVentaById,
     createVenta,
     anularVenta,
+    checkDiaCerrado,
   };
 });
 
@@ -818,11 +829,24 @@ export const useCierresStore = defineStore("cierres", () => {
     }
   }
 
+  async function reabrirCierre(fecha: string): Promise<boolean> {
+    error.value = null;
+    try {
+      await cierresRepository.reabrirCierre(fecha);
+      cierres.value = cierres.value.filter((c) => c.fecha !== fecha);
+      return true;
+    } catch (e) {
+      error.value = toErrorMessage(e);
+      return false;
+    }
+  }
+
   return {
     cierres,
     loading,
     error,
     fetchCierres,
     crearCierre,
+    reabrirCierre,
   };
 });

@@ -12,7 +12,7 @@ use api::commands::{
     get_all_sub_categorias, get_all_tipos_venta, get_all_users, get_all_ventas,
     get_audit_logs, get_precio_venta, get_proveedor_by_id, get_stock_by_articulo,
     get_stock_by_id, get_sub_categorias_by_categoria, get_user_permissions, get_venta_by_id,
-    login, remove_permission_from_user, update_articulo, update_categoria, update_proveedor,
+    is_dia_cerrado, login, reabrir_cierre, remove_permission_from_user, update_articulo, update_categoria, update_proveedor,
     update_stock, update_sub_categoria, update_tipo_venta, update_user, AppState,
     ArticuloAppState, AuditLogAppState, CategoriaAppState, CierreAppState, ProveedorAppState,
     StockAppState, SubCategoriaAppState, TipoVentaAppState, VentaAppState,
@@ -80,7 +80,9 @@ pub fn run() {
             update_tipo_venta,
             delete_tipo_venta,
             crear_cierre,
-            get_all_cierres
+            get_all_cierres,
+            reabrir_cierre,
+            is_dia_cerrado
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

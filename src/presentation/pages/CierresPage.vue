@@ -4,9 +4,10 @@ import { useCierresStore } from "../stores";
 import { usePermissions } from "../composables/usePermissions";
 import { useToasts } from "../composables/useToasts";
 import { formatMoney } from "../utils/format";
+import type { CierreWithTipos } from "../../domain/entities";
 
 const cierresStore = useCierresStore();
-const { canCreateCierre } = usePermissions();
+const { canCreateCierre, canReabrirCierre } = usePermissions();
 const { error: toastError, success: toastSuccess } = useToasts();
 
 function todayLocal(): string {
@@ -53,6 +54,22 @@ async function handleCerrarDia() {
         toastError(cierresStore.error || "No se pudo generar el cierre.");
     }
 }
+
+async function handleReabrir(cierre: CierreWithTipos) {
+    if (
+        !confirm(
+            `¿Está seguro de reabrir el día ${cierre.fecha}? El cierre se eliminará y se podrán registrar nuevas ventas.`,
+        )
+    ) {
+        return;
+    }
+    const ok = await cierresStore.reabrirCierre(cierre.fecha);
+    if (ok) {
+        toastSuccess(`Día ${cierre.fecha} reabierto.`);
+    } else {
+        toastError(cierresStore.error || "No se pudo reabrir el día.");
+    }
+}
 </script>
 
 <template>
@@ -83,6 +100,7 @@ async function handleCerrarDia() {
                     <th>Total Costo</th>
                     <th>Ganancia</th>
                     <th>Desglose</th>
+                    <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
@@ -101,9 +119,18 @@ async function handleCerrarDia() {
                                 {{ expanded.has(cierre.id) ? "Ocultar" : "Ver" }}
                             </button>
                         </td>
+                        <td>
+                            <button
+                                v-if="canReabrirCierre()"
+                                @click="handleReabrir(cierre)"
+                                class="btn-secondary btn-small"
+                            >
+                                Reabrir
+                            </button>
+                        </td>
                     </tr>
                     <tr v-if="expanded.has(cierre.id)">
-                        <td colspan="6" class="tipos-cell">
+                        <td colspan="7" class="tipos-cell">
                             <div v-if="cierre.tipos.length === 0" class="empty-tipos">
                                 Sin ventas en este día.
                             </div>

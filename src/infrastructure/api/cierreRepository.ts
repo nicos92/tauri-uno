@@ -23,4 +23,11 @@ export class CierresApiRepository {
       request,
     });
   }
+
+  async reabrirCierre(fecha: string): Promise<void> {
+    return await invoke<void>("reabrir_cierre", {
+      userId: this.getCurrentUserId(),
+      request: { fecha },
+    });
+  }
 }

@@ -24,7 +24,9 @@ pub use audit_log_commands::{get_audit_logs, AuditLogAppState};
 pub use categoria_commands::{
     create_categoria, delete_categoria, get_all_categorias, update_categoria, CategoriaAppState,
 };
-pub use cierre_commands::{crear_cierre, get_all_cierres, CierreAppState};
+pub use cierre_commands::{
+    crear_cierre, get_all_cierres, is_dia_cerrado, reabrir_cierre, CierreAppState,
+};
 pub use proveedor_commands::{
     create_proveedor, delete_proveedor, get_all_proveedores, get_proveedor_by_id, update_proveedor,
     ProveedorAppState,

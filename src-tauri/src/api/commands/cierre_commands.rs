@@ -68,6 +68,37 @@ pub fn crear_cierre(
 }
 
 #[tauri::command]
+pub fn reabrir_cierre(
+    user_id: i64,
+    request: CrearCierreRequest,
+    state: State<CierreAppState>,
+) -> Result<(), AppError> {
+    let service = state
+        .cierre_service
+        .lock()
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+    check_permission(user_id, PermissionCode::ReopenCierre)?;
+    service.reabrir_cierre(&request.fecha)?;
+    log_audit(
+        user_id,
+        AuditScreen::Cierres,
+        AuditAction::Delete,
+        Some(format!("Cierre del día {} reabierto", request.fecha)),
+    )?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn is_dia_cerrado(user_id: i64, state: State<CierreAppState>) -> Result<bool, AppError> {
+    let service = state
+        .cierre_service
+        .lock()
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+    check_permission(user_id, PermissionCode::CreateVenta)?;
+    service.is_dia_cerrado()
+}
+
+#[tauri::command]
 pub fn get_all_cierres(
     user_id: i64,
     state: State<CierreAppState>,

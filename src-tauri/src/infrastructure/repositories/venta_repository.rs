@@ -25,6 +25,11 @@ impl VentaRepository for SqliteVentaRepository {
         let mut conn = DB.lock().map_err(|e| AppError::Internal(e.to_string()))?;
         let tx = conn.transaction()?;
 
+        let hoy = chrono::Local::now().format("%Y-%m-%d").to_string();
+        if Self::is_dia_cerrado(&tx, &hoy)? {
+            return Err(AppError::DiaCerrado);
+        }
+
         let mut items: Vec<VentaDetalle> = Vec::new();
         let mut total = 0.0;
 
@@ -151,10 +156,12 @@ impl VentaRepository for SqliteVentaRepository {
         let mut conn = DB.lock().map_err(|e| AppError::Internal(e.to_string()))?;
         let tx = conn.transaction()?;
 
-        let anulada: bool = tx
-            .query_row("SELECT anulada FROM ventas WHERE id = ?1", params![id], |row| {
-                row.get(0)
-            })
+        let (anulada, fecha): (bool, String) = tx
+            .query_row(
+                "SELECT anulada, fecha FROM ventas WHERE id = ?1",
+                params![id],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
             .map_err(|e| match e {
                 rusqlite::Error::QueryReturnedNoRows => AppError::VentaNotFound,
                 other => other.into(),
@@ -162,6 +169,10 @@ impl VentaRepository for SqliteVentaRepository {
 
         if anulada {
             return Err(AppError::VentaAlreadyAnulada);
+        }
+
+        if Self::is_dia_cerrado(&tx, &Self::utc_to_local_date(&fecha)?)? {
+            return Err(AppError::DiaCerrado);
         }
 
         {
@@ -190,6 +201,24 @@ impl VentaRepository for SqliteVentaRepository {
 }
 
 impl SqliteVentaRepository {
+    fn is_dia_cerrado(
+        conn: &rusqlite::Connection,
+        fecha_local: &str,
+    ) -> Result<bool, AppError> {
+        let count: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM cierres WHERE fecha = ?1",
+            params![fecha_local],
+            |row| row.get(0),
+        )?;
+        Ok(count > 0)
+    }
+
+    fn utc_to_local_date(utc_rfc3339: &str) -> Result<String, AppError> {
+        let dt = chrono::DateTime::parse_from_rfc3339(utc_rfc3339)
+            .map_err(|e| AppError::Internal(format!("Fecha inválida: {}", e)))?;
+        Ok(dt.with_timezone(&chrono::Local).format("%Y-%m-%d").to_string())
+    }
+
     fn row_to_venta(&self, row: &rusqlite::Row) -> Result<VentaWithDetalle, AppError> {
         Ok(VentaWithDetalle {
             id: row.get(0)?,

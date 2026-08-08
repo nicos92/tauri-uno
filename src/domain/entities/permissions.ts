@@ -38,6 +38,7 @@ export const PERMISSIONS = {
   VIEW_AUDITORIA: "ver_auditoria",
   VIEW_CIERRES: "ver_cierres",
   CREATE_CIERRE: "crear_cierre",
+  REABRIR_CIERRE: "reabrir_cierre",
 } as const;
 
 export type PermissionKey = keyof typeof PERMISSIONS;

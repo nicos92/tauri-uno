@@ -167,6 +167,10 @@ export function usePermissions() {
     return can(PERMISSIONS.CREATE_CIERRE);
   }
 
+  function canReabrirCierre(): boolean {
+    return can(PERMISSIONS.REABRIR_CIERRE);
+  }
+
   return {
     allPermissions,
     can,
@@ -209,5 +213,6 @@ export function usePermissions() {
     canViewAuditoria,
     canViewCierres,
     canCreateCierre,
+    canReabrirCierre,
   };
 }

@@ -118,6 +118,7 @@ onMounted(async () => {
     articulosStore.fetchArticulos(),
     tiposVentaStore.fetchTiposVenta(),
   ]);
+  await ventasStore.checkDiaCerrado();
   focusSearch();
 });
 
@@ -244,6 +245,10 @@ function generarPdf() {
             </div>
         </div>
 
+        <div v-if="ventasStore.diaCerrado" class="dia-cerrado-banner">
+            Día cerrado, no se pueden ingresar más ventas.
+        </div>
+
         <div class="venta-section header-section">
             <div class="form-group obs-group">
                 <label>Observación</label>
@@ -286,7 +291,7 @@ function generarPdf() {
                     type="button"
                     @click="handleCreate"
                     class="btn-primary"
-                    :disabled="!carritoValido"
+                    :disabled="!carritoValido || ventasStore.diaCerrado"
                 >
                     Registrar Venta
                 </button>
@@ -499,6 +504,16 @@ function generarPdf() {
 
 .header-left h1 {
     margin: 0;
+}
+
+.dia-cerrado-banner {
+    color: #e53e3e;
+    background: rgba(229, 62, 62, 0.1);
+    border: 1px solid rgba(229, 62, 62, 0.3);
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    margin-bottom: 1.5rem;
+    font-weight: 600;
 }
 
 .venta-section {

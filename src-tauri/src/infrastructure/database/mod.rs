@@ -70,6 +70,7 @@ const PERMISSIONS: &[&str] = &[
     // Cierres del día
     "ver_cierres",
     "crear_cierre",
+    "reabrir_cierre",
 ];
 
 pub fn init_database() -> Result<Connection, rusqlite::Error> {

@@ -32,7 +32,7 @@ const filteredVentas = computed(() => {
 });
 
 onMounted(async () => {
-    await ventasStore.fetchVentas();
+    await Promise.all([ventasStore.fetchVentas(), ventasStore.checkDiaCerrado()]);
 });
 
 function irANuevaVenta() {
@@ -70,9 +70,14 @@ function generarPdfDetalle() {
                 v-if="canCreateVenta()"
                 @click="irANuevaVenta"
                 class="btn-primary"
+                :disabled="ventasStore.diaCerrado"
             >
                 Nueva Venta
             </button>
+        </div>
+
+        <div v-if="ventasStore.diaCerrado" class="dia-cerrado-banner">
+            Día cerrado, no se pueden ingresar más ventas.
         </div>
 
         <div class="search-bar">
@@ -288,6 +293,16 @@ function generarPdfDetalle() {
 
 .page-header h1 {
     margin: 0;
+}
+
+.dia-cerrado-banner {
+    color: #e53e3e;
+    background: rgba(229, 62, 62, 0.1);
+    border: 1px solid rgba(229, 62, 62, 0.3);
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    margin-bottom: 1.5rem;
+    font-weight: 600;
 }
 
 .search-bar {

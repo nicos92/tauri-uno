@@ -42,6 +42,7 @@ pub enum PermissionCode {
     ViewAuditoria,
     ViewCierres,
     CreateCierre,
+    ReopenCierre,
 }
 
 impl PermissionCode {
@@ -86,6 +87,7 @@ impl PermissionCode {
             PermissionCode::ViewAuditoria => "ver_auditoria",
             PermissionCode::ViewCierres => "ver_cierres",
             PermissionCode::CreateCierre => "crear_cierre",
+            PermissionCode::ReopenCierre => "reabrir_cierre",
         }
     }
 
@@ -130,6 +132,7 @@ impl PermissionCode {
             PermissionCode::ViewAuditoria,
             PermissionCode::ViewCierres,
             PermissionCode::CreateCierre,
+            PermissionCode::ReopenCierre,
         ]
     }
 }

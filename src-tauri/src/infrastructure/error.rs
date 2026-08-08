@@ -117,6 +117,15 @@ pub enum AppError {
     #[error("Cierre not found")]
     CierreNotFound,
 
+    #[error("Cierre sin ventas")]
+    CierreSinVentas,
+
+    #[error("Cierre fecha futura")]
+    CierreFechaFutura,
+
+    #[error("Día cerrado")]
+    DiaCerrado,
+
     #[error("Internal error: {0}")]
     Internal(String),
 }
@@ -185,6 +194,9 @@ impl AppError {
             AppError::TipoVentaNombreInvalido => "tipo_venta_nombre_invalido",
             AppError::CierreYaExiste => "cierre_ya_existe",
             AppError::CierreNotFound => "cierre_not_found",
+            AppError::CierreSinVentas => "cierre_sin_ventas",
+            AppError::CierreFechaFutura => "cierre_fecha_futura",
+            AppError::DiaCerrado => "dia_cerrado",
             AppError::Internal(_) => "internal_error",
         }
     }
@@ -276,6 +288,15 @@ impl AppError {
                 "Ya existe un cierre para esa fecha.".to_string()
             }
             AppError::CierreNotFound => "El cierre no existe.".to_string(),
+            AppError::CierreSinVentas => {
+                "El día seleccionado no tiene ventas para cerrar.".to_string()
+            }
+            AppError::CierreFechaFutura => {
+                "No se puede cerrar una fecha futura.".to_string()
+            }
+            AppError::DiaCerrado => {
+                "Día cerrado, no se pueden ingresar más ventas.".to_string()
+            }
             AppError::Internal(_) => {
                 "Ocurrió un error inesperado. Intente nuevamente.".to_string()
             }
