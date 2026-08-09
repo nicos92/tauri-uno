@@ -16,6 +16,36 @@ import ConfirmDialog from "./presentation/components/ConfirmDialog.vue";
   box-sizing: border-box;
 }
 
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button,
+select {
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+select {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.5rem;
+}
+
+button:not(.btn-icon).btn-primary,
+button:not(.btn-icon).btn-secondary,
+button:not(.btn-icon).btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.2;
+}
+
 html,
 body,
 #app {
@@ -33,6 +63,7 @@ body {
 }
 
 html[data-theme="light"] {
+  color-scheme: light;
   --color-bg: #f3f4f6;
   --color-surface: #ffffff;
   --color-surface-2: #f8fafc;
@@ -42,6 +73,7 @@ html[data-theme="light"] {
 }
 
 html[data-theme="dark"] {
+  color-scheme: dark;
   --color-bg: #020617;
   --color-surface: #0f172a;
   --color-surface-2: #111c33;
