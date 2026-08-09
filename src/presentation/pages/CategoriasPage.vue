@@ -3,6 +3,7 @@ import { ref, onMounted } from "vue";
 import { useCategoriasStore } from "../stores";
 import { usePermissions } from "../composables/usePermissions";
 import { useToasts } from "../composables/useToasts";
+import { useConfirm } from "../composables/useConfirm";
 import type {
     Categoria,
     CreateCategoriaRequest,
@@ -12,6 +13,7 @@ import type {
 const categoriasStore = useCategoriasStore();
 const { canCreateCategoria, canUpdateCategoria, canDeleteCategoria } =
     usePermissions();
+const { confirm } = useConfirm();
 
 const showCreateModal = ref(false);
 const showEditModal = ref(false);
@@ -58,7 +60,7 @@ async function handleUpdate() {
 }
 
 async function handleDelete(id: number) {
-    if (confirm("¿Está seguro de eliminar esta categoría?")) {
+    if (await confirm({ message: "¿Está seguro de eliminar esta categoría?" })) {
         const success = await categoriasStore.deleteCategoria(id);
         if (!success) {
             useToasts().error(

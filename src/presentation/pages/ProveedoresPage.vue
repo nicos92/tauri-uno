@@ -3,6 +3,7 @@ import { ref, onMounted } from "vue";
 import { useProveedoresStore } from "../stores";
 import { usePermissions } from "../composables/usePermissions";
 import { useToasts } from "../composables/useToasts";
+import { useConfirm } from "../composables/useConfirm";
 import type {
     Proveedor,
     CreateProveedorRequest,
@@ -12,6 +13,7 @@ import type {
 const proveedoresStore = useProveedoresStore();
 const { canCreateProveedor, canUpdateProveedor, canDeleteProveedor } =
     usePermissions();
+const { confirm } = useConfirm();
 
 const showCreateModal = ref(false);
 const showEditModal = ref(false);
@@ -89,7 +91,7 @@ async function handleUpdate() {
 }
 
 async function handleDelete(id: number) {
-    if (confirm("¿Está seguro de eliminar este proveedor?")) {
+    if (await confirm({ message: "¿Está seguro de eliminar este proveedor?" })) {
         const success = await proveedoresStore.deleteProveedor(id);
         if (!success) {
             useToasts().error(

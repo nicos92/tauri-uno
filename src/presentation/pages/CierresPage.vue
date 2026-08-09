@@ -3,12 +3,14 @@ import { ref, onMounted } from "vue";
 import { useCierresStore } from "../stores";
 import { usePermissions } from "../composables/usePermissions";
 import { useToasts } from "../composables/useToasts";
+import { useConfirm } from "../composables/useConfirm";
 import { formatMoney } from "../utils/format";
 import type { CierreWithTipos } from "../../domain/entities";
 
 const cierresStore = useCierresStore();
 const { canCreateCierre, canReabrirCierre } = usePermissions();
 const { error: toastError, success: toastSuccess } = useToasts();
+const { confirm } = useConfirm();
 
 function todayLocal(): string {
     const now = new Date();
@@ -41,9 +43,10 @@ async function handleCerrarDia() {
         return;
     }
     if (
-        !confirm(
-            `¿Está seguro de cerrar el día ${fecha.value}? Se guardará un snapshot de las ventas del día.`,
-        )
+        !(await confirm({
+            message: `¿Está seguro de cerrar el día ${fecha.value}? Se guardará un snapshot de las ventas del día.`,
+            confirmText: "Cerrar día",
+        }))
     ) {
         return;
     }
@@ -57,9 +60,10 @@ async function handleCerrarDia() {
 
 async function handleReabrir(cierre: CierreWithTipos) {
     if (
-        !confirm(
-            `¿Está seguro de reabrir el día ${cierre.fecha}? El cierre se eliminará y se podrán registrar nuevas ventas.`,
-        )
+        !(await confirm({
+            message: `¿Está seguro de reabrir el día ${cierre.fecha}? El cierre se eliminará y se podrán registrar nuevas ventas.`,
+            confirmText: "Reabrir",
+        }))
     ) {
         return;
     }

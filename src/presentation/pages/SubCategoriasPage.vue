@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from "vue";
 import { useSubCategoriasStore, useCategoriasStore } from "../stores";
 import { usePermissions } from "../composables/usePermissions";
 import { useToasts } from "../composables/useToasts";
+import { useConfirm } from "../composables/useConfirm";
 import type {
     SubCategoria,
     CreateSubCategoriaRequest,
@@ -13,6 +14,7 @@ const subCategoriasStore = useSubCategoriasStore();
 const categoriasStore = useCategoriasStore();
 const { canCreateSubCategoria, canUpdateSubCategoria, canDeleteSubCategoria } =
     usePermissions();
+const { confirm } = useConfirm();
 
 const showCreateModal = ref(false);
 const showEditModal = ref(false);
@@ -82,7 +84,7 @@ async function handleUpdate() {
 }
 
 async function handleDelete(id: number) {
-    if (confirm("¿Está seguro de eliminar esta subcategoría?")) {
+    if (await confirm({ message: "¿Está seguro de eliminar esta subcategoría?" })) {
         const success = await subCategoriasStore.deleteSubCategoria(id);
         if (!success) {
             useToasts().error(

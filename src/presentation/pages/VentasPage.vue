@@ -4,6 +4,7 @@ import { useRouter } from "vue-router";
 import { useVentasStore } from "../stores";
 import { usePermissions } from "../composables/usePermissions";
 import { useToasts } from "../composables/useToasts";
+import { useConfirm } from "../composables/useConfirm";
 import { formatMoney } from "../utils/format";
 import type { VentaWithDetalle } from "../../domain/entities";
 
@@ -11,6 +12,7 @@ const router = useRouter();
 const ventasStore = useVentasStore();
 const { canCreateVenta, canAnularVenta, canGenerarPresupuesto } = usePermissions();
 const { error: toastError, success: toastSuccess } = useToasts();
+const { confirm } = useConfirm();
 
 const showDetailModal = ref(false);
 const selectedVenta = ref<VentaWithDetalle | null>(null);
@@ -45,7 +47,13 @@ function openDetailModal(venta: VentaWithDetalle) {
 }
 
 async function handleAnular(id: number) {
-    if (!confirm("¿Está seguro de anular esta venta? Se devolverán las cantidades al stock.")) {
+    if (
+        !(await confirm({
+            message:
+                "¿Está seguro de anular esta venta? Se devolverán las cantidades al stock.",
+            confirmText: "Anular venta",
+        }))
+    ) {
         return;
     }
     const success = await ventasStore.anularVenta(id);

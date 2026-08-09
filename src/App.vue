@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import Toasts from "./presentation/components/Toasts.vue";
+import ConfirmDialog from "./presentation/components/ConfirmDialog.vue";
 </script>
 
 <template>
   <router-view />
   <Toasts />
+  <ConfirmDialog />
 </template>
 
 <style>
