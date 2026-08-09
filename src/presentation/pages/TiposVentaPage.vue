@@ -3,6 +3,7 @@ import { ref, onMounted } from "vue";
 import { useTiposVentaStore } from "../stores";
 import { usePermissions } from "../composables/usePermissions";
 import { useToasts } from "../composables/useToasts";
+import { useConfirm } from "../composables/useConfirm";
 import type {
     CreateTipoVentaRequest,
     TipoVenta,
@@ -12,6 +13,7 @@ import type {
 const tiposVentaStore = useTiposVentaStore();
 const { canCreateTipoVenta, canUpdateTipoVenta, canDeleteTipoVenta } =
     usePermissions();
+const { confirm } = useConfirm();
 
 const showCreateModal = ref(false);
 const showEditModal = ref(false);
@@ -64,7 +66,7 @@ async function handleUpdate() {
 }
 
 async function handleDelete(id: number) {
-    if (confirm("¿Está seguro de eliminar este tipo de venta?")) {
+    if (await confirm({ message: "¿Está seguro de eliminar este tipo de venta?" })) {
         const success = await tiposVentaStore.deleteTipoVenta(id);
         if (!success) {
             useToasts().error(
