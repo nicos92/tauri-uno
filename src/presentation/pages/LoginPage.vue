@@ -85,7 +85,7 @@ async function handleLogin() {
     left: 50%;
     top: 50%;
     transform: translate(-70%, -50%);
-    background-image: url("/tauri.svg");
+    background-image: url("/lightBulb.svg");
     background-repeat: no-repeat;
     background-size: contain;
     background-position: center;
