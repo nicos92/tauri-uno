@@ -126,6 +126,9 @@ pub enum AppError {
     #[error("Día cerrado")]
     DiaCerrado,
 
+    #[error("Día cerrado, no se puede anular la venta")]
+    DiaCerradoAnulacion,
+
     #[error("Internal error: {0}")]
     Internal(String),
 }
@@ -197,6 +200,7 @@ impl AppError {
             AppError::CierreSinVentas => "cierre_sin_ventas",
             AppError::CierreFechaFutura => "cierre_fecha_futura",
             AppError::DiaCerrado => "dia_cerrado",
+            AppError::DiaCerradoAnulacion => "dia_cerrado_anulacion",
             AppError::Internal(_) => "internal_error",
         }
     }
@@ -296,6 +300,9 @@ impl AppError {
             }
             AppError::DiaCerrado => {
                 "Día cerrado, no se pueden ingresar más ventas.".to_string()
+            }
+            AppError::DiaCerradoAnulacion => {
+                "El día está cerrado, no se puede anular la venta.".to_string()
             }
             AppError::Internal(_) => {
                 "Ocurrió un error inesperado. Intente nuevamente.".to_string()

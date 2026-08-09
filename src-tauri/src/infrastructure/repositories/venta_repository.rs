@@ -172,7 +172,7 @@ impl VentaRepository for SqliteVentaRepository {
         }
 
         if Self::is_dia_cerrado(&tx, &Self::utc_to_local_date(&fecha)?)? {
-            return Err(AppError::DiaCerrado);
+            return Err(AppError::DiaCerradoAnulacion);
         }
 
         {
