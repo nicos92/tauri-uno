@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import { useRouter, useRoute } from "vue-router";
+import { useRoute } from "vue-router";
 import { useAuthStore } from "../stores";
+import TopBar from "../components/TopBar.vue";
 
-const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
 
@@ -95,11 +95,6 @@ const menuItems = computed(() => {
 function isActive(name: string): boolean {
     return route.name === name;
 }
-
-function handleLogout() {
-    authStore.logout();
-    router.push({ name: "login" });
-}
 </script>
 
 <template>
@@ -111,7 +106,7 @@ function handleLogout() {
                         src="/svg/thunderfill.svg"
                         alt="logo tienda"
                         class="nav-icon"
-                    />Calise App
+                    />Casa Calise App
                 </h2>
                 <button
                     @click="isSidebarOpen = !isSidebarOpen"
@@ -140,25 +135,15 @@ function handleLogout() {
             </nav>
 
             <div class="sidebar-footer">
-                <div v-if="isSidebarOpen" class="user-info">
-                    <span>{{ authStore.user?.username }}</span>
-                </div>
-                <button
-                    @click="handleLogout"
-                    class="logout-btn"
-                    title="Cerrar Sesión"
-                >
-                    <img
-                        src="/svg/logout.svg"
-                        alt="Cerrar Sesión"
-                        class="nav-icon"
-                    />
-                </button>
+                <span class="footer-hint">Calise App</span>
             </div>
         </aside>
 
         <main class="main-content">
-            <router-view />
+            <TopBar />
+            <div class="page-container">
+                <router-view />
+            </div>
         </main>
     </div>
 </template>
@@ -187,7 +172,8 @@ function handleLogout() {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 1rem;
+    height: 56px;
+    padding: 0 1rem;
     border-bottom: 1px solid #334155;
 }
 
@@ -243,29 +229,22 @@ function handleLogout() {
 .sidebar-footer {
     padding: 1rem;
     border-top: 1px solid #334155;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
 }
 
-.user-info {
-    font-size: 0.9rem;
-    color: #94a3b8;
-}
-
-.logout-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0.25rem;
-}
-
-.logout-btn img {
-    width: 20px;
-    height: 20px;
+.footer-hint {
+    font-size: 0.8rem;
+    color: #475569;
 }
 
 .main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.page-container {
     flex: 1;
     overflow-y: auto;
 }
