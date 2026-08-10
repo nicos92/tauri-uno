@@ -37,51 +37,53 @@ async function handleLogin() {
 
 <template>
     <div class="login-container">
-        <div class="login-card">
-            <h1>Iniciar Sesión</h1>
+        <div class="login-inner">
+            <h1 v-if="!dbReady" class="app-name">Casa Calise App</h1>
 
-            <div v-if="passwordChanged" class="success-message">
-                Contraseña cambiada correctamente. Vuelva a ingresar.
-            </div>
+            <transition name="fade-slide">
+                <div v-if="dbReady" class="login-card">
+                    <h2>Iniciar Sesión</h2>
 
-            <div v-if="!dbReady" class="info-message">
-                Inicializando base de datos...
-            </div>
+                    <div v-if="passwordChanged" class="success-message">
+                        Contraseña cambiada correctamente. Vuelva a ingresar.
+                    </div>
 
-            <form @submit.prevent="handleLogin">
-                <div class="form-group">
-                    <label for="username">Usuario</label>
-                    <input
-                        id="username"
-                        v-model="username"
-                        type="text"
-                        placeholder="Ingrese su usuario"
-                        :disabled="isLoading || !dbReady"
-                    />
+                    <form @submit.prevent="handleLogin">
+                        <div class="form-group">
+                            <label for="username">Usuario</label>
+                            <input
+                                id="username"
+                                v-model="username"
+                                type="text"
+                                placeholder="Ingrese su usuario"
+                                :disabled="isLoading"
+                            />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="password">Contraseña</label>
+                            <input
+                                id="password"
+                                v-model="password"
+                                type="password"
+                                placeholder="Ingrese su contraseña"
+                                :disabled="isLoading"
+                            />
+                        </div>
+
+                        <div v-if="authStore.error" class="error-message">
+                            {{ authStore.error }}
+                        </div>
+
+                        <button
+                            type="submit"
+                            :disabled="isLoading || !username || !password"
+                        >
+                            {{ isLoading ? "Iniciando sesión..." : "Entrar" }}
+                        </button>
+                    </form>
                 </div>
-
-                <div class="form-group">
-                    <label for="password">Contraseña</label>
-                    <input
-                        id="password"
-                        v-model="password"
-                        type="password"
-                        placeholder="Ingrese su contraseña"
-                        :disabled="isLoading || !dbReady"
-                    />
-                </div>
-
-                <div v-if="authStore.error" class="error-message">
-                    {{ authStore.error }}
-                </div>
-
-                <button
-                    type="submit"
-                    :disabled="isLoading || !dbReady || !username || !password"
-                >
-                    {{ isLoading ? "Iniciando sesión..." : "Entrar" }}
-                </button>
-            </form>
+            </transition>
         </div>
     </div>
 </template>
@@ -90,11 +92,30 @@ async function handleLogin() {
 .login-container {
     min-height: 100vh;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     background: var(--color-bg);
     position: relative;
     overflow: hidden;
+}
+
+.login-inner {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.app-name {
+    margin: 0;
+    font-size: 2.75rem;
+    font-weight: 700;
+    text-align: center;
+    color: #667eeaaa;
 }
 
 .login-container::before {
@@ -114,17 +135,16 @@ async function handleLogin() {
 }
 
 .login-card {
-    background: var(--color-surface);
+    background: color-mix(in srgb, var(--color-surface) 75%, transparent);
     padding: 2rem;
     border-radius: 12px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
     width: 100%;
     max-width: 400px;
-    position: relative;
-    z-index: 1;
+    backdrop-filter: blur(4px);
 }
 
-h1 {
+h2 {
     margin: 0 0 1.5rem;
     text-align: center;
     color: var(--color-text);
@@ -188,15 +208,6 @@ button:disabled {
     text-align: center;
 }
 
-.info-message {
-    color: #2b6cb0;
-    margin-bottom: 1rem;
-    padding: 0.75rem;
-    background: #bee3f8;
-    border-radius: 6px;
-    text-align: center;
-}
-
 .success-message {
     color: #2f855a;
     margin-bottom: 1rem;
@@ -204,6 +215,24 @@ button:disabled {
     background: #c6f6d5;
     border-radius: 6px;
     text-align: center;
+}
+
+.fade-slide-enter-active {
+    transition: opacity 0.45s ease, transform 0.45s ease;
+}
+
+.fade-slide-leave-active {
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.fade-slide-enter-from {
+    opacity: 0;
+    transform: translateY(24px);
+}
+
+.fade-slide-leave-to {
+    opacity: 0;
+    transform: translateY(12px);
 }
 
 </style>
