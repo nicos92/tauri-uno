@@ -102,11 +102,7 @@ function isActive(name: string): boolean {
         <aside :class="['sidebar', { collapsed: !isSidebarOpen }]">
             <div class="sidebar-header">
                 <h2 v-if="isSidebarOpen">
-                    <img
-                        src="/svg/thunderfill.svg"
-                        alt="logo tienda"
-                        class="nav-icon"
-                    />Casa Calise App
+                    Casa Calise App
                 </h2>
                 <button
                     @click="isSidebarOpen = !isSidebarOpen"
