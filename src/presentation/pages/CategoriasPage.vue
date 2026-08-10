@@ -90,6 +90,7 @@ async function handleDelete(id: number) {
             {{ categoriasStore.error }}
         </div>
 
+        <div class="table-wrapper">
         <table v-if="!categoriasStore.loading" class="categorias-table">
             <thead>
                 <tr>
@@ -124,6 +125,7 @@ async function handleDelete(id: number) {
                 </tr>
             </tbody>
         </table>
+        </div>
 
         <div v-if="categoriasStore.categorias.length === 0" class="empty-state">
             No hay categorías registradas
@@ -231,12 +233,15 @@ async function handleDelete(id: number) {
     cursor: pointer;
 }
 
+.table-wrapper {
+    overflow-x: auto;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
 .categorias-table {
     width: 100%;
     background: var(--color-surface);
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .categorias-table th,

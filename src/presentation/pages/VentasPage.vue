@@ -103,6 +103,7 @@ function generarPdfDetalle() {
             {{ ventasStore.error }}
         </div>
 
+        <div class="table-wrapper">
         <table v-if="!ventasStore.loading" class="ventas-table">
             <thead>
                 <tr>
@@ -159,6 +160,7 @@ function generarPdfDetalle() {
                 </tr>
             </tbody>
         </table>
+        </div>
 
         <div v-if="filteredVentas.length === 0" class="empty-state">
             No hay ventas que coincidan con la búsqueda
@@ -355,13 +357,16 @@ function generarPdfDetalle() {
     cursor: pointer;
 }
 
+.table-wrapper {
+    overflow-x: auto;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
 .ventas-table,
 .cart-table {
     width: 100%;
     background: var(--color-surface);
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .ventas-table th,

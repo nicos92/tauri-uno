@@ -120,6 +120,7 @@ async function handleDelete(id: number) {
             {{ subCategoriasStore.error }}
         </div>
 
+        <div class="table-wrapper">
         <table
             v-if="!(subCategoriasStore.loading || categoriasStore.loading)"
             class="sub-categorias-table"
@@ -159,6 +160,7 @@ async function handleDelete(id: number) {
                 </tr>
             </tbody>
         </table>
+        </div>
 
         <div
             v-if="subCategoriasStore.subCategorias.length === 0"
@@ -311,12 +313,15 @@ async function handleDelete(id: number) {
     cursor: pointer;
 }
 
+.table-wrapper {
+    overflow-x: auto;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
 .sub-categorias-table {
     width: 100%;
     background: var(--color-surface);
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .sub-categorias-table th,

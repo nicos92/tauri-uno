@@ -96,6 +96,7 @@ async function handleDelete(id: number) {
             {{ tiposVentaStore.error }}
         </div>
 
+        <div class="table-wrapper">
         <table v-if="!tiposVentaStore.loading" class="tipos-table">
             <thead>
                 <tr>
@@ -132,6 +133,7 @@ async function handleDelete(id: number) {
                 </tr>
             </tbody>
         </table>
+        </div>
 
         <div v-if="tiposVentaStore.tipos.length === 0" class="empty-state">
             No hay tipos de venta registrados
@@ -255,12 +257,15 @@ async function handleDelete(id: number) {
     cursor: pointer;
 }
 
+.table-wrapper {
+    overflow-x: auto;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
 .tipos-table {
     width: 100%;
     background: var(--color-surface);
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .tipos-table th,

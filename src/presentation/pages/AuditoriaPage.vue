@@ -117,6 +117,7 @@ onMounted(() => {
             {{ auditStore.error }}
         </div>
 
+        <div class="table-wrapper">
         <table v-if="!auditStore.loading" class="audit-table">
             <thead>
                 <tr>
@@ -143,6 +144,7 @@ onMounted(() => {
                 </tr>
             </tbody>
         </table>
+        </div>
 
         <div
             v-if="!auditStore.loading && auditStore.logs.length === 0"
@@ -241,12 +243,15 @@ select.filter-input {
     cursor: not-allowed;
 }
 
+.table-wrapper {
+    overflow-x: auto;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
 .audit-table {
     width: 100%;
     background: var(--color-surface);
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .audit-table th,
