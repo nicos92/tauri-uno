@@ -27,6 +27,10 @@ export function usePermissions() {
     return can(PERMISSIONS.DELETE_USER);
   }
 
+  function canChangeUserPassword(): boolean {
+    return can(PERMISSIONS.CHANGE_USER_PASSWORD);
+  }
+
   function canViewPermissions(): boolean {
     return can(PERMISSIONS.VIEW_PERMISSIONS);
   }
@@ -178,6 +182,7 @@ export function usePermissions() {
     canCreateUser,
     canUpdateUser,
     canDeleteUser,
+    canChangeUserPassword,
     canViewPermissions,
     canAssignPermission,
     canRemovePermission,

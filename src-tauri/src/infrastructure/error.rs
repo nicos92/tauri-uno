@@ -84,6 +84,9 @@ pub enum AppError {
     #[error("Cannot delete the admin user")]
     CannotDeleteAdmin,
 
+    #[error("Password cannot be empty")]
+    EmptyPassword,
+
     #[error("Venta not found")]
     VentaNotFound,
 
@@ -186,6 +189,7 @@ impl AppError {
             AppError::ProveedorHasArticulos => "proveedor_has_articulos",
             AppError::CannotDeleteSelf => "cannot_delete_self",
             AppError::CannotDeleteAdmin => "cannot_delete_admin",
+            AppError::EmptyPassword => "empty_password",
             AppError::VentaNotFound => "venta_not_found",
             AppError::VentaAlreadyAnulada => "venta_already_anulada",
             AppError::InsufficientStock => "insufficient_stock",
@@ -265,6 +269,9 @@ impl AppError {
             }
             AppError::CannotDeleteAdmin => {
                 "No se puede eliminar el usuario administrador.".to_string()
+            }
+            AppError::EmptyPassword => {
+                "La contraseña no puede estar vacía.".to_string()
             }
             AppError::VentaNotFound => "La venta no existe.".to_string(),
             AppError::VentaAlreadyAnulada => "La venta ya fue anulada.".to_string(),

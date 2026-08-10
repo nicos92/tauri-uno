@@ -307,6 +307,7 @@ const result = await invoke<UserResponse>("create_user", {
 | `create_user` | Crear nuevo usuario |
 | `get_all_users` | Listar todos los usuarios |
 | `update_user` | Actualizar usuario |
+| `change_password` | Cambiar contraseña (propia o de otro usuario con permiso `cambiar_contrasena_usuario`) |
 | `delete_user` | Eliminar usuario |
 | `get_user_permissions` | Obtener permisos de un usuario |
 | `get_all_permissions` | Listar todos los permisos |
@@ -348,8 +349,8 @@ const result = await invoke<UserResponse>("create_user", {
 3. **No olvidar el `.value`** al acceder a refs de Vue
 4. **En Rust, siempre manejar `Result` con `?` o match**
 5. **No hardcodear secrets** - usar variables de entorno
-6. **DB global** - `infrastructure::database::DB` es un `Lazy<Mutex<Connection>>` (rusqlite no es `Sync`); todos los repos lo bloquean. El esquema se crea en el primer arranque en el directorio de datos de `ProjectDirs` (`app.db`), sin migraciones. Se siembran 27 permisos y el usuario `admin` / `admin123` con todos los permisos
-7. **Sincronizar permisos en 3 lugares** (strings en español snake_case, ej. `ver_usuarios`): Rust `PermissionCode::as_str()` (`domain/entities/permission_code.rs`), TS `PERMISSIONS` (`src/domain/entities/permissions.ts`) y la lista seed (`infrastructure/database/mod.rs`)
+6. **DB global** - `infrastructure::database::DB` es un `Lazy<Mutex<Connection>>` (rusqlite no es `Sync`); todos los repos lo bloquean. El esquema se crea en el primer arranque en el directorio de datos de `ProjectDirs` (`app.db`), sin migraciones. Se siembran 41 permisos y el usuario `admin` / `admin123` con todos los permisos
+7. **Sincronizar permisos en 3 lugares** (strings en español snake_case, ej. `ver_usuarios`): Rust `PermissionCode::as_str()` (`domain/entities/permission_code.rs`), TS `PERMISSIONS` (`src/domain/entities/permissions.ts`) y la lista seed (`infrastructure/database/mod.rs`). Agregar también el helper correspondiente en `usePermissions.ts` (frontend).
 8. **No olvidar `user_id` en los comandos** - Todo comando recibe `user_id: i64` como primer argumento. Los de usuarios/permisos usan `AppState` + `UserService::has_permission`; los de dominio (articulo/categoria/...) duplican un `check_permission` propio que consulta la DB directo. Respetar el patrón al agregar comandos
 9. **Registrar comandos y estados en `lib.rs`** - `.manage(...)` + `tauri::generate_handler!` en `src-tauri/src/lib.rs`
 10. **Auth en frontend** - Usuario y permisos se persisten en `localStorage` (`currentUser`, `userPermissions`). Los repos leen `getCurrentUserId()` y lo pasan como `userId` a cada `invoke`. El guard del router llama `authStore.loadFromStorage()`

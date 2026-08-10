@@ -1,14 +1,17 @@
 <script setup lang="ts">
-import { ref } from "vue";
-import { useRouter } from "vue-router";
+import { ref, computed } from "vue";
+import { useRouter, useRoute } from "vue-router";
 import { useAuthStore } from "../stores";
 
 const router = useRouter();
+const route = useRoute();
 const authStore = useAuthStore();
 
 const username = ref("");
 const password = ref("");
 const isLoading = ref(false);
+
+const passwordChanged = computed(() => route.query.passwordChanged === "1");
 
 async function handleLogin() {
     if (!username.value || !password.value) return;
@@ -27,6 +30,10 @@ async function handleLogin() {
     <div class="login-container">
         <div class="login-card">
             <h1>Iniciar Sesión</h1>
+
+            <div v-if="passwordChanged" class="success-message">
+                Contraseña cambiada correctamente. Vuelva a ingresar.
+            </div>
 
             <form @submit.prevent="handleLogin">
                 <div class="form-group">
@@ -167,4 +174,14 @@ button:disabled {
     border-radius: 6px;
     text-align: center;
 }
+
+.success-message {
+    color: #2f855a;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background: #c6f6d5;
+    border-radius: 6px;
+    text-align: center;
+}
+
 </style>

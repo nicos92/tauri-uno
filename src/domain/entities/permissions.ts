@@ -3,6 +3,7 @@ export const PERMISSIONS = {
   CREATE_USER: "crear_usuario",
   UPDATE_USER: "modificar_usuario",
   DELETE_USER: "eliminar_usuario",
+  CHANGE_USER_PASSWORD: "cambiar_contrasena_usuario",
   VIEW_PERMISSIONS: "ver_permisos",
   ASSIGN_PERMISSION: "asignar_permiso_a_usuario",
   REMOVE_PERMISSION: "quitar_permiso_a_usuario",

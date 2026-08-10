@@ -4,7 +4,8 @@ pub mod domain;
 pub mod infrastructure;
 
 use api::commands::{
-    add_permission_to_user, anular_venta, crear_cierre, create_articulo, create_categoria,
+    add_permission_to_user, anular_venta, change_password, crear_cierre, create_articulo,
+    create_categoria,
     create_permission, create_proveedor, create_stock, create_sub_categoria, create_tipo_venta,
     create_user, create_venta, delete_articulo, delete_categoria, delete_proveedor, delete_stock,
     delete_sub_categoria, delete_tipo_venta, delete_user, get_all_articulos,
@@ -39,6 +40,7 @@ pub fn run() {
             create_user,
             get_all_users,
             update_user,
+            change_password,
             delete_user,
             add_permission_to_user,
             remove_permission_from_user,

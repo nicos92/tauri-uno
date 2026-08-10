@@ -1,9 +1,9 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
-import type { User, Permission, UserPermission } from "../../domain/entities";
+import type { User, Permission, UserPermission, ChangePasswordRequest } from "../../domain/entities";
 import { toErrorMessage } from "../../infrastructure/api/errorHandler";
 import { UserApiRepository } from "../../infrastructure/api";
-import { LoginUseCase, CreateUserUseCase, GetAllUsersUseCase, UpdateUserUseCase, DeleteUserUseCase, ManagePermissionsUseCase } from "../../application/usecases";
+import { LoginUseCase, CreateUserUseCase, GetAllUsersUseCase, UpdateUserUseCase, DeleteUserUseCase, ManagePermissionsUseCase, ChangePasswordUseCase } from "../../application/usecases";
 
 const repository = new UserApiRepository();
 
@@ -14,6 +14,7 @@ export const useAuthStore = defineStore("auth", () => {
   const error = ref<string | null>(null);
 
   const loginUseCase = new LoginUseCase(repository);
+  const changePasswordUseCase = new ChangePasswordUseCase(repository);
 
   function hasPermission(permission: string): boolean {
     return permissions.value.includes(permission);
@@ -43,6 +44,23 @@ export const useAuthStore = defineStore("auth", () => {
     sessionStorage.removeItem("userPermissions");
   }
 
+  async function changeOwnPassword(currentPassword: string, newPassword: string): Promise<boolean> {
+    error.value = null;
+    if (!user.value) return false;
+    try {
+      const request: ChangePasswordRequest = {
+        target_user_id: user.value.id,
+        current_password: currentPassword,
+        new_password: newPassword,
+      };
+      await changePasswordUseCase.execute(request);
+      return true;
+    } catch (e) {
+      error.value = toErrorMessage(e);
+      return false;
+    }
+  }
+
   function loadFromStorage() {
     const storedUser = sessionStorage.getItem("currentUser");
     const storedPermissions = sessionStorage.getItem("userPermissions");
@@ -60,6 +78,7 @@ export const useAuthStore = defineStore("auth", () => {
     error,
     login,
     logout,
+    changeOwnPassword,
     hasPermission,
     loadFromStorage,
   };
@@ -74,6 +93,7 @@ export const useUsersStore = defineStore("users", () => {
   const getAllUsersUseCase = new GetAllUsersUseCase(repository);
   const updateUserUseCase = new UpdateUserUseCase(repository);
   const deleteUserUseCase = new DeleteUserUseCase(repository);
+  const changePasswordUseCase = new ChangePasswordUseCase(repository);
 
   async function fetchUsers() {
     loading.value = true;
@@ -126,6 +146,22 @@ export const useUsersStore = defineStore("users", () => {
     }
   }
 
+  async function changePassword(userId: number, newPassword: string): Promise<boolean> {
+    error.value = null;
+    try {
+      const request: ChangePasswordRequest = {
+        target_user_id: userId,
+        current_password: null,
+        new_password: newPassword,
+      };
+      await changePasswordUseCase.execute(request);
+      return true;
+    } catch (e) {
+      error.value = toErrorMessage(e);
+      return false;
+    }
+  }
+
   return {
     users,
     loading,
@@ -134,6 +170,7 @@ export const useUsersStore = defineStore("users", () => {
     createUser,
     updateUser,
     deleteUser,
+    changePassword,
   };
 });
 

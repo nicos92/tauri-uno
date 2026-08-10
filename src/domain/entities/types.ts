@@ -74,6 +74,12 @@ export interface AddPermissionRequest {
   permission_id: number;
 }
 
+export interface ChangePasswordRequest {
+  target_user_id: number;
+  current_password?: string | null;
+  new_password: string;
+}
+
 export interface CreateProveedorRequest {
   proveedor: string;
   nombre: string;

@@ -84,6 +84,13 @@ pub struct AddPermissionRequest {
     pub permission_id: i64,
 }
 
+#[derive(serde::Deserialize)]
+pub struct ChangePasswordRequest {
+    pub target_user_id: i64,
+    pub current_password: Option<String>,
+    pub new_password: String,
+}
+
 #[derive(serde::Serialize)]
 pub struct UserResponse {
     pub id: i64,
@@ -194,6 +201,40 @@ pub fn update_user(
         AuditScreen::Usuarios,
         AuditAction::Update,
         Some(format!("Usuario: {} (id {})", user.username, user.id)),
+    )?;
+    Ok(user.into())
+}
+
+#[tauri::command]
+pub fn change_password(
+    user_id: i64,
+    request: ChangePasswordRequest,
+    state: State<AppState>,
+) -> Result<UserResponse, AppError> {
+    let service = state
+        .user_service
+        .lock()
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+
+    if user_id != request.target_user_id {
+        check_permission(&service, user_id, PermissionCode::ChangeUserPassword)?;
+    }
+
+    let user = service.change_password(
+        user_id,
+        request.target_user_id,
+        request.current_password,
+        request.new_password,
+    )?;
+
+    log_audit(
+        user_id,
+        AuditScreen::Usuarios,
+        AuditAction::Update,
+        Some(format!(
+            "Contraseña actualizada (usuario id {})",
+            request.target_user_id
+        )),
     )?;
     Ok(user.into())
 }

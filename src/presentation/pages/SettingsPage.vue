@@ -4,23 +4,69 @@ import { useRouter } from "vue-router";
 
 import { useAuthStore } from "../stores";
 import { useThemeStore } from "../stores/themeStore";
+import { useToasts } from "../composables/useToasts";
 
 const router = useRouter();
 
 const authStore = useAuthStore();
 const themeStore = useThemeStore();
+const { success: toastSuccess } = useToasts();
 
 const appVersion = ref("0.1.0");
+
+const showPasswordModal = ref(false);
+const currentPassword = ref("");
+const newPassword = ref("");
+const confirmPassword = ref("");
+const isSaving = ref(false);
+const formError = ref<string | null>(null);
 
 const theme = computed({
     get: () => themeStore.mode,
     set: (value) => themeStore.setMode(value),
 });
 
+function openPasswordModal() {
+    formError.value = null;
+    currentPassword.value = "";
+    newPassword.value = "";
+    confirmPassword.value = "";
+    showPasswordModal.value = true;
+}
+
+async function handleChangePassword() {
+    formError.value = null;
+    if (!currentPassword.value || !newPassword.value) {
+        formError.value = "Complete todos los campos.";
+        return;
+    }
+    if (newPassword.value !== confirmPassword.value) {
+        formError.value = "Las contraseñas no coinciden.";
+        return;
+    }
+
+    isSaving.value = true;
+    const success = await authStore.changeOwnPassword(
+        currentPassword.value,
+        newPassword.value,
+    );
+    isSaving.value = false;
+
+    if (!success) {
+        formError.value =
+            authStore.error || "No se pudo cambiar la contraseña.";
+        return;
+    }
+
+    showPasswordModal.value = false;
+    toastSuccess("Contraseña cambiada correctamente.");
+    authStore.logout();
+    router.push({ name: "login", query: { passwordChanged: "1" } });
+}
+
 function handleLogout() {
     authStore.logout();
     router.push({ name: "login" });
-
 }
 </script>
 
@@ -41,6 +87,14 @@ function handleLogout() {
                 <span class="setting-value">{{
                     authStore.user?.active ? "Activo" : "Inactivo"
                 }}</span>
+            </div>
+            <div class="setting-item">
+                <button
+                    @click="openPasswordModal"
+                    class="btn-secondary"
+                >
+                    Cambiar contraseña
+                </button>
             </div>
         </div>
 
@@ -65,6 +119,57 @@ function handleLogout() {
             <button @click="handleLogout" class="btn-danger">
                 Cerrar Sesión
             </button>
+        </div>
+
+        <div
+            v-if="showPasswordModal"
+            class="modal-overlay"
+            @click.self="showPasswordModal = false"
+        >
+            <div class="modal">
+                <h2>Cambiar contraseña</h2>
+                <form @submit.prevent="handleChangePassword">
+                    <div class="form-group">
+                        <label>Contraseña actual</label>
+                        <input
+                            v-model="currentPassword"
+                            type="password"
+                            required
+                        />
+                    </div>
+                    <div class="form-group">
+                        <label>Nueva contraseña</label>
+                        <input v-model="newPassword" type="password" required />
+                    </div>
+                    <div class="form-group">
+                        <label>Repetir nueva contraseña</label>
+                        <input
+                            v-model="confirmPassword"
+                            type="password"
+                            required
+                        />
+                    </div>
+                    <div v-if="formError" class="error-message">
+                        {{ formError }}
+                    </div>
+                    <div class="modal-actions">
+                        <button
+                            type="button"
+                            @click="showPasswordModal = false"
+                            class="btn-secondary"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            type="submit"
+                            class="btn-primary"
+                            :disabled="isSaving"
+                        >
+                            {{ isSaving ? "Guardando..." : "Guardar" }}
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </template>
@@ -134,4 +239,87 @@ h1 {
 .btn-danger:hover {
     background: #c53030;
 }
+
+.btn-secondary {
+    background: var(--color-surface-2);
+    color: var(--color-text);
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.btn-primary {
+    background: #667eea;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: #5568d3;
+}
+
+.btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal {
+    background: var(--color-surface);
+    padding: 2rem;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 400px;
+}
+
+.modal h2 {
+    margin: 0 0 1.5rem;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.form-group input[type="password"] {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: var(--color-surface);
+    color: var(--color-text);
+}
+
+.modal-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 1.5rem;
+}
+
+.error-message {
+    color: #e53e3e;
+    margin-bottom: 1rem;
+}
+
 </style>

@@ -13,6 +13,7 @@ const {
     canCreateUser,
     canUpdateUser,
     canDeleteUser,
+    canChangeUserPassword,
     canAssignPermission,
     canRemovePermission,
 } = usePermissions();
@@ -21,12 +22,19 @@ const { confirm } = useConfirm();
 const showCreateModal = ref(false);
 const showEditModal = ref(false);
 const showPermissionsModal = ref(false);
+const showPasswordModal = ref(false);
 const selectedUser = ref<User | null>(null);
 
 const newUsername = ref("");
 const newPassword = ref("");
 const editUsername = ref("");
 const editActive = ref(true);
+
+const passwordTargetId = ref(0);
+const passwordNew = ref("");
+const passwordConfirm = ref("");
+const passwordError = ref<string | null>(null);
+const isSavingPassword = ref(false);
 
 const selectedUserAssignedPermissions = computed(() => {
     return permissionsStore.getUserPermissions(selectedUser.value?.id || 0);
@@ -63,6 +71,41 @@ function openEditModal(user: User) {
     editUsername.value = user.username;
     editActive.value = user.active;
     showEditModal.value = true;
+}
+
+function openPasswordModal(user: User) {
+    passwordTargetId.value = user.id;
+    passwordNew.value = "";
+    passwordConfirm.value = "";
+    passwordError.value = null;
+    showPasswordModal.value = true;
+}
+
+async function handleChangePassword() {
+    passwordError.value = null;
+    if (!passwordNew.value) {
+        passwordError.value = "Ingrese la nueva contraseña.";
+        return;
+    }
+    if (passwordNew.value !== passwordConfirm.value) {
+        passwordError.value = "Las contraseñas no coinciden.";
+        return;
+    }
+
+    isSavingPassword.value = true;
+    const success = await usersStore.changePassword(
+        passwordTargetId.value,
+        passwordNew.value,
+    );
+    isSavingPassword.value = false;
+
+    if (success) {
+        showPasswordModal.value = false;
+        toastSuccess("Contraseña actualizada correctamente.");
+    } else {
+        passwordError.value =
+            usersStore.error || "No se pudo cambiar la contraseña.";
+    }
 }
 
 async function handleUpdate() {
@@ -176,6 +219,17 @@ async function removePermission(permissionId: number) {
                             title="Permisos"
                         >
                             <img src="/svg/permissions.svg" alt="Permisos" />
+                        </button>
+                        <button
+                            v-if="canChangeUserPassword()"
+                            @click="openPasswordModal(user)"
+                            class="btn-icon"
+                            title="Cambiar contraseña"
+                        >
+                            <img
+                                src="/svg/lock.svg"
+                                alt="Cambiar contraseña"
+                            />
                         </button>
                         <button
                             v-if="canUpdateUser()"
@@ -352,6 +406,53 @@ async function removePermission(permissionId: number) {
                         Cerrar
                     </button>
                 </div>
+            </div>
+        </div>
+
+        <div
+            v-if="showPasswordModal"
+            class="modal-overlay"
+            @click.self="showPasswordModal = false"
+        >
+            <div class="modal">
+                <h2>Cambiar contraseña</h2>
+                <form @submit.prevent="handleChangePassword">
+                    <div class="form-group">
+                        <label>Nueva contraseña</label>
+                        <input
+                            v-model="passwordNew"
+                            type="password"
+                            required
+                        />
+                    </div>
+                    <div class="form-group">
+                        <label>Repetir nueva contraseña</label>
+                        <input
+                            v-model="passwordConfirm"
+                            type="password"
+                            required
+                        />
+                    </div>
+                    <div v-if="passwordError" class="error-message">
+                        {{ passwordError }}
+                    </div>
+                    <div class="modal-actions">
+                        <button
+                            type="button"
+                            @click="showPasswordModal = false"
+                            class="btn-secondary"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            type="submit"
+                            class="btn-primary"
+                            :disabled="isSavingPassword"
+                        >
+                            {{ isSavingPassword ? "Guardando..." : "Guardar" }}
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

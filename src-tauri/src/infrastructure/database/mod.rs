@@ -25,6 +25,7 @@ const PERMISSIONS: &[&str] = &[
     "crear_usuario",
     "modificar_usuario",
     "eliminar_usuario",
+    "cambiar_contrasena_usuario",
     // Permisos
     "ver_permisos",
     "asignar_permiso_a_usuario",

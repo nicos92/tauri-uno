@@ -1,4 +1,5 @@
 use bcrypt::{hash, verify, DEFAULT_COST};
+use chrono::Utc;
 use std::sync::Arc;
 
 use crate::domain::entities::{Permission, User, UserPermission};
@@ -75,6 +76,41 @@ impl UserService {
         user.active = active;
 
         self.repository.update(&user)
+    }
+
+    pub fn change_password(
+        &self,
+        actor_id: i64,
+        target_user_id: i64,
+        current_password: Option<String>,
+        new_password: String,
+    ) -> Result<User, AppError> {
+        if new_password.trim().is_empty() {
+            return Err(AppError::EmptyPassword);
+        }
+
+        let target = self
+            .repository
+            .find_by_id(target_user_id)?
+            .ok_or(AppError::UserNotFound)?;
+
+        if actor_id == target_user_id {
+            let current = current_password.ok_or(AppError::InvalidCredentials)?;
+            let is_valid = verify(&current, &target.password)
+                .map_err(|e| AppError::Hashing(e.to_string()))?;
+            if !is_valid {
+                return Err(AppError::InvalidCredentials);
+            }
+        }
+
+        let hashed_password =
+            hash(&new_password, DEFAULT_COST).map_err(|e| AppError::Hashing(e.to_string()))?;
+
+        let mut updated = target.clone();
+        updated.password = hashed_password;
+        updated.modified_at = Utc::now();
+
+        self.repository.update(&updated)
     }
 
     pub fn delete_user(&self, actor_id: i64, id: i64) -> Result<(), AppError> {

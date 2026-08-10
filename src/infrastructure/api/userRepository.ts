@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { User, Permission, UserPermission, LoginRequest, CreateUserRequest, UpdateUserRequest, AddPermissionRequest } from "../../domain/entities";
+import type { User, Permission, UserPermission, LoginRequest, CreateUserRequest, UpdateUserRequest, AddPermissionRequest, ChangePasswordRequest } from "../../domain/entities";
 import type { IUserRepository } from "../../domain/interfaces";
 
 export interface LoginResponse {
@@ -35,6 +35,10 @@ export class UserApiRepository implements IUserRepository {
 
   async deleteUser(id: number): Promise<void> {
     return await invoke<void>("delete_user", { userId: this.getCurrentUserId(), id });
+  }
+
+  async changePassword(request: ChangePasswordRequest): Promise<User> {
+    return await invoke<User>("change_password", { userId: this.getCurrentUserId(), request });
   }
 
   async addPermissionToUser(request: AddPermissionRequest): Promise<void> {
