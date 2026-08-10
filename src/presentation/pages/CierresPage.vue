@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useCierresStore } from "../stores";
 import { usePermissions } from "../composables/usePermissions";
 import { useToasts } from "../composables/useToasts";
@@ -23,8 +23,64 @@ function todayLocal(): string {
 const fecha = ref(todayLocal());
 const expanded = ref<Set<number>>(new Set());
 
+const PAGE_SIZE_OPTIONS = [5, 10, 15, 20, 25];
+
+const pageSize = ref(10);
+const offset = ref(0);
+
+const currentPage = computed(() => Math.floor(offset.value / pageSize.value) + 1);
+const totalPages = computed(() =>
+    Math.max(1, Math.ceil(cierresStore.total / pageSize.value))
+);
+
+const pages = computed<Array<number | "...">>(() => {
+    const total = totalPages.value;
+    const current = currentPage.value;
+    const window = 2;
+    const result: Array<number | "..."> = [];
+    for (let p = 1; p <= total; p++) {
+        if (
+            p === 1 ||
+            p === total ||
+            (p >= current - window && p <= current + window)
+        ) {
+            result.push(p);
+        } else if (result[result.length - 1] !== "...") {
+            result.push("...");
+        }
+    }
+    return result;
+});
+
+async function fetchCierres() {
+    await cierresStore.fetchCierres({
+        limit: pageSize.value,
+        offset: offset.value,
+    });
+}
+
+async function handlePageSizeChange() {
+    offset.value = 0;
+    await fetchCierres();
+}
+
+function goToPage(page: number | "...") {
+    if (typeof page !== "number") return;
+    if (page === currentPage.value || page < 1 || page > totalPages.value) return;
+    offset.value = (page - 1) * pageSize.value;
+    fetchCierres();
+}
+
+async function nextPage() {
+    goToPage(currentPage.value + 1);
+}
+
+async function prevPage() {
+    goToPage(currentPage.value - 1);
+}
+
 onMounted(async () => {
-    await cierresStore.fetchCierres();
+    await fetchCierres();
 });
 
 function toggleTipos(id: number) {
@@ -53,6 +109,8 @@ async function handleCerrarDia() {
     const ok = await cierresStore.crearCierre(fecha.value);
     if (ok) {
         toastSuccess(`Cierre del día ${fecha.value} generado.`);
+        offset.value = 0;
+        await fetchCierres();
     } else {
         toastError(cierresStore.error || "No se pudo generar el cierre.");
     }
@@ -70,6 +128,8 @@ async function handleReabrir(cierre: CierreWithTipos) {
     const ok = await cierresStore.reabrirCierre(cierre.fecha);
     if (ok) {
         toastSuccess(`Día ${cierre.fecha} reabierto.`);
+        offset.value = 0;
+        await fetchCierres();
     } else {
         toastError(cierresStore.error || "No se pudo reabrir el día.");
     }
@@ -82,11 +142,31 @@ async function handleReabrir(cierre: CierreWithTipos) {
             <h1>Cierres del día</h1>
         </div>
 
-        <div v-if="canCreateCierre()" class="cierre-bar">
-            <input v-model="fecha" type="date" class="date-input" />
-            <button @click="handleCerrarDia" class="btn-primary">
+        <div class="cierre-bar">
+            <input
+                v-if="canCreateCierre()"
+                v-model="fecha"
+                type="date"
+                class="date-input"
+            />
+            <button
+                v-if="canCreateCierre()"
+                @click="handleCerrarDia"
+                class="btn-primary"
+            >
                 Cerrar día
             </button>
+            <div class="toolbar-spacer"></div>
+            <select
+                v-model="pageSize"
+                class="filter-input page-size-select"
+                @change="handlePageSizeChange"
+                title="Cierres por página"
+            >
+                <option v-for="n in PAGE_SIZE_OPTIONS" :key="n" :value="n">
+                    {{ n }} por página
+                </option>
+            </select>
         </div>
 
         <div v-if="cierresStore.loading" class="loading">Cargando...</div>
@@ -166,6 +246,37 @@ async function handleReabrir(cierre: CierreWithTipos) {
         <div v-if="!cierresStore.loading && cierresStore.cierres.length === 0" class="empty-state">
             No hay cierres registrados.
         </div>
+
+        <div v-if="!cierresStore.loading && cierresStore.total > 0" class="pagination">
+            <span class="pagination-info">
+                Mostrando {{ cierresStore.cierres.length }} de {{ cierresStore.total }} cierres
+            </span>
+            <div class="pagination-buttons">
+                <button
+                    @click="prevPage"
+                    :disabled="currentPage <= 1"
+                    class="btn-secondary"
+                >
+                    ‹ Anterior
+                </button>
+                <button
+                    v-for="p in pages"
+                    :key="p"
+                    :class="['page-btn', { active: p === currentPage }]"
+                    :disabled="p === '...'"
+                    @click="goToPage(p)"
+                >
+                    {{ p }}
+                </button>
+                <button
+                    @click="nextPage"
+                    :disabled="currentPage >= totalPages"
+                    class="btn-secondary"
+                >
+                    Siguiente ›
+                </button>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -191,7 +302,28 @@ async function handleReabrir(cierre: CierreWithTipos) {
     display: flex;
     gap: 1rem;
     align-items: center;
+    flex-wrap: wrap;
     margin-bottom: 1.5rem;
+}
+
+.toolbar-spacer {
+    flex: 1;
+}
+
+.filter-input {
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: var(--color-surface);
+    color: var(--color-text);
+    font-size: 0.95rem;
+}
+
+select.filter-input {
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    padding-right: 2.5rem;
 }
 
 .date-input {
@@ -229,6 +361,11 @@ async function handleReabrir(cierre: CierreWithTipos) {
     padding: 0.75rem 1.5rem;
     border-radius: 6px;
     cursor: pointer;
+}
+
+.btn-secondary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .btn-small {
@@ -294,5 +431,57 @@ async function handleReabrir(cierre: CierreWithTipos) {
     text-align: center;
     padding: 2rem;
     color: var(--color-text-muted);
+}
+
+.pagination {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+}
+
+.pagination-info {
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+    white-space: nowrap;
+    text-align: center;
+}
+
+.pagination-buttons {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.pagination-buttons .btn-secondary {
+    padding: 0.5rem 1rem;
+}
+
+.page-btn {
+    min-width: 2.2rem;
+    height: 2.2rem;
+    padding: 0 0.5rem;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: var(--color-surface);
+    color: var(--color-text);
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.page-btn:disabled {
+    border: none;
+    background: none;
+    cursor: default;
+}
+
+.page-btn.active {
+    background: #667eea;
+    border-color: #667eea;
+    color: #fff;
+    font-weight: 600;
 }
 </style>

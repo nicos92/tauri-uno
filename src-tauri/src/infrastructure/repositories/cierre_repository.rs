@@ -1,7 +1,7 @@
 use rusqlite::params;
 
 use crate::domain::entities::{Cierre, CierreTipo, CierreWithTipos};
-use crate::domain::repositories::CierreRepository;
+use crate::domain::repositories::{CierreRepository, Page};
 use crate::infrastructure::database::DB;
 use crate::infrastructure::error::AppError;
 
@@ -81,15 +81,23 @@ impl CierreRepository for SqliteCierreRepository {
         }
     }
 
-    fn find_all(&self) -> Result<Vec<CierreWithTipos>, AppError> {
+    fn find_page(&self, limit: i64, offset: i64) -> Result<Page<CierreWithTipos>, AppError> {
         let conn = DB.lock().map_err(|e| AppError::Internal(e.to_string()))?;
+
+        let limit = limit.max(1);
+        let offset = offset.max(0);
+
+        let total: i64 = conn.query_row("SELECT COUNT(*) FROM cierres", [], |row| {
+            row.get(0)
+        })?;
 
         let mut stmt = conn.prepare(
             "SELECT id, fecha, dia, mes, anio, total_costo, total_ganancia, total_venta, created_at
-             FROM cierres ORDER BY fecha DESC, id DESC",
+             FROM cierres ORDER BY fecha DESC, id DESC
+             LIMIT ?1 OFFSET ?2",
         )?;
 
-        let mut rows = stmt.query([])?;
+        let mut rows = stmt.query(params![limit, offset])?;
         let mut cierres = Vec::new();
         while let Some(row) = rows.next()? {
             let mut cierre = self.row_to_cierre(row)?;
@@ -97,7 +105,12 @@ impl CierreRepository for SqliteCierreRepository {
             cierres.push(cierre);
         }
 
-        Ok(cierres)
+        Ok(Page {
+            items: cierres,
+            total,
+            limit,
+            offset,
+        })
     }
 
     fn delete_by_fecha(&self, fecha: &str) -> Result<(), AppError> {

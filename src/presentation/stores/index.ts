@@ -845,12 +845,24 @@ export const useCierresStore = defineStore("cierres", () => {
   const cierres = ref<CierreWithTipos[]>([]);
   const loading = ref(false);
   const error = ref<string | null>(null);
+  const total = ref(0);
+  const limit = ref(10);
+  const offset = ref(0);
 
-  async function fetchCierres() {
+  async function fetchCierres(filters?: { limit: number; offset: number }) {
     loading.value = true;
     error.value = null;
     try {
-      cierres.value = await cierresRepository.getAllCierres();
+      if (filters) {
+        limit.value = filters.limit;
+        offset.value = filters.offset;
+      }
+      const page = await cierresRepository.getAllCierres({
+        limit: limit.value,
+        offset: offset.value,
+      });
+      cierres.value = page.items;
+      total.value = page.total;
     } catch (e) {
       error.value = toErrorMessage(e);
     } finally {
@@ -886,6 +898,9 @@ export const useCierresStore = defineStore("cierres", () => {
     cierres,
     loading,
     error,
+    total,
+    limit,
+    offset,
     fetchCierres,
     crearCierre,
     reabrirCierre,

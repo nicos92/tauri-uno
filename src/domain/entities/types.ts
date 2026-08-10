@@ -279,6 +279,13 @@ export interface CierreWithTipos extends Cierre {
   tipos: CierreTipo[];
 }
 
+export interface CierrePage {
+  items: CierreWithTipos[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
 export interface CrearCierreRequest {
   fecha: string;
 }

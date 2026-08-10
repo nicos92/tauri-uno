@@ -4,7 +4,7 @@ use std::sync::Arc;
 use chrono::{Datelike, Local, NaiveDate, TimeZone};
 
 use crate::domain::entities::{Cierre, CierreTipo, CierreWithTipos};
-use crate::domain::repositories::CierreRepository;
+use crate::domain::repositories::{CierreRepository, Page};
 use crate::infrastructure::error::AppError;
 use crate::infrastructure::repositories::SqliteCierreRepository;
 
@@ -127,8 +127,8 @@ impl CierreService {
         Ok(self.repository.find_by_fecha(&hoy)?.is_some())
     }
 
-    pub fn get_all(&self) -> Result<Vec<CierreWithTipos>, AppError> {
-        self.repository.find_all()
+    pub fn get_page(&self, limit: i64, offset: i64) -> Result<Page<CierreWithTipos>, AppError> {
+        self.repository.find_page(limit, offset)
     }
 }
 

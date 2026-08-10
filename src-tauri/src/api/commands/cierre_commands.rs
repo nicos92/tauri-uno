@@ -5,6 +5,7 @@ use crate::application::services::{log_audit, CierreService};
 use crate::domain::entities::{
     AuditAction, AuditScreen, CierreWithTipos, PermissionCode,
 };
+use crate::domain::repositories::Page;
 use crate::infrastructure::error::AppError;
 
 pub struct CierreAppState {
@@ -22,6 +23,12 @@ impl CierreAppState {
 #[derive(serde::Deserialize)]
 pub struct CrearCierreRequest {
     pub fecha: String,
+}
+
+#[derive(serde::Deserialize)]
+pub struct GetCierresRequest {
+    pub limit: Option<i64>,
+    pub offset: Option<i64>,
 }
 
 fn check_permission(user_id: i64, permission: PermissionCode) -> Result<(), AppError> {
@@ -101,12 +108,15 @@ pub fn is_dia_cerrado(user_id: i64, state: State<CierreAppState>) -> Result<bool
 #[tauri::command]
 pub fn get_all_cierres(
     user_id: i64,
+    request: GetCierresRequest,
     state: State<CierreAppState>,
-) -> Result<Vec<CierreWithTipos>, AppError> {
+) -> Result<Page<CierreWithTipos>, AppError> {
     let service = state
         .cierre_service
         .lock()
         .map_err(|e| AppError::Internal(e.to_string()))?;
     check_permission(user_id, PermissionCode::ViewCierres)?;
-    service.get_all()
+    let limit = request.limit.unwrap_or(10).max(1);
+    let offset = request.offset.unwrap_or(0).max(0);
+    service.get_page(limit, offset)
 }

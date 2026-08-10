@@ -1,5 +1,9 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { CierreWithTipos, CrearCierreRequest } from "../../domain/entities";
+import type {
+  CierrePage,
+  CierreWithTipos,
+  CrearCierreRequest,
+} from "../../domain/entities";
 
 export class CierresApiRepository {
   private getCurrentUserId(): number {
@@ -11,9 +15,13 @@ export class CierresApiRepository {
     return 0;
   }
 
-  async getAllCierres(): Promise<CierreWithTipos[]> {
-    return await invoke<CierreWithTipos[]>("get_all_cierres", {
+  async getAllCierres(filters: {
+    limit: number;
+    offset: number;
+  }): Promise<CierrePage> {
+    return await invoke<CierrePage>("get_all_cierres", {
       userId: this.getCurrentUserId(),
+      request: { limit: filters.limit, offset: filters.offset },
     });
   }
 
