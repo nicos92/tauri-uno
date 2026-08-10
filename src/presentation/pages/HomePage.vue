@@ -7,14 +7,27 @@ import {
     useCategoriasStore,
     useSubCategoriasStore,
     useStockStore,
+    useProveedoresStore,
+    useVentasStore,
 } from "../stores";
+import { usePermissions } from "../composables/usePermissions";
 
 const authStore = useAuthStore();
+const {
+    canViewArticulos,
+    canViewUsers,
+    canViewProveedores,
+    canViewVentas,
+    canViewCategorias,
+    canViewSubCategorias,
+} = usePermissions();
 const articulosStore = useArticulosStore();
 const usersStore = useUsersStore();
 const categoriasStore = useCategoriasStore();
 const subCategoriasStore = useSubCategoriasStore();
 const stockStore = useStockStore();
+const proveedoresStore = useProveedoresStore();
+const ventasStore = useVentasStore();
 
 const loading = ref(true);
 
@@ -26,6 +39,8 @@ onMounted(async () => {
             categoriasStore.fetchCategorias(),
             subCategoriasStore.fetchSubCategorias(),
             stockStore.fetchStock(),
+            proveedoresStore.fetchProveedores(),
+            ventasStore.fetchVentas(),
         ]);
     } finally {
         loading.value = false;
@@ -33,11 +48,40 @@ onMounted(async () => {
 });
 
 const totalArticulos = computed(() => articulosStore.articulos.length);
+const articulosConStock = computed(
+    () => new Set(stockStore.stocks.map((s) => s.id_articulo)).size,
+);
 const totalUsuarios = computed(() => usersStore.users.length);
+const usuariosActivos = computed(
+    () => usersStore.users.filter((u) => u.active).length,
+);
+const usuariosInactivos = computed(() => totalUsuarios.value - usuariosActivos.value);
+const totalProveedores = computed(() => proveedoresStore.proveedores.length);
 const totalCategorias = computed(() => categoriasStore.categorias.length);
 const totalSubCategorias = computed(
     () => subCategoriasStore.subCategorias.length,
 );
+
+const ventasDelDia = computed(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    return ventasStore.ventas.filter((v) => {
+        if (v.anulada) return false;
+        const fecha = new Date(v.fecha);
+        return fecha >= today && fecha < tomorrow;
+    });
+});
+
+const totalVentasDelDia = computed(() => {
+    return ventasDelDia.value.reduce((acc, v) => acc + v.total, 0);
+});
+
+function stat(hasPermission: boolean, value: string | number): string {
+    return hasPermission ? String(value) : "—";
+}
 
 const categoriasConSubcategorias = computed(() => {
     return categoriasStore.categorias.map((cat) => {
@@ -53,7 +97,7 @@ const categoriasConSubcategorias = computed(() => {
 
 const articulosBajoStock = computed(() => {
     return stockStore.stocks
-        .filter((s) => s.cantidad < 100)
+        .filter((s) => s.cantidad < 10)
         .map((s) => {
             const articulo = articulosStore.articulos.find(
                 (a) => a.id === s.id_articulo,
@@ -99,8 +143,13 @@ const articulosBajoStock = computed(() => {
                         </svg>
                     </div>
                     <div class="stat-info">
-                        <span class="stat-value">{{ totalArticulos }}</span>
+                        <span class="stat-value">{{
+                            stat(canViewArticulos(), totalArticulos)
+                        }}</span>
                         <span class="stat-label">Artículos</span>
+                        <span v-if="canViewArticulos()" class="stat-sub">
+                            {{ articulosConStock }} con stock
+                        </span>
                     </div>
                 </div>
 
@@ -126,8 +175,68 @@ const articulosBajoStock = computed(() => {
                         </svg>
                     </div>
                     <div class="stat-info">
-                        <span class="stat-value">{{ totalUsuarios }}</span>
+                        <span class="stat-value">{{
+                            stat(canViewUsers(), totalUsuarios)
+                        }}</span>
                         <span class="stat-label">Usuarios</span>
+                        <span v-if="canViewUsers()" class="stat-sub">
+                            {{ usuariosActivos }} activos · {{ usuariosInactivos }} inactivos
+                        </span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon teal">
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <path d="M1 3h15v13H1z" />
+                            <path d="M16 8h4l3 3v5h-7V8z" />
+                            <circle cx="5.5" cy="18.5" r="2.5" />
+                            <circle cx="18.5" cy="18.5" r="2.5" />
+                        </svg>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-value">{{
+                            stat(canViewProveedores(), totalProveedores)
+                        }}</span>
+                        <span class="stat-label">Proveedores</span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon red">
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <line x1="12" y1="1" x2="12" y2="23" />
+                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                        </svg>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-value">{{
+                            stat(canViewVentas(), ventasDelDia.length)
+                        }}</span>
+                        <span class="stat-label">Ventas</span>
+                        <span v-if="canViewVentas()" class="stat-sub">
+                            Hoy · ${{ totalVentasDelDia.toFixed(2) }}
+                        </span>
                     </div>
                 </div>
 
@@ -150,7 +259,9 @@ const articulosBajoStock = computed(() => {
                         </svg>
                     </div>
                     <div class="stat-info">
-                        <span class="stat-value">{{ totalCategorias }}</span>
+                        <span class="stat-value">{{
+                            stat(canViewCategorias(), totalCategorias)
+                        }}</span>
                         <span class="stat-label">Categorías</span>
                     </div>
                 </div>
@@ -176,7 +287,9 @@ const articulosBajoStock = computed(() => {
                         </svg>
                     </div>
                     <div class="stat-info">
-                        <span class="stat-value">{{ totalSubCategorias }}</span>
+                        <span class="stat-value">{{
+                            stat(canViewSubCategorias(), totalSubCategorias)
+                        }}</span>
                         <span class="stat-label">Sub Categorías</span>
                     </div>
                 </div>
@@ -343,6 +456,16 @@ p {
     color: #ea580c;
 }
 
+.stat-icon.teal {
+    background: #ccfbf1;
+    color: #0d9488;
+}
+
+.stat-icon.red {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
 .stat-info {
     display: flex;
     flex-direction: column;
@@ -357,6 +480,12 @@ p {
 .stat-label {
     font-size: 0.875rem;
     color: var(--color-text-muted);
+}
+
+.stat-sub {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    margin-top: 0.25rem;
 }
 
 .card {
