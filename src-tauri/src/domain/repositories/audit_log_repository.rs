@@ -1,4 +1,5 @@
 use crate::domain::entities::AuditLog;
+use crate::domain::repositories::Page;
 use crate::infrastructure::error::AppError;
 
 #[derive(Debug, Clone, Default)]
@@ -14,5 +15,5 @@ pub struct AuditLogFilter {
 
 pub trait AuditLogRepository: Send + Sync {
     fn create(&self, log: &AuditLog) -> Result<AuditLog, AppError>;
-    fn find_with_filters(&self, filter: &AuditLogFilter) -> Result<Vec<AuditLog>, AppError>;
+    fn find_with_filters(&self, filter: &AuditLogFilter) -> Result<Page<AuditLog>, AppError>;
 }

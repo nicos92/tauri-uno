@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { AuditLog, AuditLogFilters } from "../../domain/entities";
+import type { AuditLogFilters, AuditLogPage } from "../../domain/entities";
 
 export class AuditApiRepository {
   private getCurrentUserId(): number {
@@ -11,8 +11,8 @@ export class AuditApiRepository {
     return 0;
   }
 
-  async getAuditLogs(filters: AuditLogFilters): Promise<AuditLog[]> {
-    return await invoke<AuditLog[]>("get_audit_logs", {
+  async getAuditLogs(filters: AuditLogFilters): Promise<AuditLogPage> {
+    return await invoke<AuditLogPage>("get_audit_logs", {
       userId: this.getCurrentUserId(),
       request: filters,
     });

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::domain::entities::{AuditAction, AuditLog, AuditScreen};
-use crate::domain::repositories::{AuditLogFilter, AuditLogRepository};
+use crate::domain::repositories::{AuditLogFilter, AuditLogRepository, Page};
 use crate::infrastructure::error::AppError;
 use crate::infrastructure::repositories::SqliteAuditLogRepository;
 
@@ -28,7 +28,7 @@ impl AuditLogService {
         self.repository.create(&log)
     }
 
-    pub fn get_logs(&self, filter: &AuditLogFilter) -> Result<Vec<AuditLog>, AppError> {
+    pub fn get_logs(&self, filter: &AuditLogFilter) -> Result<Page<AuditLog>, AppError> {
         self.repository.find_with_filters(filter)
     }
 }

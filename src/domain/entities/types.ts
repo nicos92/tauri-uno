@@ -190,6 +190,13 @@ export interface AuditLogFilters {
   offset?: number;
 }
 
+export interface AuditLogPage {
+  items: AuditLog[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
 export interface Venta {
   id: number;
   user_id: number;

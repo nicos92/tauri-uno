@@ -3,7 +3,7 @@ use tauri::State;
 
 use crate::application::services::AuditLogService;
 use crate::domain::entities::{AuditLog, PermissionCode};
-use crate::domain::repositories::AuditLogFilter;
+use crate::domain::repositories::{AuditLogFilter, Page};
 use crate::infrastructure::error::AppError;
 
 pub struct AuditLogAppState {
@@ -53,7 +53,7 @@ pub fn get_audit_logs(
     user_id: i64,
     request: GetAuditLogsRequest,
     state: State<AuditLogAppState>,
-) -> Result<Vec<AuditLog>, AppError> {
+) -> Result<Page<AuditLog>, AppError> {
     let service = state
         .audit_service
         .lock()

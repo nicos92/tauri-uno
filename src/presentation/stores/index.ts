@@ -649,6 +649,7 @@ const auditRepository = new AuditApiRepository();
 
 export const useAuditStore = defineStore("audit", () => {
   const logs = ref<AuditLog[]>([]);
+  const total = ref(0);
   const loading = ref(false);
   const error = ref<string | null>(null);
 
@@ -656,7 +657,9 @@ export const useAuditStore = defineStore("audit", () => {
     loading.value = true;
     error.value = null;
     try {
-      logs.value = await auditRepository.getAuditLogs(filters);
+      const page = await auditRepository.getAuditLogs(filters);
+      logs.value = page.items;
+      total.value = page.total;
     } catch (e) {
       error.value = toErrorMessage(e);
     } finally {
@@ -666,6 +669,7 @@ export const useAuditStore = defineStore("audit", () => {
 
   return {
     logs,
+    total,
     loading,
     error,
     fetchLogs,

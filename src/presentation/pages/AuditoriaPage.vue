@@ -1,18 +1,19 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useAuditStore } from "../stores";
 import type { AuditLogFilters } from "../../domain/entities";
 
 const auditStore = useAuditStore();
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE_OPTIONS = [5, 10, 15, 20, 25];
+
+const pageSize = ref(10);
 
 const screen = ref("");
 const action = ref("");
 const from = ref("");
 const to = ref("");
 const offset = ref(0);
-const hasMore = ref(false);
 
 const screens = [
     "Usuarios",
@@ -30,9 +31,27 @@ const screens = [
 
 const actions = ["nuevo", "modificar", "consultar", "eliminar"];
 
+const currentPage = computed(() => Math.floor(offset.value / pageSize.value) + 1);
+const totalPages = computed(() => Math.max(1, Math.ceil(auditStore.total / pageSize.value)));
+
+const pages = computed<Array<number | "...">>(() => {
+    const total = totalPages.value;
+    const current = currentPage.value;
+    const window = 2;
+    const result: Array<number | "..."> = [];
+    for (let p = 1; p <= total; p++) {
+        if (p === 1 || p === total || (p >= current - window && p <= current + window)) {
+            result.push(p);
+        } else if (result[result.length - 1] !== "...") {
+            result.push("...");
+        }
+    }
+    return result;
+});
+
 function buildFilters(): AuditLogFilters {
     const filters: AuditLogFilters = {
-        limit: PAGE_SIZE,
+        limit: pageSize.value,
         offset: offset.value,
     };
     if (screen.value) filters.screen = screen.value;
@@ -44,7 +63,11 @@ function buildFilters(): AuditLogFilters {
 
 async function fetchLogs() {
     await auditStore.fetchLogs(buildFilters());
-    hasMore.value = auditStore.logs.length === PAGE_SIZE;
+    if (auditStore.logs.length === 0 && offset.value > 0 && auditStore.total > 0) {
+        const lastPage = Math.max(1, Math.ceil(auditStore.total / pageSize.value));
+        offset.value = (lastPage - 1) * pageSize.value;
+        await auditStore.fetchLogs(buildFilters());
+    }
 }
 
 async function handleSearch() {
@@ -52,14 +75,24 @@ async function handleSearch() {
     await fetchLogs();
 }
 
-async function nextPage() {
-    offset.value += PAGE_SIZE;
+async function handlePageSizeChange() {
+    offset.value = 0;
     await fetchLogs();
 }
 
+function goToPage(page: number | "...") {
+    if (typeof page !== "number") return;
+    if (page === currentPage.value || page < 1 || page > totalPages.value) return;
+    offset.value = (page - 1) * pageSize.value;
+    fetchLogs();
+}
+
+async function nextPage() {
+    goToPage(currentPage.value + 1);
+}
+
 async function prevPage() {
-    offset.value = Math.max(0, offset.value - PAGE_SIZE);
-    await fetchLogs();
+    goToPage(currentPage.value - 1);
 }
 
 function resetFilters() {
@@ -105,6 +138,16 @@ onMounted(() => {
                 <span>→</span>
                 <input v-model="to" type="date" class="filter-input" />
             </div>
+            <select
+                v-model="pageSize"
+                class="filter-input page-size-select"
+                @change="handlePageSizeChange"
+                title="Registros por página"
+            >
+                <option v-for="n in PAGE_SIZE_OPTIONS" :key="n" :value="n">
+                    {{ n }} por página
+                </option>
+            </select>
             <button @click="handleSearch" class="btn-primary">Buscar</button>
             <button @click="resetFilters" class="btn-secondary">
                 Limpiar
@@ -153,17 +196,35 @@ onMounted(() => {
             No hay registros de auditoría con los filtros seleccionados
         </div>
 
-        <div v-if="!auditStore.loading && auditStore.logs.length > 0" class="pagination">
-            <button
-                @click="prevPage"
-                :disabled="offset === 0"
-                class="btn-secondary"
-            >
-                Anterior
-            </button>
-            <button @click="nextPage" :disabled="!hasMore" class="btn-secondary">
-                Siguiente
-            </button>
+        <div v-if="!auditStore.loading && auditStore.total > 0" class="pagination">
+            <span class="pagination-info">
+                Mostrando {{ auditStore.logs.length }} de {{ auditStore.total }} registros
+            </span>
+            <div class="pagination-buttons">
+                <button
+                    @click="prevPage"
+                    :disabled="currentPage <= 1"
+                    class="btn-secondary"
+                >
+                    ‹ Anterior
+                </button>
+                <button
+                    v-for="p in pages"
+                    :key="p"
+                    :class="['page-btn', { active: p === currentPage }]"
+                    :disabled="p === '...'"
+                    @click="goToPage(p)"
+                >
+                    {{ p }}
+                </button>
+                <button
+                    @click="nextPage"
+                    :disabled="currentPage >= totalPages"
+                    class="btn-secondary"
+                >
+                    Siguiente ›
+                </button>
+            </div>
         </div>
     </div>
 </template>
@@ -296,9 +357,73 @@ select.filter-input {
 
 .pagination {
     display: flex;
+    justify-content: space-between;
+    align-items: center;
     gap: 1rem;
-    justify-content: flex-end;
     margin-top: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.pagination-info {
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.pagination-buttons {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+@media (max-width: 960px) {
+    .pagination {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+
+    .pagination-info {
+        text-align: center;
+    }
+
+    .pagination-buttons {
+        justify-content: center;
+    }
+}
+
+.pagination-buttons .btn-secondary {
+    padding: 0.5rem 1rem;
+}
+
+.page-btn {
+    min-width: 2.2rem;
+    height: 2.2rem;
+    padding: 0 0.5rem;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: var(--color-surface);
+    color: var(--color-text);
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.page-btn:disabled {
+    border: none;
+    background: none;
+    cursor: default;
+}
+
+.page-btn.active {
+    background: #667eea;
+    border-color: #667eea;
+    color: #fff;
+    font-weight: 600;
 }
 
 .error-banner {

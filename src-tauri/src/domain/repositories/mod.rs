@@ -1,5 +1,6 @@
 pub mod articulo_repository;
 pub mod audit_log_repository;
+pub mod pagination;
 pub mod categoria_repository;
 pub mod cierre_repository;
 pub mod proveedor_repository;
@@ -11,6 +12,7 @@ pub mod venta_repository;
 
 pub use articulo_repository::ArticuloRepository;
 pub use audit_log_repository::{AuditLogFilter, AuditLogRepository};
+pub use pagination::Page;
 pub use categoria_repository::CategoriaRepository;
 pub use cierre_repository::CierreRepository;
 pub use proveedor_repository::ProveedorRepository;

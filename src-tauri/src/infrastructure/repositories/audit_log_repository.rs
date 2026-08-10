@@ -1,7 +1,7 @@
 use rusqlite::params;
 
 use crate::domain::entities::AuditLog;
-use crate::domain::repositories::{AuditLogFilter, AuditLogRepository};
+use crate::domain::repositories::{AuditLogFilter, AuditLogRepository, Page};
 use crate::infrastructure::database::DB;
 use crate::infrastructure::error::AppError;
 
@@ -37,7 +37,7 @@ impl AuditLogRepository for SqliteAuditLogRepository {
         })
     }
 
-    fn find_with_filters(&self, filter: &AuditLogFilter) -> Result<Vec<AuditLog>, AppError> {
+    fn find_with_filters(&self, filter: &AuditLogFilter) -> Result<Page<AuditLog>, AppError> {
         let conn = DB.lock().map_err(|e| AppError::Internal(e.to_string()))?;
 
         let mut sql = String::from(
@@ -73,14 +73,23 @@ impl AuditLogRepository for SqliteAuditLogRepository {
             sql.push_str(&conditions.join(" AND "));
         }
 
-        sql.push_str(" ORDER BY created_at DESC, id DESC");
+        let limit = filter.limit.unwrap_or(20).max(1);
+        let offset = filter.offset.unwrap_or(0).max(0);
 
-        if let Some(limit) = filter.limit {
-            sql.push_str(&format!(" LIMIT {}", limit.max(1)));
-        }
-        if let Some(offset) = filter.offset {
-            sql.push_str(&format!(" OFFSET {}", offset.max(0)));
-        }
+        let total: i64 = {
+            let count_sql = format!(
+                "SELECT COUNT(*) FROM audit_logs WHERE 1 = 1 AND {}",
+                if conditions.is_empty() {
+                    "1 = 1".to_string()
+                } else {
+                    conditions.join(" AND ")
+                }
+            );
+            conn.query_row(&count_sql, [], |row| row.get(0))?
+        };
+
+        sql.push_str(" ORDER BY created_at DESC, id DESC");
+        sql.push_str(&format!(" LIMIT {} OFFSET {}", limit, offset));
 
         let mut stmt = conn.prepare(&sql)?;
         let mut rows = stmt.query([])?;
@@ -90,7 +99,12 @@ impl AuditLogRepository for SqliteAuditLogRepository {
             logs.push(row_to_audit_log(row)?);
         }
 
-        Ok(logs)
+        Ok(Page {
+            items: logs,
+            total,
+            limit,
+            offset,
+        })
     }
 }
 
