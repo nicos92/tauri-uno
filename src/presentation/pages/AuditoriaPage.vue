@@ -357,44 +357,25 @@ select.filter-input {
 
 .pagination {
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
     align-items: center;
-    gap: 1rem;
+    gap: 0.75rem;
     margin-top: 1.5rem;
-    flex-wrap: wrap;
 }
 
 .pagination-info {
     color: var(--color-text-muted);
     font-size: 0.9rem;
     white-space: nowrap;
-    flex-shrink: 0;
+    text-align: center;
 }
 
 .pagination-buttons {
     display: flex;
     gap: 0.4rem;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: center;
     flex-wrap: wrap;
-    flex: 1 1 auto;
-    min-width: 0;
-}
-
-@media (max-width: 960px) {
-    .pagination {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 0.75rem;
-    }
-
-    .pagination-info {
-        text-align: center;
-    }
-
-    .pagination-buttons {
-        justify-content: center;
-    }
 }
 
 .pagination-buttons .btn-secondary {
