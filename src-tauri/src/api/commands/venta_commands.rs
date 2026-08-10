@@ -61,7 +61,7 @@ fn can_sell_without_stock(user_id: i64) -> Result<bool, AppError> {
     }
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn create_venta(
     user_id: i64,
     request: CreateVentaRequest,
@@ -104,7 +104,7 @@ pub fn create_venta(
     Ok(venta)
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn get_all_ventas(
     user_id: i64,
     state: State<VentaAppState>,
@@ -117,7 +117,7 @@ pub fn get_all_ventas(
     service.get_all()
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn get_venta_by_id(
     user_id: i64,
     id: i64,
@@ -131,7 +131,7 @@ pub fn get_venta_by_id(
     service.get_by_id(id)
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn anular_venta(user_id: i64, id: i64, state: State<VentaAppState>) -> Result<(), AppError> {
     let service = state
         .venta_service

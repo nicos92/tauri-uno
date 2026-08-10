@@ -1,4 +1,4 @@
-use bcrypt::{hash, verify, DEFAULT_COST};
+use bcrypt::{hash, verify};
 use chrono::Utc;
 use std::sync::Arc;
 
@@ -6,6 +6,8 @@ use crate::domain::entities::{Permission, User, UserPermission};
 use crate::domain::repositories::UserRepository;
 use crate::infrastructure::error::AppError;
 use crate::infrastructure::repositories::SqliteUserRepository;
+
+const BCRYPT_COST: u32 = 10;
 
 pub struct UserService {
     repository: Arc<SqliteUserRepository>,
@@ -25,7 +27,7 @@ impl UserService {
         }
 
         let hashed_password =
-            hash(&password, DEFAULT_COST).map_err(|e| AppError::Hashing(e.to_string()))?;
+            hash(&password, BCRYPT_COST).map_err(|e| AppError::Hashing(e.to_string()))?;
 
         let user = User::new(username, hashed_password);
         self.repository.create(&user)
@@ -104,7 +106,7 @@ impl UserService {
         }
 
         let hashed_password =
-            hash(&new_password, DEFAULT_COST).map_err(|e| AppError::Hashing(e.to_string()))?;
+            hash(&new_password, BCRYPT_COST).map_err(|e| AppError::Hashing(e.to_string()))?;
 
         let mut updated = target.clone();
         updated.password = hashed_password;

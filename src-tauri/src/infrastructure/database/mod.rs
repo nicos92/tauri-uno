@@ -4,6 +4,8 @@ use rusqlite::Connection;
 use std::path::PathBuf;
 use std::sync::Mutex;
 
+pub const BCRYPT_COST: u32 = 10;
+
 pub static DB: Lazy<Mutex<Connection>> = Lazy::new(|| {
     let conn = init_database().expect("Failed to initialize database");
     Mutex::new(conn)
@@ -310,7 +312,7 @@ fn seed_admin_user(conn: &Connection) -> Result<(), rusqlite::Error> {
 
     if !exists {
         let bcrypt_hash =
-            bcrypt::hash("admin123", bcrypt::DEFAULT_COST).expect("Failed to hash password");
+            bcrypt::hash("admin123", BCRYPT_COST).expect("Failed to hash password");
 
         conn.execute(
             "INSERT INTO users (username, password, active, created_at, modified_at) VALUES (?1, ?2, 1, ?3, ?3)",
@@ -794,7 +796,7 @@ fn seed_demo_data(conn: &Connection) -> Result<(), rusqlite::Error> {
             |row| row.get(0),
         )?;
         if !exists {
-            let hashed = bcrypt::hash(password, bcrypt::DEFAULT_COST)
+            let hashed = bcrypt::hash(password, BCRYPT_COST)
                 .expect("Failed to hash demo user password");
             conn.execute(
                 "INSERT INTO users (username, password, active, created_at, modified_at) VALUES (?1, ?2, 1, ?3, ?3)",

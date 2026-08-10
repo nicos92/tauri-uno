@@ -61,7 +61,7 @@ fn check_permission(
     Ok(())
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn get_all_proveedores(
     user_id: i64,
     state: State<ProveedorAppState>,
@@ -74,7 +74,7 @@ pub fn get_all_proveedores(
     service.get_all()
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn get_proveedor_by_id(
     user_id: i64,
     id: i64,
@@ -88,7 +88,7 @@ pub fn get_proveedor_by_id(
     service.get_by_id(id)
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn create_proveedor(
     user_id: i64,
     request: CreateProveedorRequest,
@@ -119,7 +119,7 @@ pub fn create_proveedor(
     Ok(result)
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn update_proveedor(
     user_id: i64,
     request: UpdateProveedorRequest,
@@ -151,7 +151,7 @@ pub fn update_proveedor(
     Ok(result)
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn delete_proveedor(
     user_id: i64,
     id: i64,

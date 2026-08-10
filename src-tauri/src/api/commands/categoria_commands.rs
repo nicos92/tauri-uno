@@ -47,7 +47,7 @@ fn check_permission(user_id: i64, permission: PermissionCode) -> Result<(), AppE
     Ok(())
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn get_all_categorias(
     user_id: i64,
     state: State<CategoriaAppState>,
@@ -60,7 +60,7 @@ pub fn get_all_categorias(
     service.get_all()
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn create_categoria(
     user_id: i64,
     request: CreateCategoriaRequest,
@@ -81,7 +81,7 @@ pub fn create_categoria(
     Ok(result)
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn update_categoria(
     user_id: i64,
     request: UpdateCategoriaRequest,
@@ -102,7 +102,7 @@ pub fn update_categoria(
     Ok(result)
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn delete_categoria(
     user_id: i64,
     id: i64,

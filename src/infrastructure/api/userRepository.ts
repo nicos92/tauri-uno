@@ -17,6 +17,10 @@ export class UserApiRepository implements IUserRepository {
     return 0;
   }
 
+  async ensureDbReady(): Promise<void> {
+    return await invoke<void>("ensure_db_ready");
+  }
+
   async login(request: LoginRequest): Promise<LoginResponse> {
     return await invoke<LoginResponse>("login", { request });
   }

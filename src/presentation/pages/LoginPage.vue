@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useAuthStore } from "../stores";
 
@@ -10,11 +10,20 @@ const authStore = useAuthStore();
 const username = ref("");
 const password = ref("");
 const isLoading = ref(false);
+const dbReady = ref(false);
 
 const passwordChanged = computed(() => route.query.passwordChanged === "1");
 
+onMounted(async () => {
+    try {
+        await authStore.ensureDbReady();
+    } finally {
+        dbReady.value = true;
+    }
+});
+
 async function handleLogin() {
-    if (!username.value || !password.value) return;
+    if (!username.value || !password.value || !dbReady.value) return;
 
     isLoading.value = true;
     const success = await authStore.login(username.value, password.value);
@@ -35,6 +44,10 @@ async function handleLogin() {
                 Contraseña cambiada correctamente. Vuelva a ingresar.
             </div>
 
+            <div v-if="!dbReady" class="info-message">
+                Inicializando base de datos...
+            </div>
+
             <form @submit.prevent="handleLogin">
                 <div class="form-group">
                     <label for="username">Usuario</label>
@@ -43,7 +56,7 @@ async function handleLogin() {
                         v-model="username"
                         type="text"
                         placeholder="Ingrese su usuario"
-                        :disabled="isLoading"
+                        :disabled="isLoading || !dbReady"
                     />
                 </div>
 
@@ -54,7 +67,7 @@ async function handleLogin() {
                         v-model="password"
                         type="password"
                         placeholder="Ingrese su contraseña"
-                        :disabled="isLoading"
+                        :disabled="isLoading || !dbReady"
                     />
                 </div>
 
@@ -64,7 +77,7 @@ async function handleLogin() {
 
                 <button
                     type="submit"
-                    :disabled="isLoading || !username || !password"
+                    :disabled="isLoading || !dbReady || !username || !password"
                 >
                     {{ isLoading ? "Iniciando sesión..." : "Entrar" }}
                 </button>
@@ -171,6 +184,15 @@ button:disabled {
     margin-bottom: 1rem;
     padding: 0.75rem;
     background: #fed7d7;
+    border-radius: 6px;
+    text-align: center;
+}
+
+.info-message {
+    color: #2b6cb0;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background: #bee3f8;
     border-radius: 6px;
     text-align: center;
 }

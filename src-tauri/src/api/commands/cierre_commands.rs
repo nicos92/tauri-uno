@@ -50,7 +50,7 @@ fn check_permission(user_id: i64, permission: PermissionCode) -> Result<(), AppE
     Ok(())
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn crear_cierre(
     user_id: i64,
     request: CrearCierreRequest,
@@ -74,7 +74,7 @@ pub fn crear_cierre(
     Ok(cierre)
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn reabrir_cierre(
     user_id: i64,
     request: CrearCierreRequest,
@@ -95,7 +95,7 @@ pub fn reabrir_cierre(
     Ok(())
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn is_dia_cerrado(user_id: i64, state: State<CierreAppState>) -> Result<bool, AppError> {
     let service = state
         .cierre_service
@@ -105,7 +105,7 @@ pub fn is_dia_cerrado(user_id: i64, state: State<CierreAppState>) -> Result<bool
     service.is_dia_cerrado()
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn get_all_cierres(
     user_id: i64,
     request: GetCierresRequest,

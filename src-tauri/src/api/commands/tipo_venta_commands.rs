@@ -42,7 +42,7 @@ fn check_permission(user_id: i64, permission: PermissionCode) -> Result<(), AppE
     Ok(())
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn get_all_tipos_venta(
     user_id: i64,
     state: State<TipoVentaAppState>,
@@ -55,7 +55,7 @@ pub fn get_all_tipos_venta(
     service.get_all()
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn create_tipo_venta(
     user_id: i64,
     request: TipoVentaRequest,
@@ -76,7 +76,7 @@ pub fn create_tipo_venta(
     Ok(result)
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn update_tipo_venta(
     user_id: i64,
     id: i64,
@@ -98,7 +98,7 @@ pub fn update_tipo_venta(
     Ok(result)
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn delete_tipo_venta(
     user_id: i64,
     id: i64,

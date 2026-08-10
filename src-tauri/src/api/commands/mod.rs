@@ -120,6 +120,15 @@ pub struct LoginResponse {
     pub permissions: Vec<String>,
 }
 
+#[tauri::command]
+pub async fn ensure_db_ready() -> Result<(), AppError> {
+    tauri::async_runtime::spawn_blocking(|| {
+        let _ = &*crate::infrastructure::database::DB;
+    })
+    .await
+    .map_err(|e| AppError::Internal(e.to_string()))
+}
+
 fn check_permission(
     service: &UserService,
     user_id: i64,
@@ -135,7 +144,7 @@ fn check_permission(
     Ok(())
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn login(request: LoginRequest, state: State<AppState>) -> Result<LoginResponse, AppError> {
     let service = state
         .user_service
@@ -152,7 +161,7 @@ pub fn login(request: LoginRequest, state: State<AppState>) -> Result<LoginRespo
     })
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn create_user(
     user_id: i64,
     request: CreateUserRequest,
@@ -173,7 +182,7 @@ pub fn create_user(
     Ok(user.into())
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn get_all_users(user_id: i64, state: State<AppState>) -> Result<Vec<UserResponse>, AppError> {
     let service = state
         .user_service
@@ -184,7 +193,7 @@ pub fn get_all_users(user_id: i64, state: State<AppState>) -> Result<Vec<UserRes
     Ok(users.into_iter().map(|u| u.into()).collect())
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn update_user(
     user_id: i64,
     request: UpdateUserRequest,
@@ -205,7 +214,7 @@ pub fn update_user(
     Ok(user.into())
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn change_password(
     user_id: i64,
     request: ChangePasswordRequest,
@@ -239,7 +248,7 @@ pub fn change_password(
     Ok(user.into())
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn delete_user(user_id: i64, id: i64, state: State<AppState>) -> Result<(), AppError> {
     let service = state
         .user_service
@@ -256,7 +265,7 @@ pub fn delete_user(user_id: i64, id: i64, state: State<AppState>) -> Result<(), 
     Ok(())
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn add_permission_to_user(
     user_id: i64,
     request: AddPermissionRequest,
@@ -280,7 +289,7 @@ pub fn add_permission_to_user(
     Ok(())
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn remove_permission_from_user(
     user_id: i64,
     request: AddPermissionRequest,
@@ -304,7 +313,7 @@ pub fn remove_permission_from_user(
     Ok(())
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn get_user_permissions(
     user_id: i64,
     target_user_id: i64,
@@ -318,7 +327,7 @@ pub fn get_user_permissions(
     service.get_user_permissions(target_user_id)
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn get_all_permissions(
     user_id: i64,
     state: State<AppState>,
@@ -331,7 +340,7 @@ pub fn get_all_permissions(
     service.get_all_permissions()
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn create_permission(
     user_id: i64,
     name: String,

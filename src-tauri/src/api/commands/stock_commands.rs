@@ -52,7 +52,7 @@ fn check_permission(user_id: i64, permission: PermissionCode) -> Result<(), AppE
     Ok(())
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn get_all_stock(user_id: i64, state: State<StockAppState>) -> Result<Vec<Stock>, AppError> {
     let service = state
         .stock_service
@@ -62,7 +62,7 @@ pub fn get_all_stock(user_id: i64, state: State<StockAppState>) -> Result<Vec<St
     service.get_all()
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn get_stock_by_id(
     user_id: i64,
     id: i64,
@@ -76,7 +76,7 @@ pub fn get_stock_by_id(
     service.get_by_id(id)
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn get_stock_by_articulo(
     user_id: i64,
     id_articulo: i64,
@@ -90,7 +90,7 @@ pub fn get_stock_by_articulo(
     service.get_by_articulo(id_articulo)
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn create_stock(
     user_id: i64,
     request: CreateStockRequest,
@@ -116,7 +116,7 @@ pub fn create_stock(
     Ok(result)
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn update_stock(
     user_id: i64,
     request: UpdateStockRequest,
@@ -142,7 +142,7 @@ pub fn update_stock(
     Ok(result)
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn delete_stock(user_id: i64, id: i64, state: State<StockAppState>) -> Result<(), AppError> {
     let service = state
         .stock_service
@@ -159,7 +159,7 @@ pub fn delete_stock(user_id: i64, id: i64, state: State<StockAppState>) -> Resul
     Ok(())
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn get_precio_venta(
     user_id: i64,
     id: i64,

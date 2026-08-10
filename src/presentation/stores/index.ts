@@ -16,6 +16,10 @@ export const useAuthStore = defineStore("auth", () => {
   const loginUseCase = new LoginUseCase(repository);
   const changePasswordUseCase = new ChangePasswordUseCase(repository);
 
+  async function ensureDbReady(): Promise<void> {
+    await repository.ensureDbReady();
+  }
+
   function hasPermission(permission: string): boolean {
     return permissions.value.includes(permission);
   }
@@ -81,6 +85,7 @@ export const useAuthStore = defineStore("auth", () => {
     changeOwnPassword,
     hasPermission,
     loadFromStorage,
+    ensureDbReady,
   };
 });
 

@@ -8,7 +8,7 @@ use api::commands::{
     create_categoria,
     create_permission, create_proveedor, create_stock, create_sub_categoria, create_tipo_venta,
     create_user, create_venta, delete_articulo, delete_categoria, delete_proveedor, delete_stock,
-    delete_sub_categoria, delete_tipo_venta, delete_user, get_all_articulos,
+    delete_sub_categoria, delete_tipo_venta, delete_user, ensure_db_ready, get_all_articulos,
     get_all_categorias, get_all_cierres, get_all_permissions, get_all_proveedores, get_all_stock,
     get_all_sub_categorias, get_all_tipos_venta, get_all_users, get_all_ventas,
     get_audit_logs, get_precio_venta, get_proveedor_by_id, get_stock_by_articulo,
@@ -21,8 +21,6 @@ use api::commands::{
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let _ = &infrastructure::database::DB;
-
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .manage(AppState::new())
@@ -36,6 +34,7 @@ pub fn run() {
         .manage(TipoVentaAppState::new())
         .manage(CierreAppState::new())
         .invoke_handler(tauri::generate_handler![
+            ensure_db_ready,
             login,
             create_user,
             get_all_users,

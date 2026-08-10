@@ -53,7 +53,7 @@ fn check_permission(user_id: i64, permission: PermissionCode) -> Result<(), AppE
     Ok(())
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn get_all_articulos(
     user_id: i64,
     state: State<ArticuloAppState>,
@@ -66,7 +66,7 @@ pub fn get_all_articulos(
     service.get_all()
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn create_articulo(
     user_id: i64,
     request: CreateArticuloRequest,
@@ -92,7 +92,7 @@ pub fn create_articulo(
     Ok(result)
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn update_articulo(
     user_id: i64,
     request: UpdateArticuloRequest,
@@ -119,7 +119,7 @@ pub fn update_articulo(
     Ok(result)
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn delete_articulo(
     user_id: i64,
     id: i64,

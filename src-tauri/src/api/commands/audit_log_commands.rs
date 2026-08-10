@@ -48,7 +48,7 @@ fn check_permission(user_id: i64, permission: PermissionCode) -> Result<(), AppE
     Ok(())
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn get_audit_logs(
     user_id: i64,
     request: GetAuditLogsRequest,
