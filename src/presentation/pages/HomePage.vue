@@ -1,15 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
-import {
-    useAuthStore,
-    useArticulosStore,
-    useUsersStore,
-    useCategoriasStore,
-    useSubCategoriasStore,
-    useStockStore,
-    useProveedoresStore,
-    useVentasStore,
-} from "../stores";
+import { computed, onMounted } from "vue";
+import { useAuthStore, useHomeStore } from "../stores";
 import { usePermissions } from "../composables/usePermissions";
 
 const authStore = useAuthStore();
@@ -21,94 +12,43 @@ const {
     canViewCategorias,
     canViewSubCategorias,
 } = usePermissions();
-const articulosStore = useArticulosStore();
-const usersStore = useUsersStore();
-const categoriasStore = useCategoriasStore();
-const subCategoriasStore = useSubCategoriasStore();
-const stockStore = useStockStore();
-const proveedoresStore = useProveedoresStore();
-const ventasStore = useVentasStore();
-
-const loading = ref(true);
+const homeStore = useHomeStore();
 
 onMounted(async () => {
-    try {
-        await Promise.all([
-            articulosStore.fetchArticulos(),
-            usersStore.fetchUsers(),
-            categoriasStore.fetchCategorias(),
-            subCategoriasStore.fetchSubCategorias(),
-            stockStore.fetchStock(),
-            proveedoresStore.fetchProveedores(),
-            ventasStore.fetchVentas(),
-        ]);
-    } finally {
-        loading.value = false;
-    }
+    await homeStore.fetchStats();
 });
 
-const totalArticulos = computed(() => articulosStore.articulos.length);
-const articulosConStock = computed(
-    () => new Set(stockStore.stocks.map((s) => s.id_articulo)).size,
-);
-const totalUsuarios = computed(() => usersStore.users.length);
-const usuariosActivos = computed(
-    () => usersStore.users.filter((u) => u.active).length,
-);
-const usuariosInactivos = computed(() => totalUsuarios.value - usuariosActivos.value);
-const totalProveedores = computed(() => proveedoresStore.proveedores.length);
-const totalCategorias = computed(() => categoriasStore.categorias.length);
-const totalSubCategorias = computed(
-    () => subCategoriasStore.subCategorias.length,
-);
+const totalArticulos = computed(() => homeStore.stats?.total_articulos ?? 0);
+const articulosConStock = computed(() => homeStore.stats?.articulos_con_stock ?? 0);
+const totalUsuarios = computed(() => homeStore.stats?.total_usuarios ?? 0);
+const usuariosActivos = computed(() => homeStore.stats?.usuarios_activos ?? 0);
+const usuariosInactivos = computed(() => homeStore.stats?.usuarios_inactivos ?? 0);
+const totalProveedores = computed(() => homeStore.stats?.total_proveedores ?? 0);
+const totalCategorias = computed(() => homeStore.stats?.total_categorias ?? 0);
+const totalSubCategorias = computed(() => homeStore.stats?.total_sub_categorias ?? 0);
 
-const ventasDelDia = computed(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    return ventasStore.ventas.filter((v) => {
-        if (v.anulada) return false;
-        const fecha = new Date(v.fecha);
-        return fecha >= today && fecha < tomorrow;
-    });
-});
-
-const totalVentasDelDia = computed(() => {
-    return ventasDelDia.value.reduce((acc, v) => acc + v.total, 0);
-});
+const ventasDelDia = computed(() => homeStore.stats?.ventas_hoy ?? 0);
+const totalVentasDelDia = computed(() => homeStore.stats?.total_ventas_hoy ?? 0);
 
 function stat(hasPermission: boolean, value: string | number): string {
     return hasPermission ? String(value) : "—";
 }
 
 const categoriasConSubcategorias = computed(() => {
-    return categoriasStore.categorias.map((cat) => {
-        const subCats = subCategoriasStore.subCategorias.filter(
-            (sc) => sc.id_categoria === cat.id,
-        );
-        return {
-            ...cat,
-            subCategorias: subCats,
-        };
-    });
+    return (homeStore.stats?.categorias ?? []).map((cat) => ({
+        id: cat.id,
+        categoria: cat.categoria,
+        subCategorias: cat.sub_categorias,
+    }));
 });
 
 const articulosBajoStock = computed(() => {
-    return stockStore.stocks
-        .filter((s) => s.cantidad < 10)
-        .map((s) => {
-            const articulo = articulosStore.articulos.find(
-                (a) => a.id === s.id_articulo,
-            );
-            return {
-                ...s,
-                articuloNombre: articulo?.articulo || "Sin artículo",
-                codArticulo: articulo?.cod_articulo || "-",
-            };
-        })
-        .sort((a, b) => a.cantidad - b.cantidad);
+    return (homeStore.stats?.stock_bajo ?? []).map((s) => ({
+        id: s.id_stock,
+        articuloNombre: s.articulo,
+        codArticulo: s.cod_articulo,
+        cantidad: s.cantidad,
+    }));
 });
 </script>
 
@@ -120,7 +60,7 @@ const articulosBajoStock = computed(() => {
             <strong>{{ authStore.user?.username }}</strong>
         </p>
 
-        <div v-if="loading" class="loading">Cargando datos...</div>
+        <div v-if="homeStore.loading" class="loading">Cargando datos...</div>
 
         <template v-else>
             <div class="stats-cards">
@@ -231,7 +171,7 @@ const articulosBajoStock = computed(() => {
                     </div>
                     <div class="stat-info">
                         <span class="stat-value">{{
-                            stat(canViewVentas(), ventasDelDia.length)
+                            stat(canViewVentas(), ventasDelDia)
                         }}</span>
                         <span class="stat-label">Ventas</span>
                         <span v-if="canViewVentas()" class="stat-sub">

@@ -241,7 +241,19 @@ pub fn init_database() -> Result<Connection, rusqlite::Error> {
     seed_admin_user(&conn)?;
     seed_demo_data(&conn)?;
 
+    purge_old_audit_logs(&conn)?;
+
     Ok(conn)
+}
+
+fn purge_old_audit_logs(conn: &Connection) -> Result<(), rusqlite::Error> {
+    const AUDIT_LOG_RETENTION_DAYS: i64 = 90;
+    conn.execute(
+        "DELETE FROM audit_logs
+         WHERE datetime(created_at) < datetime('now', ?1, 'localtime')",
+        rusqlite::params![format!("-{} days", AUDIT_LOG_RETENTION_DAYS)],
+    )?;
+    Ok(())
 }
 
 fn ensure_column(

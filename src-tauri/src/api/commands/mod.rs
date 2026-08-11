@@ -11,6 +11,7 @@ pub mod articulo_commands;
 pub mod audit_log_commands;
 pub mod categoria_commands;
 pub mod cierre_commands;
+pub mod home_commands;
 pub mod proveedor_commands;
 pub mod stock_commands;
 pub mod sub_categoria_commands;
@@ -27,6 +28,7 @@ pub use categoria_commands::{
 pub use cierre_commands::{
     crear_cierre, get_all_cierres, is_dia_cerrado, reabrir_cierre, CierreAppState,
 };
+pub use home_commands::{get_home_stats, HomeStatsAppState};
 pub use proveedor_commands::{
     create_proveedor, delete_proveedor, get_all_proveedores, get_proveedor_by_id, update_proveedor,
     ProveedorAppState,

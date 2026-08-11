@@ -5,6 +5,7 @@ use crate::application::services::{log_audit, VentaService};
 use crate::domain::entities::{
     AuditAction, AuditScreen, PermissionCode, VentaDetalle, VentaWithDetalle,
 };
+use crate::domain::repositories::Page;
 use crate::infrastructure::error::AppError;
 
 pub struct VentaAppState {
@@ -32,6 +33,12 @@ pub struct CreateVentaRequest {
     pub descuento: Option<f64>,
     pub observacion: Option<String>,
     pub id_tipo_venta: Option<i64>,
+}
+
+#[derive(serde::Deserialize)]
+pub struct GetVentasRequest {
+    pub limit: Option<i64>,
+    pub offset: Option<i64>,
 }
 
 fn check_permission(user_id: i64, permission: PermissionCode) -> Result<(), AppError> {
@@ -107,14 +114,17 @@ pub fn create_venta(
 #[tauri::command(async)]
 pub fn get_all_ventas(
     user_id: i64,
+    request: Option<GetVentasRequest>,
     state: State<VentaAppState>,
-) -> Result<Vec<VentaWithDetalle>, AppError> {
+) -> Result<Page<VentaWithDetalle>, AppError> {
     let service = state
         .venta_service
         .lock()
         .map_err(|e| AppError::Internal(e.to_string()))?;
     check_permission(user_id, PermissionCode::ViewVentas)?;
-    service.get_all()
+    let limit = request.as_ref().and_then(|r| r.limit).unwrap_or(50);
+    let offset = request.as_ref().and_then(|r| r.offset).unwrap_or(0);
+    service.get_page(limit, offset)
 }
 
 #[tauri::command(async)]

@@ -3,7 +3,7 @@ use rusqlite::params;
 use crate::domain::entities::{
     Venta, VentaDetalle, VentaDetalleConArticulo, VentaWithDetalle,
 };
-use crate::domain::repositories::VentaRepository;
+use crate::domain::repositories::{Page, VentaRepository};
 use crate::infrastructure::database::DB;
 use crate::infrastructure::error::AppError;
 
@@ -152,6 +152,54 @@ impl VentaRepository for SqliteVentaRepository {
         Ok(ventas)
     }
 
+    fn find_page(&self, limit: i64, offset: i64) -> Result<Page<VentaWithDetalle>, AppError> {
+        let conn = DB.lock().map_err(|e| AppError::Internal(e.to_string()))?;
+
+        let limit = limit.max(1);
+        let offset = offset.max(0);
+
+        let total: i64 = conn.query_row("SELECT COUNT(*) FROM ventas", [], |row| {
+            row.get(0)
+        })?;
+
+        let mut stmt = conn.prepare(
+            "SELECT v.id, v.user_id, COALESCE(u.username, ''), v.fecha, v.total, v.descuento, v.anulada, v.observacion, COALESCE(t.nombre, 'Efectivo'), v.created_at
+             FROM ventas v
+             LEFT JOIN users u ON u.id = v.user_id
+             LEFT JOIN tipos_venta t ON t.id = v.id_tipo_venta
+             ORDER BY v.id DESC
+             LIMIT ?1 OFFSET ?2",
+        )?;
+
+        let mut rows = stmt.query(params![limit, offset])?;
+        let mut ventas = Vec::new();
+        let mut ids: Vec<i64> = Vec::new();
+
+        while let Some(row) = rows.next()? {
+            let venta = self.row_to_venta(row)?;
+            ids.push(venta.id);
+            ventas.push(venta);
+        }
+
+        if !ids.is_empty() {
+            let items = self.load_items_bulk(&conn, &ids)?;
+            for venta in ventas.iter_mut() {
+                venta.items = items
+                    .get(&venta.id)
+                    .cloned()
+                    .unwrap_or_default();
+                venta.subtotal = venta.items.iter().map(|i| i.subtotal).sum();
+            }
+        }
+
+        Ok(Page {
+            items: ventas,
+            total,
+            limit,
+            offset,
+        })
+    }
+
     fn anular(&self, id: i64) -> Result<(), AppError> {
         let mut conn = DB.lock().map_err(|e| AppError::Internal(e.to_string()))?;
         let tx = conn.transaction()?;
@@ -287,5 +335,51 @@ impl SqliteVentaRepository {
         }
 
         Ok(items)
+    }
+
+    fn load_items_bulk(
+        &self,
+        conn: &rusqlite::Connection,
+        venta_ids: &[i64],
+    ) -> Result<std::collections::HashMap<i64, Vec<VentaDetalleConArticulo>>, AppError> {
+        if venta_ids.is_empty() {
+            return Ok(std::collections::HashMap::new());
+        }
+
+        let placeholders: Vec<String> = venta_ids.iter().map(|_| "?".to_string()).collect();
+        let sql = format!(
+            "SELECT d.id, d.id_venta, d.id_articulo, COALESCE(a.cod_articulo, ''), COALESCE(a.articulo, ''), d.cantidad, d.costo_unitario, d.precio_unitario, d.subtotal
+             FROM venta_detalle d
+             LEFT JOIN articulos a ON a.id = d.id_articulo
+             WHERE d.id_venta IN ({})
+             ORDER BY d.id",
+            placeholders.join(", ")
+        );
+
+        let params_vec: Vec<&dyn rusqlite::ToSql> =
+            venta_ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
+
+        let mut stmt = conn.prepare(&sql)?;
+        let mut rows = stmt.query(rusqlite::params_from_iter(params_vec))?;
+
+        let mut map: std::collections::HashMap<i64, Vec<VentaDetalleConArticulo>> =
+            std::collections::HashMap::new();
+
+        while let Some(row) = rows.next()? {
+            let id_venta: i64 = row.get(1)?;
+            let item = VentaDetalleConArticulo {
+                id: row.get(0)?,
+                id_articulo: row.get(2)?,
+                cod_articulo: row.get(3)?,
+                articulo: row.get(4)?,
+                cantidad: row.get(5)?,
+                costo_unitario: row.get(6)?,
+                precio_unitario: row.get(7)?,
+                subtotal: row.get(8)?,
+            };
+            map.entry(id_venta).or_default().push(item);
+        }
+
+        Ok(map)
     }
 }

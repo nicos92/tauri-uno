@@ -11,11 +11,12 @@ use api::commands::{
     delete_sub_categoria, delete_tipo_venta, delete_user, ensure_db_ready, get_all_articulos,
     get_all_categorias, get_all_cierres, get_all_permissions, get_all_proveedores, get_all_stock,
     get_all_sub_categorias, get_all_tipos_venta, get_all_users, get_all_ventas,
-    get_audit_logs, get_precio_venta, get_proveedor_by_id, get_stock_by_articulo,
+    get_audit_logs, get_home_stats, get_precio_venta, get_proveedor_by_id, get_stock_by_articulo,
     get_stock_by_id, get_sub_categorias_by_categoria, get_user_permissions, get_venta_by_id,
     is_dia_cerrado, login, reabrir_cierre, remove_permission_from_user, update_articulo, update_categoria, update_proveedor,
     update_stock, update_sub_categoria, update_tipo_venta, update_user, AppState,
-    ArticuloAppState, AuditLogAppState, CategoriaAppState, CierreAppState, ProveedorAppState,
+    ArticuloAppState, AuditLogAppState, CategoriaAppState, CierreAppState, HomeStatsAppState,
+    ProveedorAppState,
     StockAppState, SubCategoriaAppState, TipoVentaAppState, VentaAppState,
 };
 
@@ -25,6 +26,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .manage(AppState::new())
         .manage(AuditLogAppState::new())
+        .manage(HomeStatsAppState::new())
         .manage(ProveedorAppState::new())
         .manage(CategoriaAppState::new())
         .manage(SubCategoriaAppState::new())
@@ -35,6 +37,7 @@ pub fn run() {
         .manage(CierreAppState::new())
         .invoke_handler(tauri::generate_handler![
             ensure_db_ready,
+            get_home_stats,
             login,
             create_user,
             get_all_users,

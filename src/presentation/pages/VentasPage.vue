@@ -19,6 +19,13 @@ const selectedVenta = ref<VentaWithDetalle | null>(null);
 
 const searchQuery = ref("");
 
+const currentPage = computed(
+    () => Math.floor(ventasStore.offset / ventasStore.limit) + 1,
+);
+const totalPages = computed(() =>
+    Math.max(1, Math.ceil(ventasStore.total / ventasStore.limit)),
+);
+
 const filteredVentas = computed(() => {
     const query = searchQuery.value.toLowerCase().trim();
     if (!query) return ventasStore.ventas;
@@ -34,8 +41,19 @@ const filteredVentas = computed(() => {
 });
 
 onMounted(async () => {
-    await Promise.all([ventasStore.fetchVentas(), ventasStore.checkDiaCerrado()]);
+    await Promise.all([
+        ventasStore.fetchVentas({ limit: 50, offset: 0 }),
+        ventasStore.checkDiaCerrado(),
+    ]);
 });
+
+async function goToPage(page: number) {
+    if (page < 1 || page > totalPages.value || page === currentPage.value) return;
+    await ventasStore.fetchVentas({
+        limit: ventasStore.limit,
+        offset: (page - 1) * ventasStore.limit,
+    });
+}
 
 function irANuevaVenta() {
     router.push({ name: "nueva-venta" });
@@ -164,6 +182,26 @@ function generarPdfDetalle() {
 
         <div v-if="filteredVentas.length === 0" class="empty-state">
             No hay ventas que coincidan con la búsqueda
+        </div>
+
+        <div v-if="!ventasStore.loading && totalPages > 1" class="pagination">
+            <button
+                class="btn-secondary"
+                :disabled="currentPage <= 1"
+                @click="goToPage(currentPage - 1)"
+            >
+                Anterior
+            </button>
+            <span class="pagination-info">
+                Página {{ currentPage }} de {{ totalPages }} — {{ ventasStore.total }} ventas
+            </span>
+            <button
+                class="btn-secondary"
+                :disabled="currentPage >= totalPages"
+                @click="goToPage(currentPage + 1)"
+            >
+                Siguiente
+            </button>
         </div>
 
         <div
@@ -484,6 +522,23 @@ function generarPdfDetalle() {
 .empty-state {
     text-align: center;
     padding: 2rem;
+    color: var(--color-text-muted);
+}
+
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.pagination button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pagination-info {
     color: var(--color-text-muted);
 }
 </style>

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::domain::entities::{Venta, VentaDetalle, VentaWithDetalle};
-use crate::domain::repositories::VentaRepository;
+use crate::domain::repositories::{Page, VentaRepository};
 use crate::infrastructure::error::AppError;
 use crate::infrastructure::repositories::SqliteVentaRepository;
 
@@ -41,6 +41,10 @@ impl VentaService {
 
     pub fn get_all(&self) -> Result<Vec<VentaWithDetalle>, AppError> {
         self.repository.find_all()
+    }
+
+    pub fn get_page(&self, limit: i64, offset: i64) -> Result<Page<VentaWithDetalle>, AppError> {
+        self.repository.find_page(limit, offset)
     }
 
     pub fn get_by_id(&self, id: i64) -> Result<VentaWithDetalle, AppError> {

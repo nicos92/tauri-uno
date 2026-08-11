@@ -1,4 +1,5 @@
 use crate::domain::entities::{Venta, VentaDetalle, VentaWithDetalle};
+use crate::domain::repositories::Page;
 use crate::infrastructure::error::AppError;
 
 pub trait VentaRepository: Send + Sync {
@@ -10,5 +11,6 @@ pub trait VentaRepository: Send + Sync {
     ) -> Result<VentaWithDetalle, AppError>;
     fn find_by_id(&self, id: i64) -> Result<Option<VentaWithDetalle>, AppError>;
     fn find_all(&self) -> Result<Vec<VentaWithDetalle>, AppError>;
+    fn find_page(&self, limit: i64, offset: i64) -> Result<Page<VentaWithDetalle>, AppError>;
     fn anular(&self, id: i64) -> Result<(), AppError>;
 }

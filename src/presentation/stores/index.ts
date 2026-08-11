@@ -691,6 +691,9 @@ export const useVentasStore = defineStore("ventas", () => {
   const loading = ref(false);
   const error = ref<string | null>(null);
   const diaCerrado = ref(false);
+  const total = ref(0);
+  const limit = ref(50);
+  const offset = ref(0);
 
   async function checkDiaCerrado() {
     try {
@@ -700,11 +703,18 @@ export const useVentasStore = defineStore("ventas", () => {
     }
   }
 
-  async function fetchVentas() {
+  async function fetchVentas(filters?: { limit?: number; offset?: number }) {
     loading.value = true;
     error.value = null;
     try {
-      ventas.value = await ventasRepository.getAllVentas();
+      const page = await ventasRepository.getAllVentas({
+        limit: filters?.limit ?? limit.value,
+        offset: filters?.offset ?? offset.value,
+      });
+      ventas.value = page.items;
+      total.value = page.total;
+      limit.value = page.limit;
+      offset.value = page.offset;
     } catch (e) {
       error.value = toErrorMessage(e);
     } finally {
@@ -727,7 +737,7 @@ export const useVentasStore = defineStore("ventas", () => {
     error.value = null;
     try {
       const venta = await ventasRepository.createVenta(request);
-      ventas.value.unshift(venta);
+      await fetchVentas({ limit: limit.value, offset: offset.value });
       await useStockStore().fetchStock();
       return venta;
     } catch (e) {
@@ -740,10 +750,7 @@ export const useVentasStore = defineStore("ventas", () => {
     error.value = null;
     try {
       await ventasRepository.anularVenta(id);
-      const index = ventas.value.findIndex((v) => v.id === id);
-      if (index !== -1) {
-        ventas.value[index].anulada = true;
-      }
+      await fetchVentas({ limit: limit.value, offset: offset.value });
       await useStockStore().fetchStock();
       return true;
     } catch (e) {
@@ -757,6 +764,9 @@ export const useVentasStore = defineStore("ventas", () => {
     loading,
     error,
     diaCerrado,
+    total,
+    limit,
+    offset,
     fetchVentas,
     getVentaById,
     createVenta,
@@ -909,5 +919,35 @@ export const useCierresStore = defineStore("cierres", () => {
     fetchCierres,
     crearCierre,
     reabrirCierre,
+  };
+});
+
+import { HomeApiRepository } from "../../infrastructure/api/homeRepository";
+import type { HomeStats } from "../../domain/entities";
+
+const homeRepository = new HomeApiRepository();
+
+export const useHomeStore = defineStore("home", () => {
+  const stats = ref<HomeStats | null>(null);
+  const loading = ref(false);
+  const error = ref<string | null>(null);
+
+  async function fetchStats() {
+    loading.value = true;
+    error.value = null;
+    try {
+      stats.value = await homeRepository.getHomeStats();
+    } catch (e) {
+      error.value = toErrorMessage(e);
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  return {
+    stats,
+    loading,
+    error,
+    fetchStats,
   };
 });

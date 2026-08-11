@@ -1,5 +1,9 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { CreateVentaRequest, VentaWithDetalle } from "../../domain/entities";
+import type {
+  CreateVentaRequest,
+  VentaPage,
+  VentaWithDetalle,
+} from "../../domain/entities";
 
 export class VentasApiRepository {
   private getCurrentUserId(): number {
@@ -11,9 +15,13 @@ export class VentasApiRepository {
     return 0;
   }
 
-  async getAllVentas(): Promise<VentaWithDetalle[]> {
-    return await invoke<VentaWithDetalle[]>("get_all_ventas", {
+  async getAllVentas(filters: {
+    limit: number;
+    offset: number;
+  }): Promise<VentaPage> {
+    return await invoke<VentaPage>("get_all_ventas", {
       userId: this.getCurrentUserId(),
+      request: { limit: filters.limit, offset: filters.offset },
     });
   }
 

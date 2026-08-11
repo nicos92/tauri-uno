@@ -257,6 +257,13 @@ export interface CreateVentaRequest {
   id_tipo_venta?: number;
 }
 
+export interface VentaPage {
+  items: VentaWithDetalle[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
 export interface Cierre {
   id: number;
   fecha: string;
@@ -288,4 +295,38 @@ export interface CierrePage {
 
 export interface CrearCierreRequest {
   fecha: string;
+}
+
+export interface StockBajoItem {
+  id_stock: number;
+  id_articulo: number;
+  cod_articulo: string;
+  articulo: string;
+  cantidad: number;
+}
+
+export interface SubCategoriaInfo {
+  id: number;
+  sub_categoria: string;
+}
+
+export interface CategoriaConSub {
+  id: number;
+  categoria: string;
+  sub_categorias: SubCategoriaInfo[];
+}
+
+export interface HomeStats {
+  total_articulos: number;
+  articulos_con_stock: number;
+  total_usuarios: number;
+  usuarios_activos: number;
+  usuarios_inactivos: number;
+  total_proveedores: number;
+  total_categorias: number;
+  total_sub_categorias: number;
+  ventas_hoy: number;
+  total_ventas_hoy: number;
+  stock_bajo: StockBajoItem[];
+  categorias: CategoriaConSub[];
 }
