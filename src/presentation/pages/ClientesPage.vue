@@ -394,7 +394,7 @@ function clienteLabel(cliente: Cliente): string {
     font-size: 0.7rem;
     border-radius: 999px;
     background: rgba(102, 126, 234, 0.15);
-    color: #3F2281;
+    color: #9A7EDD;
 }
 
 .actions {
