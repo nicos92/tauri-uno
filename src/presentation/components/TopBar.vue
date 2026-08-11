@@ -2,10 +2,12 @@
 import { computed } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useAuthStore } from "../stores";
+import { useConfirm } from "../composables/useConfirm";
 
 const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
+const { confirm } = useConfirm();
 
 const PAGE_TITLES: Record<string, string> = {
   home: "Inicio",
@@ -41,7 +43,15 @@ const initials = computed(() => {
   return (first + last).toUpperCase();
 });
 
-function handleLogout() {
+async function handleLogout() {
+  const ok = await confirm({
+    title: "Cerrar sesión",
+    message: "¿Está seguro de que desea cerrar la sesión?",
+    confirmText: "Cerrar sesión",
+    cancelText: "Cancelar",
+    variant: "danger",
+  });
+  if (!ok) return;
   authStore.logout();
   router.push({ name: "login" });
 }
