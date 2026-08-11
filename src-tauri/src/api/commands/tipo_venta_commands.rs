@@ -9,6 +9,12 @@ pub struct TipoVentaAppState {
     pub tipo_venta_service: Mutex<TipoVentaService>,
 }
 
+impl Default for TipoVentaAppState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TipoVentaAppState {
     pub fn new() -> Self {
         Self {

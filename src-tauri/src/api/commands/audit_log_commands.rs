@@ -10,6 +10,12 @@ pub struct AuditLogAppState {
     pub audit_service: Mutex<AuditLogService>,
 }
 
+impl Default for AuditLogAppState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl AuditLogAppState {
     pub fn new() -> Self {
         Self {

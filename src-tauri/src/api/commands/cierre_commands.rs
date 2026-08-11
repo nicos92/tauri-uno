@@ -12,6 +12,12 @@ pub struct CierreAppState {
     pub cierre_service: Mutex<CierreService>,
 }
 
+impl Default for CierreAppState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl CierreAppState {
     pub fn new() -> Self {
         Self {

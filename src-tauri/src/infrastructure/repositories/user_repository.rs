@@ -8,6 +8,12 @@ use crate::infrastructure::error::AppError;
 
 pub struct SqliteUserRepository;
 
+impl Default for SqliteUserRepository {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SqliteUserRepository {
     pub fn new() -> Self {
         Self

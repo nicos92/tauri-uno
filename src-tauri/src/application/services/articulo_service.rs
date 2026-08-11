@@ -9,6 +9,12 @@ pub struct ArticuloService {
     repository: Arc<SqliteArticuloRepository>,
 }
 
+impl Default for ArticuloService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ArticuloService {
     pub fn new() -> Self {
         Self {

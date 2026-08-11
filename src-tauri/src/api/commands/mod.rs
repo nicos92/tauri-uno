@@ -53,6 +53,12 @@ pub struct AppState {
     pub user_service: Mutex<UserService>,
 }
 
+impl Default for AppState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl AppState {
     pub fn new() -> Self {
         Self {

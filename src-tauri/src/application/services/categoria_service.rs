@@ -9,6 +9,12 @@ pub struct CategoriaService {
     repository: Arc<SqliteCategoriaRepository>,
 }
 
+impl Default for CategoriaService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl CategoriaService {
     pub fn new() -> Self {
         Self {

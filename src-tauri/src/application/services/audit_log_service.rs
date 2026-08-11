@@ -9,6 +9,12 @@ pub struct AuditLogService {
     repository: Arc<SqliteAuditLogRepository>,
 }
 
+impl Default for AuditLogService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl AuditLogService {
     pub fn new() -> Self {
         Self {

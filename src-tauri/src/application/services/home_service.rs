@@ -5,6 +5,12 @@ use crate::infrastructure::error::AppError;
 
 pub struct HomeService;
 
+impl Default for HomeService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl HomeService {
     pub fn new() -> Self {
         Self

@@ -9,6 +9,12 @@ pub struct VentaService {
     repository: Arc<SqliteVentaRepository>,
 }
 
+impl Default for VentaService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl VentaService {
     pub fn new() -> Self {
         Self {

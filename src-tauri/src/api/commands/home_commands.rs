@@ -9,6 +9,12 @@ pub struct HomeStatsAppState {
     pub home_service: Mutex<HomeService>,
 }
 
+impl Default for HomeStatsAppState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl HomeStatsAppState {
     pub fn new() -> Self {
         Self {

@@ -7,6 +7,12 @@ use crate::infrastructure::error::AppError;
 
 pub struct SqliteCierreRepository;
 
+impl Default for SqliteCierreRepository {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SqliteCierreRepository {
     pub fn new() -> Self {
         Self

@@ -9,6 +9,12 @@ pub struct StockAppState {
     pub stock_service: Mutex<StockService>,
 }
 
+impl Default for StockAppState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl StockAppState {
     pub fn new() -> Self {
         Self {

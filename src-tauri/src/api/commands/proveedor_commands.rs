@@ -9,6 +9,12 @@ pub struct ProveedorAppState {
     pub proveedor_service: Mutex<ProveedorService>,
 }
 
+impl Default for ProveedorAppState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ProveedorAppState {
     pub fn new() -> Self {
         Self {
@@ -70,7 +76,7 @@ pub fn get_all_proveedores(
         .proveedor_service
         .lock()
         .map_err(|e| AppError::Internal(e.to_string()))?;
-    check_permission(&*service, user_id, PermissionCode::ViewProveedores)?;
+    check_permission(&service, user_id, PermissionCode::ViewProveedores)?;
     service.get_all()
 }
 
@@ -84,7 +90,7 @@ pub fn get_proveedor_by_id(
         .proveedor_service
         .lock()
         .map_err(|e| AppError::Internal(e.to_string()))?;
-    check_permission(&*service, user_id, PermissionCode::ViewProveedores)?;
+    check_permission(&service, user_id, PermissionCode::ViewProveedores)?;
     service.get_by_id(id)
 }
 
@@ -98,7 +104,7 @@ pub fn create_proveedor(
         .proveedor_service
         .lock()
         .map_err(|e| AppError::Internal(e.to_string()))?;
-    check_permission(&*service, user_id, PermissionCode::CreateProveedor)?;
+    check_permission(&service, user_id, PermissionCode::CreateProveedor)?;
     let result = service.create(
         request.proveedor,
         request.nombre,
@@ -129,7 +135,7 @@ pub fn update_proveedor(
         .proveedor_service
         .lock()
         .map_err(|e| AppError::Internal(e.to_string()))?;
-    check_permission(&*service, user_id, PermissionCode::UpdateProveedor)?;
+    check_permission(&service, user_id, PermissionCode::UpdateProveedor)?;
     let result = service.update(
         request.id,
         request.proveedor,
@@ -161,7 +167,7 @@ pub fn delete_proveedor(
         .proveedor_service
         .lock()
         .map_err(|e| AppError::Internal(e.to_string()))?;
-    check_permission(&*service, user_id, PermissionCode::DeleteProveedor)?;
+    check_permission(&service, user_id, PermissionCode::DeleteProveedor)?;
     service.delete(id)?;
     log_audit(
         user_id,

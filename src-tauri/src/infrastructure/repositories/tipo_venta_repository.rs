@@ -7,6 +7,12 @@ use crate::infrastructure::error::AppError;
 
 pub struct SqliteTipoVentaRepository;
 
+impl Default for SqliteTipoVentaRepository {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SqliteTipoVentaRepository {
     pub fn new() -> Self {
         Self

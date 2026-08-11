@@ -9,6 +9,12 @@ pub struct ProveedorService {
     repository: Arc<SqliteProveedorRepository>,
 }
 
+impl Default for ProveedorService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ProveedorService {
     pub fn new() -> Self {
         Self {

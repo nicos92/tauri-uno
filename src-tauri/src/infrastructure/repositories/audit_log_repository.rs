@@ -7,6 +7,12 @@ use crate::infrastructure::error::AppError;
 
 pub struct SqliteAuditLogRepository;
 
+impl Default for SqliteAuditLogRepository {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SqliteAuditLogRepository {
     pub fn new() -> Self {
         Self

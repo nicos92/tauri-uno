@@ -9,6 +9,12 @@ pub struct SubCategoriaAppState {
     pub sub_categoria_service: Mutex<SubCategoriaService>,
 }
 
+impl Default for SubCategoriaAppState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SubCategoriaAppState {
     pub fn new() -> Self {
         Self {

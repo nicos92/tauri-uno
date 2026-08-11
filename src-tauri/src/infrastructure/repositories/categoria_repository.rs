@@ -7,6 +7,12 @@ use crate::infrastructure::error::AppError;
 
 pub struct SqliteCategoriaRepository;
 
+impl Default for SqliteCategoriaRepository {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SqliteCategoriaRepository {
     pub fn new() -> Self {
         Self

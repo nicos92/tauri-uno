@@ -9,6 +9,12 @@ pub struct ArticuloAppState {
     pub articulo_service: Mutex<ArticuloService>,
 }
 
+impl Default for ArticuloAppState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ArticuloAppState {
     pub fn new() -> Self {
         Self {

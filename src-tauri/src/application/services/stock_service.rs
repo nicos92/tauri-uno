@@ -9,6 +9,12 @@ pub struct StockService {
     repository: Arc<SqliteStockRepository>,
 }
 
+impl Default for StockService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl StockService {
     pub fn new() -> Self {
         Self {

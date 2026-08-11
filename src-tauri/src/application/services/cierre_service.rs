@@ -12,6 +12,12 @@ pub struct CierreService {
     repository: Arc<SqliteCierreRepository>,
 }
 
+impl Default for CierreService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl CierreService {
     pub fn new() -> Self {
         Self {

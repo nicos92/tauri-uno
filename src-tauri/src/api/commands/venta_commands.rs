@@ -12,6 +12,12 @@ pub struct VentaAppState {
     pub venta_service: Mutex<VentaService>,
 }
 
+impl Default for VentaAppState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl VentaAppState {
     pub fn new() -> Self {
         Self {
