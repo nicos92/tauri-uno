@@ -1,6 +1,7 @@
 use crate::domain::entities::TipoVenta;
 use crate::infrastructure::error::AppError;
 
+#[cfg_attr(test, mockall::automock)]
 pub trait TipoVentaRepository: Send + Sync {
     fn find_all(&self) -> Result<Vec<TipoVenta>, AppError>;
     fn find_by_id(&self, id: i64) -> Result<Option<TipoVenta>, AppError>;

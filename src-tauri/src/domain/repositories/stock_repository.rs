@@ -1,6 +1,7 @@
 use crate::domain::entities::Stock;
 use crate::infrastructure::error::AppError;
 
+#[cfg_attr(test, mockall::automock)]
 pub trait StockRepository: Send + Sync {
     fn create(&self, stock: &Stock) -> Result<Stock, AppError>;
     fn find_by_id(&self, id: i64) -> Result<Option<Stock>, AppError>;

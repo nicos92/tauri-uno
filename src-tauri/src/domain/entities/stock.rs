@@ -20,3 +20,38 @@ impl Stock {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new_sets_fields() {
+        let s = Stock::new(12, 50.5, 100.0, 30.0);
+        assert_eq!(s.id, 0);
+        assert_eq!(s.id_articulo, 12);
+        assert_eq!(s.cantidad, 50.5);
+        assert_eq!(s.costo, 100.0);
+        assert_eq!(s.ganancia, 30.0);
+    }
+
+    #[test]
+    fn new_accepts_zero_and_negative_cantidad() {
+        let s = Stock::new(12, 0.0, 0.0, 0.0);
+        assert_eq!(s.cantidad, 0.0);
+        assert_eq!(s.costo, 0.0);
+        assert_eq!(s.ganancia, 0.0);
+    }
+
+    #[test]
+    fn json_round_trip() {
+        let s = Stock::new(12, 50.5, 100.0, 30.0);
+        let json = serde_json::to_string(&s).unwrap();
+        let back: Stock = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.id_articulo, 12);
+        assert_eq!(back.cantidad, 50.5);
+        assert_eq!(back.costo, 100.0);
+        assert_eq!(back.ganancia, 30.0);
+        assert_eq!(back.id, 0);
+    }
+}

@@ -6,7 +6,7 @@ use crate::infrastructure::error::AppError;
 use crate::infrastructure::repositories::SqliteProveedorRepository;
 
 pub struct ProveedorService {
-    repository: Arc<SqliteProveedorRepository>,
+    repository: Arc<dyn ProveedorRepository>,
 }
 
 impl Default for ProveedorService {
@@ -17,9 +17,11 @@ impl Default for ProveedorService {
 
 impl ProveedorService {
     pub fn new() -> Self {
-        Self {
-            repository: Arc::new(SqliteProveedorRepository::new()),
-        }
+        Self::with_repository(Arc::new(SqliteProveedorRepository::new()))
+    }
+
+    pub fn with_repository(repository: Arc<dyn ProveedorRepository>) -> Self {
+        Self { repository }
     }
 
     pub fn create(

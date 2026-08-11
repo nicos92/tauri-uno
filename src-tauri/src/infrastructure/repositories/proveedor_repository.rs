@@ -142,3 +142,100 @@ impl SqliteProveedorRepository {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::infrastructure::database::{reset_test_db, TEST_LOCK};
+    use std::sync::MutexGuard;
+
+    fn fresh_db() -> MutexGuard<'static, ()> {
+        let guard = TEST_LOCK.lock().unwrap();
+        reset_test_db().unwrap();
+        guard
+    }
+
+    fn sample_proveedor() -> Proveedor {
+        Proveedor::new(
+            "TESTPROV".to_string(),
+            "Proveedor Test".to_string(),
+            Some("30-00000000-1".to_string()),
+            Some("1234".to_string()),
+            Some("t@t.com".to_string()),
+            Some("obs".to_string()),
+        )
+    }
+
+    #[test]
+    fn create_assigns_id_and_find_by_id_round_trip() {
+        let _guard = fresh_db();
+        let repo = SqliteProveedorRepository::new();
+
+        let created = repo.create(&sample_proveedor()).unwrap();
+        assert!(created.id > 0);
+
+        let found = repo.find_by_id(created.id).unwrap().unwrap();
+        assert_eq!(found.id, created.id);
+        assert_eq!(found.proveedor, "TESTPROV");
+        assert_eq!(found.nombre, "Proveedor Test");
+        assert_eq!(found.cuit.as_deref(), Some("30-00000000-1"));
+        assert_eq!(found.tel.as_deref(), Some("1234"));
+        assert_eq!(found.email.as_deref(), Some("t@t.com"));
+        assert_eq!(found.observacion.as_deref(), Some("obs"));
+    }
+
+    #[test]
+    fn create_with_duplicate_cuit_maps_duplicate_value() {
+        let _guard = fresh_db();
+        let repo = SqliteProveedorRepository::new();
+
+        repo.create(&sample_proveedor()).unwrap();
+        let err = repo.create(&sample_proveedor()).unwrap_err();
+        assert!(matches!(err, AppError::DuplicateValue), "{:?}", err);
+    }
+
+    #[test]
+    fn find_by_cuit_returns_none_when_missing() {
+        let _guard = fresh_db();
+        let repo = SqliteProveedorRepository::new();
+
+        assert!(repo.find_by_cuit("30-00000000-1").unwrap().is_none());
+
+        let created = repo.create(&sample_proveedor()).unwrap();
+        let found = repo.find_by_cuit("30-00000000-1").unwrap().unwrap();
+        assert_eq!(found.id, created.id);
+    }
+
+    #[test]
+    fn find_all_and_update() {
+        let _guard = fresh_db();
+        let repo = SqliteProveedorRepository::new();
+
+        let mut created = repo.create(&sample_proveedor()).unwrap();
+        assert!(repo.find_all().unwrap().iter().any(|p| p.id == created.id));
+
+        created.tel = Some("9999".to_string());
+        repo.update(&created).unwrap();
+        let updated = repo.find_by_id(created.id).unwrap().unwrap();
+        assert_eq!(updated.tel.as_deref(), Some("9999"));
+    }
+
+    #[test]
+    fn delete_removes_proveedor() {
+        let _guard = fresh_db();
+        let repo = SqliteProveedorRepository::new();
+
+        let created = repo.create(&sample_proveedor()).unwrap();
+        repo.delete(created.id).unwrap();
+        assert!(repo.find_by_id(created.id).unwrap().is_none());
+    }
+
+    #[test]
+    fn has_articulos_returns_false_without_articulos() {
+        let _guard = fresh_db();
+        let repo = SqliteProveedorRepository::new();
+
+        let created = repo.create(&sample_proveedor()).unwrap();
+        assert!(!repo.has_articulos(created.id).unwrap());
+    }
+}

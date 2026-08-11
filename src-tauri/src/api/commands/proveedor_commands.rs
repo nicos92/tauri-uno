@@ -2,6 +2,7 @@ use std::sync::Mutex;
 use tauri::State;
 
 use crate::application::services::{log_audit, ProveedorService};
+use crate::api::commands::permissions::check_permission;
 use crate::domain::entities::{AuditAction, AuditScreen, PermissionCode, Proveedor};
 use crate::infrastructure::error::AppError;
 
@@ -44,29 +45,6 @@ pub struct UpdateProveedorRequest {
     pub observacion: Option<String>,
 }
 
-fn check_permission(
-    _service: &ProveedorService,
-    user_id: i64,
-    permission: PermissionCode,
-) -> Result<(), AppError> {
-    let conn = crate::infrastructure::database::DB
-        .lock()
-        .map_err(|e| AppError::Internal(e.to_string()))?;
-
-    let count: i64 = conn.query_row(
-        "SELECT COUNT(*) FROM user_permissions up
-         INNER JOIN permissions p ON up.permission_id = p.id
-         WHERE up.user_id = ?1 AND p.permission = ?2",
-        rusqlite::params![user_id, permission.as_str()],
-        |row| row.get(0),
-    )?;
-
-    if count == 0 {
-        return Err(AppError::PermissionDenied);
-    }
-    Ok(())
-}
-
 #[tauri::command(async)]
 pub fn get_all_proveedores(
     user_id: i64,
@@ -76,7 +54,7 @@ pub fn get_all_proveedores(
         .proveedor_service
         .lock()
         .map_err(|e| AppError::Internal(e.to_string()))?;
-    check_permission(&service, user_id, PermissionCode::ViewProveedores)?;
+    check_permission(user_id, PermissionCode::ViewProveedores)?;
     service.get_all()
 }
 
@@ -90,7 +68,7 @@ pub fn get_proveedor_by_id(
         .proveedor_service
         .lock()
         .map_err(|e| AppError::Internal(e.to_string()))?;
-    check_permission(&service, user_id, PermissionCode::ViewProveedores)?;
+    check_permission(user_id, PermissionCode::ViewProveedores)?;
     service.get_by_id(id)
 }
 
@@ -104,7 +82,7 @@ pub fn create_proveedor(
         .proveedor_service
         .lock()
         .map_err(|e| AppError::Internal(e.to_string()))?;
-    check_permission(&service, user_id, PermissionCode::CreateProveedor)?;
+    check_permission(user_id, PermissionCode::CreateProveedor)?;
     let result = service.create(
         request.proveedor,
         request.nombre,
@@ -135,7 +113,7 @@ pub fn update_proveedor(
         .proveedor_service
         .lock()
         .map_err(|e| AppError::Internal(e.to_string()))?;
-    check_permission(&service, user_id, PermissionCode::UpdateProveedor)?;
+    check_permission(user_id, PermissionCode::UpdateProveedor)?;
     let proveedor = Proveedor {
         id: request.id,
         proveedor: request.proveedor,
@@ -168,7 +146,7 @@ pub fn delete_proveedor(
         .proveedor_service
         .lock()
         .map_err(|e| AppError::Internal(e.to_string()))?;
-    check_permission(&service, user_id, PermissionCode::DeleteProveedor)?;
+    check_permission(user_id, PermissionCode::DeleteProveedor)?;
     service.delete(id)?;
     log_audit(
         user_id,

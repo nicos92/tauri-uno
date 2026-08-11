@@ -13,7 +13,9 @@ pub struct AuditLogFilter {
     pub offset: Option<i64>,
 }
 
+#[cfg_attr(test, mockall::automock)]
 pub trait AuditLogRepository: Send + Sync {
     fn create(&self, log: &AuditLog) -> Result<AuditLog, AppError>;
     fn find_with_filters(&self, filter: &AuditLogFilter) -> Result<Page<AuditLog>, AppError>;
+    fn get_username(&self, user_id: i64) -> Result<Option<String>, AppError>;
 }

@@ -2,6 +2,7 @@ use std::sync::Mutex;
 use tauri::State;
 
 use crate::application::services::{log_audit, StockService};
+use crate::api::commands::permissions::check_permission;
 use crate::domain::entities::{AuditAction, AuditScreen, PermissionCode, Stock};
 use crate::infrastructure::error::AppError;
 
@@ -37,25 +38,6 @@ pub struct UpdateStockRequest {
     pub cantidad: f64,
     pub costo: f64,
     pub ganancia: f64,
-}
-
-fn check_permission(user_id: i64, permission: PermissionCode) -> Result<(), AppError> {
-    let conn = crate::infrastructure::database::DB
-        .lock()
-        .map_err(|e| AppError::Internal(e.to_string()))?;
-
-    let count: i64 = conn.query_row(
-        "SELECT COUNT(*) FROM user_permissions up
-         INNER JOIN permissions p ON up.permission_id = p.id
-         WHERE up.user_id = ?1 AND p.permission = ?2",
-        rusqlite::params![user_id, permission.as_str()],
-        |row| row.get(0),
-    )?;
-
-    if count == 0 {
-        return Err(AppError::PermissionDenied);
-    }
-    Ok(())
 }
 
 #[tauri::command(async)]

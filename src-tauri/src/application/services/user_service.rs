@@ -10,7 +10,7 @@ use crate::infrastructure::repositories::SqliteUserRepository;
 const BCRYPT_COST: u32 = 10;
 
 pub struct UserService {
-    repository: Arc<SqliteUserRepository>,
+    repository: Arc<dyn UserRepository>,
 }
 
 impl Default for UserService {
@@ -21,9 +21,11 @@ impl Default for UserService {
 
 impl UserService {
     pub fn new() -> Self {
-        Self {
-            repository: Arc::new(SqliteUserRepository::new()),
-        }
+        Self::with_repository(Arc::new(SqliteUserRepository::new()))
+    }
+
+    pub fn with_repository(repository: Arc<dyn UserRepository>) -> Self {
+        Self { repository }
     }
 
     pub fn create_user(&self, username: String, password: String) -> Result<User, AppError> {
@@ -175,18 +177,7 @@ impl UserService {
         }
 
         let permission = Permission::new(permission_name);
-
-        let conn = crate::infrastructure::database::DB
-            .lock()
-            .map_err(|e| AppError::Internal(e.to_string()))?;
-
-        conn.execute(
-            "INSERT INTO permissions (permission, created) VALUES (?1, ?2)",
-            rusqlite::params![permission.permission, permission.created.to_rfc3339()],
-        )?;
-
-        let id = conn.last_insert_rowid();
-        Ok(Permission { id, ..permission })
+        self.repository.create_permission(&permission)
     }
 
     pub fn has_permission(&self, user_id: i64, permission_name: &str) -> Result<bool, AppError> {

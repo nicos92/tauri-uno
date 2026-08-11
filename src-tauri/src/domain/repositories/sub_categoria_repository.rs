@@ -1,6 +1,7 @@
 use crate::domain::entities::SubCategoria;
 use crate::infrastructure::error::AppError;
 
+#[cfg_attr(test, mockall::automock)]
 pub trait SubCategoriaRepository: Send + Sync {
     fn create(&self, sub_categoria: &SubCategoria) -> Result<SubCategoria, AppError>;
     fn find_by_id(&self, id: i64) -> Result<Option<SubCategoria>, AppError>;

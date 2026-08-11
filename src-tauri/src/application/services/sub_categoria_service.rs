@@ -6,7 +6,7 @@ use crate::infrastructure::error::AppError;
 use crate::infrastructure::repositories::SqliteSubCategoriaRepository;
 
 pub struct SubCategoriaService {
-    repository: Arc<SqliteSubCategoriaRepository>,
+    repository: Arc<dyn SubCategoriaRepository>,
 }
 
 impl Default for SubCategoriaService {
@@ -17,9 +17,11 @@ impl Default for SubCategoriaService {
 
 impl SubCategoriaService {
     pub fn new() -> Self {
-        Self {
-            repository: Arc::new(SqliteSubCategoriaRepository::new()),
-        }
+        Self::with_repository(Arc::new(SqliteSubCategoriaRepository::new()))
+    }
+
+    pub fn with_repository(repository: Arc<dyn SubCategoriaRepository>) -> Self {
+        Self { repository }
     }
 
     pub fn create(

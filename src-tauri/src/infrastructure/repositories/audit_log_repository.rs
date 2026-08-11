@@ -20,6 +20,20 @@ impl SqliteAuditLogRepository {
 }
 
 impl AuditLogRepository for SqliteAuditLogRepository {
+    fn get_username(&self, user_id: i64) -> Result<Option<String>, AppError> {
+        let conn = DB.lock().map_err(|e| AppError::Internal(e.to_string()))?;
+
+        let username: Option<String> = conn
+            .query_row(
+                "SELECT username FROM users WHERE id = ?1",
+                params![user_id],
+                |row| row.get(0),
+            )
+            .ok();
+
+        Ok(username)
+    }
+
     fn create(&self, log: &AuditLog) -> Result<AuditLog, AppError> {
         let conn = DB.lock().map_err(|e| AppError::Internal(e.to_string()))?;
 

@@ -6,7 +6,7 @@ use crate::infrastructure::error::AppError;
 use crate::infrastructure::repositories::SqliteStockRepository;
 
 pub struct StockService {
-    repository: Arc<SqliteStockRepository>,
+    repository: Arc<dyn StockRepository>,
 }
 
 impl Default for StockService {
@@ -17,9 +17,11 @@ impl Default for StockService {
 
 impl StockService {
     pub fn new() -> Self {
-        Self {
-            repository: Arc::new(SqliteStockRepository::new()),
-        }
+        Self::with_repository(Arc::new(SqliteStockRepository::new()))
+    }
+
+    pub fn with_repository(repository: Arc<dyn StockRepository>) -> Self {
+        Self { repository }
     }
 
     pub fn create(

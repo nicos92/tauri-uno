@@ -6,7 +6,7 @@ use crate::infrastructure::error::AppError;
 use crate::infrastructure::repositories::SqliteAuditLogRepository;
 
 pub struct AuditLogService {
-    repository: Arc<SqliteAuditLogRepository>,
+    repository: Arc<dyn AuditLogRepository>,
 }
 
 impl Default for AuditLogService {
@@ -17,9 +17,11 @@ impl Default for AuditLogService {
 
 impl AuditLogService {
     pub fn new() -> Self {
-        Self {
-            repository: Arc::new(SqliteAuditLogRepository::new()),
-        }
+        Self::with_repository(Arc::new(SqliteAuditLogRepository::new()))
+    }
+
+    pub fn with_repository(repository: Arc<dyn AuditLogRepository>) -> Self {
+        Self { repository }
     }
 
     pub fn log(
@@ -29,7 +31,10 @@ impl AuditLogService {
         action: AuditAction,
         detail: Option<String>,
     ) -> Result<AuditLog, AppError> {
-        let username = lookup_username(user_id)?;
+        let username = self
+            .repository
+            .get_username(user_id)?
+            .unwrap_or_default();
         let log = AuditLog::new(user_id, username, screen, action, detail);
         self.repository.create(&log)
     }
@@ -37,22 +42,6 @@ impl AuditLogService {
     pub fn get_logs(&self, filter: &AuditLogFilter) -> Result<Page<AuditLog>, AppError> {
         self.repository.find_with_filters(filter)
     }
-}
-
-fn lookup_username(user_id: i64) -> Result<String, AppError> {
-    let conn = crate::infrastructure::database::DB
-        .lock()
-        .map_err(|e| AppError::Internal(e.to_string()))?;
-
-    let username: Option<String> = conn
-        .query_row(
-            "SELECT username FROM users WHERE id = ?1",
-            rusqlite::params![user_id],
-            |row| row.get(0),
-        )
-        .ok();
-
-    Ok(username.unwrap_or_default())
 }
 
 pub fn log_audit(

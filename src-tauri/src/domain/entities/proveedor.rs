@@ -31,3 +31,60 @@ impl Proveedor {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new_sets_id_zero_and_required_fields() {
+        let p = Proveedor::new(
+            "DISTRIBUIDORA".to_string(),
+            "Distribuidora SA".to_string(),
+            None,
+            None,
+            None,
+            None,
+        );
+        assert_eq!(p.id, 0);
+        assert_eq!(p.proveedor, "DISTRIBUIDORA");
+        assert_eq!(p.nombre, "Distribuidora SA");
+        assert!(p.cuit.is_none());
+        assert!(p.tel.is_none());
+        assert!(p.email.is_none());
+        assert!(p.observacion.is_none());
+    }
+
+    #[test]
+    fn new_keeps_optional_fields() {
+        let p = Proveedor::new(
+            "P1".to_string(),
+            "Nombre 1".to_string(),
+            Some("20-12345678-9".to_string()),
+            Some("555-1234".to_string()),
+            Some("a@b.com".to_string()),
+            Some("obs".to_string()),
+        );
+        assert_eq!(p.cuit.as_deref(), Some("20-12345678-9"));
+        assert_eq!(p.tel.as_deref(), Some("555-1234"));
+        assert_eq!(p.email.as_deref(), Some("a@b.com"));
+        assert_eq!(p.observacion.as_deref(), Some("obs"));
+    }
+
+    #[test]
+    fn json_round_trip() {
+        let p = Proveedor::new(
+            "P1".to_string(),
+            "Nombre 1".to_string(),
+            Some("20-12345678-9".to_string()),
+            None,
+            None,
+            None,
+        );
+        let json = serde_json::to_string(&p).unwrap();
+        let back: Proveedor = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.proveedor, p.proveedor);
+        assert_eq!(back.cuit, p.cuit);
+        assert_eq!(back.id, 0);
+    }
+}

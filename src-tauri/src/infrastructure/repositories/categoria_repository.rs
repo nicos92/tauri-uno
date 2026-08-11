@@ -116,3 +116,86 @@ impl SqliteCategoriaRepository {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::domain::entities::SubCategoria;
+    use crate::domain::repositories::SubCategoriaRepository;
+    use crate::infrastructure::database::{reset_test_db, TEST_LOCK};
+    use crate::infrastructure::repositories::SqliteSubCategoriaRepository;
+    use std::sync::MutexGuard;
+
+    fn fresh_db() -> MutexGuard<'static, ()> {
+        let guard = TEST_LOCK.lock().unwrap();
+        reset_test_db().unwrap();
+        guard
+    }
+
+    #[test]
+    fn create_assigns_id_and_find_by_id_round_trip() {
+        let _guard = fresh_db();
+        let repo = SqliteCategoriaRepository::new();
+
+        let created = repo.create(&Categoria::new("Test Cat".to_string())).unwrap();
+        assert!(created.id > 0);
+
+        let found = repo.find_by_id(created.id).unwrap().unwrap();
+        assert_eq!(found.categoria, "Test Cat");
+    }
+
+    #[test]
+    fn find_by_name_and_duplicate_maps_duplicate_value() {
+        let _guard = fresh_db();
+        let repo = SqliteCategoriaRepository::new();
+
+        repo.create(&Categoria::new("Bebidas Test".to_string())).unwrap();
+        let found = repo.find_by_name("Bebidas Test").unwrap().unwrap();
+        assert_eq!(found.categoria, "Bebidas Test");
+        assert!(repo.find_by_name("No existe").unwrap().is_none());
+
+        let err = repo
+            .create(&Categoria::new("Bebidas Test".to_string()))
+            .unwrap_err();
+        assert!(matches!(err, AppError::DuplicateValue), "{:?}", err);
+    }
+
+    #[test]
+    fn find_all_and_update() {
+        let _guard = fresh_db();
+        let repo = SqliteCategoriaRepository::new();
+
+        let mut created = repo.create(&Categoria::new("Cat A".to_string())).unwrap();
+        assert!(repo.find_all().unwrap().iter().any(|c| c.id == created.id));
+
+        created.categoria = "Cat B".to_string();
+        repo.update(&created).unwrap();
+        let updated = repo.find_by_id(created.id).unwrap().unwrap();
+        assert_eq!(updated.categoria, "Cat B");
+    }
+
+    #[test]
+    fn delete_removes_categoria() {
+        let _guard = fresh_db();
+        let repo = SqliteCategoriaRepository::new();
+
+        let created = repo.create(&Categoria::new("Cat X".to_string())).unwrap();
+        repo.delete(created.id).unwrap();
+        assert!(repo.find_by_id(created.id).unwrap().is_none());
+    }
+
+    #[test]
+    fn delete_categoria_with_sub_categorias_maps_foreign_key() {
+        let _guard = fresh_db();
+        let repo = SqliteCategoriaRepository::new();
+
+        let created = repo.create(&Categoria::new("Cat Y".to_string())).unwrap();
+        let sub_repo = SqliteSubCategoriaRepository::new();
+        sub_repo
+            .create(&SubCategoria::new("Sub Y".to_string(), created.id))
+            .unwrap();
+
+        let err = repo.delete(created.id).unwrap_err();
+        assert!(matches!(err, AppError::ForeignKeyConstraint), "{:?}", err);
+    }
+}

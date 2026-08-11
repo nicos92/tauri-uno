@@ -1,6 +1,7 @@
 use std::sync::Mutex;
 use tauri::State;
 
+use crate::api::commands::permissions::check_permission;
 use crate::application::services::{log_audit, UserService};
 use crate::domain::entities::{
     AuditAction, AuditScreen, Permission, PermissionCode, User, UserPermission,
@@ -12,6 +13,7 @@ pub mod audit_log_commands;
 pub mod categoria_commands;
 pub mod cierre_commands;
 pub mod home_commands;
+pub mod permissions;
 pub mod proveedor_commands;
 pub mod stock_commands;
 pub mod sub_categoria_commands;
@@ -137,21 +139,6 @@ pub async fn ensure_db_ready() -> Result<(), AppError> {
     .map_err(|e| AppError::Internal(e.to_string()))
 }
 
-fn check_permission(
-    service: &UserService,
-    user_id: i64,
-    permission: PermissionCode,
-) -> Result<(), AppError> {
-    let has_perm = service
-        .has_permission(user_id, permission.as_str())
-        .map_err(|e| AppError::Internal(e.to_string()))?;
-
-    if !has_perm {
-        return Err(AppError::PermissionDenied);
-    }
-    Ok(())
-}
-
 #[tauri::command(async)]
 pub fn login(request: LoginRequest, state: State<AppState>) -> Result<LoginResponse, AppError> {
     let service = state
@@ -179,7 +166,7 @@ pub fn create_user(
         .user_service
         .lock()
         .map_err(|e| AppError::Internal(e.to_string()))?;
-    check_permission(&service, user_id, PermissionCode::CreateUser)?;
+    check_permission(user_id, PermissionCode::CreateUser)?;
     let user = service.create_user(request.username, request.password)?;
     log_audit(
         user_id,
@@ -196,7 +183,7 @@ pub fn get_all_users(user_id: i64, state: State<AppState>) -> Result<Vec<UserRes
         .user_service
         .lock()
         .map_err(|e| AppError::Internal(e.to_string()))?;
-    check_permission(&service, user_id, PermissionCode::ViewUsers)?;
+    check_permission(user_id, PermissionCode::ViewUsers)?;
     let users = service.get_all_users()?;
     Ok(users.into_iter().map(|u| u.into()).collect())
 }
@@ -211,7 +198,7 @@ pub fn update_user(
         .user_service
         .lock()
         .map_err(|e| AppError::Internal(e.to_string()))?;
-    check_permission(&service, user_id, PermissionCode::UpdateUser)?;
+    check_permission(user_id, PermissionCode::UpdateUser)?;
     let user = service.update_user(request.id, request.username, request.active)?;
     log_audit(
         user_id,
@@ -234,7 +221,7 @@ pub fn change_password(
         .map_err(|e| AppError::Internal(e.to_string()))?;
 
     if user_id != request.target_user_id {
-        check_permission(&service, user_id, PermissionCode::ChangeUserPassword)?;
+        check_permission(user_id, PermissionCode::ChangeUserPassword)?;
     }
 
     let user = service.change_password(
@@ -262,7 +249,7 @@ pub fn delete_user(user_id: i64, id: i64, state: State<AppState>) -> Result<(), 
         .user_service
         .lock()
         .map_err(|e| AppError::Internal(e.to_string()))?;
-    check_permission(&service, user_id, PermissionCode::DeleteUser)?;
+    check_permission(user_id, PermissionCode::DeleteUser)?;
     service.delete_user(user_id, id)?;
     log_audit(
         user_id,
@@ -283,7 +270,7 @@ pub fn add_permission_to_user(
         .user_service
         .lock()
         .map_err(|e| AppError::Internal(e.to_string()))?;
-    check_permission(&service, user_id, PermissionCode::AssignPermission)?;
+    check_permission(user_id, PermissionCode::AssignPermission)?;
     service.add_permission_to_user(request.user_id, request.permission_id)?;
     log_audit(
         user_id,
@@ -307,7 +294,7 @@ pub fn remove_permission_from_user(
         .user_service
         .lock()
         .map_err(|e| AppError::Internal(e.to_string()))?;
-    check_permission(&service, user_id, PermissionCode::RemovePermission)?;
+    check_permission(user_id, PermissionCode::RemovePermission)?;
     service.remove_permission_from_user(request.user_id, request.permission_id)?;
     log_audit(
         user_id,
@@ -331,7 +318,7 @@ pub fn get_user_permissions(
         .user_service
         .lock()
         .map_err(|e| AppError::Internal(e.to_string()))?;
-    check_permission(&service, user_id, PermissionCode::ViewPermissions)?;
+    check_permission(user_id, PermissionCode::ViewPermissions)?;
     service.get_user_permissions(target_user_id)
 }
 
@@ -344,7 +331,7 @@ pub fn get_all_permissions(
         .user_service
         .lock()
         .map_err(|e| AppError::Internal(e.to_string()))?;
-    check_permission(&service, user_id, PermissionCode::ViewPermissions)?;
+    check_permission(user_id, PermissionCode::ViewPermissions)?;
     service.get_all_permissions()
 }
 
@@ -358,7 +345,7 @@ pub fn create_permission(
         .user_service
         .lock()
         .map_err(|e| AppError::Internal(e.to_string()))?;
-    check_permission(&service, user_id, PermissionCode::CreateCategoria)?;
+    check_permission(user_id, PermissionCode::CreateCategoria)?;
     let permission = service.create_permission(name)?;
     log_audit(
         user_id,

@@ -2,6 +2,7 @@ use crate::domain::entities::{Venta, VentaDetalle, VentaWithDetalle};
 use crate::domain::repositories::Page;
 use crate::infrastructure::error::AppError;
 
+#[cfg_attr(test, mockall::automock)]
 pub trait VentaRepository: Send + Sync {
     fn create(
         &self,

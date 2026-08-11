@@ -1,17 +1,33 @@
-use directories::ProjectDirs;
 use once_cell::sync::Lazy;
 use rusqlite::Connection;
 use std::path::PathBuf;
 use std::sync::Mutex;
 
+#[cfg(not(test))]
 pub const BCRYPT_COST: u32 = 10;
+#[cfg(test)]
+pub const BCRYPT_COST: u32 = 4;
 
 pub static DB: Lazy<Mutex<Connection>> = Lazy::new(|| {
     let conn = init_database().expect("Failed to initialize database");
     Mutex::new(conn)
 });
 
+#[cfg(test)]
 pub fn get_db_path() -> PathBuf {
+    PathBuf::from(":memory:")
+}
+
+#[cfg(not(test))]
+pub fn get_db_path() -> PathBuf {
+    use directories::ProjectDirs;
+
+    if let Ok(path) = std::env::var("CALISE_DB_PATH") {
+        if !path.is_empty() {
+            return PathBuf::from(path);
+        }
+    }
+
     if let Some(proj_dirs) = ProjectDirs::from("com", "nicos92", "tauri-uno") {
         let data_dir = proj_dirs.data_dir();
         std::fs::create_dir_all(data_dir).ok();
@@ -19,6 +35,33 @@ pub fn get_db_path() -> PathBuf {
     } else {
         PathBuf::from("app.db")
     }
+}
+
+#[cfg(test)]
+pub static TEST_LOCK: Mutex<()> = Mutex::new(());
+
+#[cfg(test)]
+pub fn reset_test_db() -> Result<(), rusqlite::Error> {
+    let conn = DB.lock().expect("test database lock");
+    conn.execute_batch(
+        "PRAGMA foreign_keys = OFF;
+         DROP TABLE IF EXISTS cierre_tipos;
+         DROP TABLE IF EXISTS cierres;
+         DROP TABLE IF EXISTS venta_detalle;
+         DROP TABLE IF EXISTS ventas;
+         DROP TABLE IF EXISTS audit_logs;
+         DROP TABLE IF EXISTS stock;
+         DROP TABLE IF EXISTS articulos;
+         DROP TABLE IF EXISTS sub_categorias;
+         DROP TABLE IF EXISTS categorias;
+         DROP TABLE IF EXISTS proveedores;
+         DROP TABLE IF EXISTS user_permissions;
+         DROP TABLE IF EXISTS users;
+         DROP TABLE IF EXISTS permissions;
+         DROP TABLE IF EXISTS tipos_venta;",
+    )?;
+    apply_schema(&conn)?;
+    Ok(())
 }
 
 const PERMISSIONS: &[&str] = &[
@@ -79,7 +122,11 @@ const PERMISSIONS: &[&str] = &[
 pub fn init_database() -> Result<Connection, rusqlite::Error> {
     let db_path = get_db_path();
     let conn = Connection::open(&db_path)?;
+    apply_schema(&conn)?;
+    Ok(conn)
+}
 
+fn apply_schema(conn: &Connection) -> Result<(), rusqlite::Error> {
     conn.execute_batch(
         "
         PRAGMA foreign_keys = ON;
@@ -222,28 +269,28 @@ pub fn init_database() -> Result<Connection, rusqlite::Error> {
         ",
     )?;
 
-    ensure_column(&conn, "ventas", "descuento", "REAL NOT NULL DEFAULT 0")?;
+    ensure_column(conn, "ventas", "descuento", "REAL NOT NULL DEFAULT 0")?;
     ensure_column(
-        &conn,
+        conn,
         "ventas",
         "id_tipo_venta",
         "INTEGER REFERENCES tipos_venta(id)",
     )?;
 
-    seed_tipos_venta(&conn)?;
+    seed_tipos_venta(conn)?;
 
     conn.execute(
         "UPDATE ventas SET id_tipo_venta = (SELECT id FROM tipos_venta WHERE nombre = 'Efectivo') WHERE id_tipo_venta IS NULL",
         [],
     )?;
 
-    seed_permissions(&conn)?;
-    seed_admin_user(&conn)?;
-    seed_demo_data(&conn)?;
+    seed_permissions(conn)?;
+    seed_admin_user(conn)?;
+    seed_demo_data(conn)?;
 
-    purge_old_audit_logs(&conn)?;
+    purge_old_audit_logs(conn)?;
 
-    Ok(conn)
+    Ok(())
 }
 
 fn purge_old_audit_logs(conn: &Connection) -> Result<(), rusqlite::Error> {

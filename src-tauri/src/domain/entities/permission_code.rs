@@ -139,3 +139,87 @@ impl PermissionCode {
         ]
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::HashSet;
+
+    #[test]
+    fn as_str_returns_non_empty_snake_case_for_all_variants() {
+        for code in PermissionCode::all() {
+            let s = code.as_str();
+            assert!(!s.is_empty(), "empty str for {:?}", code);
+            assert!(!s.contains(' '), "space in '{}'", s);
+            assert_eq!(s, s.to_lowercase(), "not lowercase: '{}'", s);
+            assert!(!s.starts_with('_'), "leading underscore: '{}'", s);
+            assert!(!s.ends_with('_'), "trailing underscore: '{}'", s);
+        }
+    }
+
+    #[test]
+    fn all_contains_no_duplicates() {
+        let strings: Vec<String> = PermissionCode::all()
+            .iter()
+            .map(|c| c.as_str().to_string())
+            .collect();
+        let set: HashSet<&String> = strings.iter().collect();
+        assert_eq!(strings.len(), set.len());
+    }
+
+    #[test]
+    fn all_covers_seeded_permissions() {
+        let expected: Vec<&str> = vec![
+            "ver_usuarios",
+            "crear_usuario",
+            "modificar_usuario",
+            "eliminar_usuario",
+            "cambiar_contrasena_usuario",
+            "ver_permisos",
+            "asignar_permiso_a_usuario",
+            "quitar_permiso_a_usuario",
+            "ver_proveedor",
+            "crear_proveedor",
+            "modificar_proveedor",
+            "eliminar_proveedor",
+            "ver_categorias",
+            "crear_categorias",
+            "modificar_categorias",
+            "eliminar_categorias",
+            "ver_sub_categorias",
+            "crear_sub_categorias",
+            "modificar_sub_categorias",
+            "eliminar_sub_categorias",
+            "ver_articulos",
+            "crear_articulos",
+            "modificar_articulos",
+            "eliminar_articulos",
+            "ver_stock",
+            "crear_stock",
+            "modificar_stock",
+            "eliminar_stock",
+            "ver_ventas",
+            "crear_venta",
+            "anular_venta",
+            "vender_sin_stock",
+            "generar_presupuesto",
+            "ver_tipos_venta",
+            "crear_tipo_venta",
+            "modificar_tipo_venta",
+            "eliminar_tipo_venta",
+            "ver_auditoria",
+            "ver_cierres",
+            "crear_cierre",
+            "reabrir_cierre",
+        ];
+
+        let mut actual: Vec<String> = PermissionCode::all()
+            .iter()
+            .map(|c| c.as_str().to_string())
+            .collect();
+        let mut expected: Vec<String> = expected.iter().map(|s| s.to_string()).collect();
+        actual.sort_unstable();
+        expected.sort_unstable();
+        assert_eq!(actual, expected);
+    }
+}

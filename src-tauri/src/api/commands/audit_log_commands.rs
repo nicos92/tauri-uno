@@ -1,6 +1,7 @@
 use std::sync::Mutex;
 use tauri::State;
 
+use crate::api::commands::permissions::check_permission;
 use crate::application::services::AuditLogService;
 use crate::domain::entities::{AuditLog, PermissionCode};
 use crate::domain::repositories::{AuditLogFilter, Page};
@@ -33,25 +34,6 @@ pub struct GetAuditLogsRequest {
     pub to: Option<String>,
     pub limit: Option<i64>,
     pub offset: Option<i64>,
-}
-
-fn check_permission(user_id: i64, permission: PermissionCode) -> Result<(), AppError> {
-    let conn = crate::infrastructure::database::DB
-        .lock()
-        .map_err(|e| AppError::Internal(e.to_string()))?;
-
-    let count: i64 = conn.query_row(
-        "SELECT COUNT(*) FROM user_permissions up
-         INNER JOIN permissions p ON up.permission_id = p.id
-         WHERE up.user_id = ?1 AND p.permission = ?2",
-        rusqlite::params![user_id, permission.as_str()],
-        |row| row.get(0),
-    )?;
-
-    if count == 0 {
-        return Err(AppError::PermissionDenied);
-    }
-    Ok(())
 }
 
 #[tauri::command(async)]

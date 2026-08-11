@@ -6,7 +6,7 @@ use crate::infrastructure::error::AppError;
 use crate::infrastructure::repositories::SqliteArticuloRepository;
 
 pub struct ArticuloService {
-    repository: Arc<SqliteArticuloRepository>,
+    repository: Arc<dyn ArticuloRepository>,
 }
 
 impl Default for ArticuloService {
@@ -17,9 +17,11 @@ impl Default for ArticuloService {
 
 impl ArticuloService {
     pub fn new() -> Self {
-        Self {
-            repository: Arc::new(SqliteArticuloRepository::new()),
-        }
+        Self::with_repository(Arc::new(SqliteArticuloRepository::new()))
+    }
+
+    pub fn with_repository(repository: Arc<dyn ArticuloRepository>) -> Self {
+        Self { repository }
     }
 
     pub fn create(

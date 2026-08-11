@@ -117,3 +117,116 @@ impl SqliteStockRepository {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::domain::entities::{Articulo, Categoria, Proveedor, SubCategoria};
+    use crate::domain::repositories::{
+        ArticuloRepository, CategoriaRepository, ProveedorRepository, SubCategoriaRepository,
+    };
+    use crate::infrastructure::database::{reset_test_db, TEST_LOCK};
+    use crate::infrastructure::repositories::{
+        SqliteArticuloRepository, SqliteCategoriaRepository, SqliteProveedorRepository,
+        SqliteSubCategoriaRepository,
+    };
+    use std::sync::MutexGuard;
+
+    fn fresh_db() -> MutexGuard<'static, ()> {
+        let guard = TEST_LOCK.lock().unwrap();
+        reset_test_db().unwrap();
+        guard
+    }
+
+    fn create_articulo() -> Articulo {
+        let cat_repo = SqliteCategoriaRepository::new();
+        let cat = cat_repo
+            .create(&Categoria::new("Cat STK".to_string()))
+            .unwrap();
+        let sub_repo = SqliteSubCategoriaRepository::new();
+        let sub = sub_repo
+            .create(&SubCategoria::new("Sub STK".to_string(), cat.id))
+            .unwrap();
+        let prov_repo = SqliteProveedorRepository::new();
+        let prov = prov_repo
+            .create(&Proveedor::new(
+                "PROV STK".to_string(),
+                "Prov Stk".to_string(),
+                None,
+                None,
+                None,
+                None,
+            ))
+            .unwrap();
+        SqliteArticuloRepository::new()
+            .create(&Articulo::new(
+                "Art STK".to_string(),
+                "STK-001".to_string(),
+                sub.id,
+                prov.id,
+            ))
+            .unwrap()
+    }
+
+    #[test]
+    fn create_assigns_id_and_find_by_id_round_trip() {
+        let _guard = fresh_db();
+        let articulo = create_articulo();
+        let repo = SqliteStockRepository::new();
+
+        let created = repo
+            .create(&Stock::new(articulo.id, 10.5, 100.0, 25.0))
+            .unwrap();
+        assert!(created.id > 0);
+
+        let found = repo.find_by_id(created.id).unwrap().unwrap();
+        assert_eq!(found.id_articulo, articulo.id);
+        assert_eq!(found.cantidad, 10.5);
+        assert_eq!(found.costo, 100.0);
+        assert_eq!(found.ganancia, 25.0);
+    }
+
+    #[test]
+    fn find_by_articulo_returns_stock() {
+        let _guard = fresh_db();
+        let articulo = create_articulo();
+        let repo = SqliteStockRepository::new();
+
+        let created = repo
+            .create(&Stock::new(articulo.id, 5.0, 50.0, 10.0))
+            .unwrap();
+        let found = repo.find_by_articulo(articulo.id).unwrap().unwrap();
+        assert_eq!(found.id, created.id);
+        assert!(repo.find_by_articulo(99999).unwrap().is_none());
+    }
+
+    #[test]
+    fn update_changes_cantidad() {
+        let _guard = fresh_db();
+        let articulo = create_articulo();
+        let repo = SqliteStockRepository::new();
+
+        let mut created = repo
+            .create(&Stock::new(articulo.id, 5.0, 50.0, 10.0))
+            .unwrap();
+        created.cantidad = 20.0;
+        repo.update(&created).unwrap();
+
+        let updated = repo.find_by_id(created.id).unwrap().unwrap();
+        assert_eq!(updated.cantidad, 20.0);
+    }
+
+    #[test]
+    fn delete_removes_stock() {
+        let _guard = fresh_db();
+        let articulo = create_articulo();
+        let repo = SqliteStockRepository::new();
+
+        let created = repo
+            .create(&Stock::new(articulo.id, 5.0, 50.0, 10.0))
+            .unwrap();
+        repo.delete(created.id).unwrap();
+        assert!(repo.find_by_id(created.id).unwrap().is_none());
+        assert!(repo.find_all().unwrap().iter().all(|s| s.id != created.id));
+    }
+}

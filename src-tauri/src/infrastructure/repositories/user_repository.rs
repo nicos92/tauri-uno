@@ -187,6 +187,21 @@ impl UserRepository for SqliteUserRepository {
         Ok(permissions)
     }
 
+    fn create_permission(&self, permission: &Permission) -> Result<Permission, AppError> {
+        let conn = DB.lock().map_err(|e| AppError::Internal(e.to_string()))?;
+
+        conn.execute(
+            "INSERT INTO permissions (permission, created) VALUES (?1, ?2)",
+            params![permission.permission, permission.created.to_rfc3339()],
+        )?;
+
+        let id = conn.last_insert_rowid();
+        Ok(Permission {
+            id,
+            ..permission.clone()
+        })
+    }
+
     fn has_permission(&self, user_id: i64, permission_name: &str) -> Result<bool, AppError> {
         let conn = DB.lock().map_err(|e| AppError::Internal(e.to_string()))?;
 
@@ -236,5 +251,138 @@ impl SqliteUserRepository {
                 .map(|dt| dt.with_timezone(&Utc))
                 .unwrap_or_else(|_| Utc::now()),
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::infrastructure::database::{reset_test_db, TEST_LOCK};
+    use std::sync::MutexGuard;
+
+    fn fresh_db() -> MutexGuard<'static, ()> {
+        let guard = TEST_LOCK.lock().unwrap();
+        reset_test_db().unwrap();
+        guard
+    }
+
+    #[test]
+    fn create_assigns_id_and_find_by_id_round_trip() {
+        let _guard = fresh_db();
+        let repo = SqliteUserRepository::new();
+
+        let created = repo
+            .create(&User::new("testuser".to_string(), "secret".to_string()))
+            .unwrap();
+        assert!(created.id > 0);
+
+        let found = repo.find_by_id(created.id).unwrap().unwrap();
+        assert_eq!(found.username, "testuser");
+        assert_eq!(found.password, "secret");
+        assert!(found.active);
+    }
+
+    #[test]
+    fn find_by_username_returns_none_when_missing() {
+        let _guard = fresh_db();
+        let repo = SqliteUserRepository::new();
+
+        assert!(repo.find_by_username("testuser").unwrap().is_none());
+
+        let created = repo
+            .create(&User::new("testuser".to_string(), "secret".to_string()))
+            .unwrap();
+        let found = repo.find_by_username("testuser").unwrap().unwrap();
+        assert_eq!(found.id, created.id);
+    }
+
+    #[test]
+    fn find_all_excludes_admin() {
+        let _guard = fresh_db();
+        let repo = SqliteUserRepository::new();
+
+        repo.create(&User::new("testuser".to_string(), "secret".to_string()))
+            .unwrap();
+        let users = repo.find_all().unwrap();
+        assert!(users.iter().any(|u| u.username == "testuser"));
+        assert!(!users.iter().any(|u| u.username == "admin"));
+    }
+
+    #[test]
+    fn update_changes_username() {
+        let _guard = fresh_db();
+        let repo = SqliteUserRepository::new();
+
+        let mut created = repo
+            .create(&User::new("before".to_string(), "secret".to_string()))
+            .unwrap();
+        created.username = "after".to_string();
+        repo.update(&created).unwrap();
+
+        assert!(repo.find_by_username("before").unwrap().is_none());
+        let updated = repo.find_by_username("after").unwrap().unwrap();
+        assert_eq!(updated.id, created.id);
+    }
+
+    #[test]
+    fn delete_removes_user_and_permissions() {
+        let _guard = fresh_db();
+        let repo = SqliteUserRepository::new();
+
+        let created = repo
+            .create(&User::new("todelete".to_string(), "secret".to_string()))
+            .unwrap();
+        let perms = repo.get_all_permissions().unwrap();
+        repo.add_permission(created.id, perms[0].id).unwrap();
+
+        repo.delete(created.id).unwrap();
+        assert!(repo.find_by_id(created.id).unwrap().is_none());
+        assert!(repo.get_user_permissions(created.id).unwrap().is_empty());
+    }
+
+    #[test]
+    fn add_and_remove_permission() {
+        let _guard = fresh_db();
+        let repo = SqliteUserRepository::new();
+
+        let user = repo
+            .create(&User::new("permuser".to_string(), "secret".to_string()))
+            .unwrap();
+        let perms = repo.get_all_permissions().unwrap();
+        let perm = perms
+            .iter()
+            .find(|p| p.permission == "ver_usuarios")
+            .unwrap();
+
+        assert!(!repo.has_permission(user.id, "ver_usuarios").unwrap());
+        repo.add_permission(user.id, perm.id).unwrap();
+        assert!(repo.has_permission(user.id, "ver_usuarios").unwrap());
+        let names = repo.get_user_permissions_by_names(user.id).unwrap();
+        assert!(names.contains(&"ver_usuarios".to_string()));
+
+        repo.remove_permission(user.id, perm.id).unwrap();
+        assert!(!repo.has_permission(user.id, "ver_usuarios").unwrap());
+        assert!(repo.get_user_permissions(user.id).unwrap().is_empty());
+    }
+
+    #[test]
+    fn create_permission_duplicate_maps_duplicate_value() {
+        let _guard = fresh_db();
+        let repo = SqliteUserRepository::new();
+
+        let err = repo
+            .create_permission(&Permission::new("ver_usuarios".to_string()))
+            .unwrap_err();
+        assert!(matches!(err, AppError::DuplicateValue), "{:?}", err);
+    }
+
+    #[test]
+    fn get_all_permissions_returns_seeded_permissions() {
+        let _guard = fresh_db();
+        let repo = SqliteUserRepository::new();
+
+        let perms = repo.get_all_permissions().unwrap();
+        assert_eq!(perms.len(), 41);
+        assert!(perms.iter().any(|p| p.permission == "ver_usuarios"));
     }
 }

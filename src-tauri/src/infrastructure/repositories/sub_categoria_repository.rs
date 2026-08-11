@@ -143,3 +143,106 @@ impl SqliteSubCategoriaRepository {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::domain::entities::Categoria;
+    use crate::domain::repositories::CategoriaRepository;
+    use crate::infrastructure::database::{reset_test_db, TEST_LOCK};
+    use crate::infrastructure::repositories::SqliteCategoriaRepository;
+    use std::sync::MutexGuard;
+
+    fn fresh_db() -> MutexGuard<'static, ()> {
+        let guard = TEST_LOCK.lock().unwrap();
+        reset_test_db().unwrap();
+        guard
+    }
+
+    fn create_categoria(cat_repo: &SqliteCategoriaRepository) -> Categoria {
+        cat_repo
+            .create(&Categoria::new("Cat SC".to_string()))
+            .unwrap()
+    }
+
+    #[test]
+    fn create_assigns_id_and_find_by_id_round_trip() {
+        let _guard = fresh_db();
+        let cat_repo = SqliteCategoriaRepository::new();
+        let cat = create_categoria(&cat_repo);
+        let repo = SqliteSubCategoriaRepository::new();
+
+        let created = repo
+            .create(&SubCategoria::new("Sub Test".to_string(), cat.id))
+            .unwrap();
+        assert!(created.id > 0);
+
+        let found = repo.find_by_id(created.id).unwrap().unwrap();
+        assert_eq!(found.sub_categoria, "Sub Test");
+        assert_eq!(found.id_categoria, cat.id);
+    }
+
+    #[test]
+    fn find_by_name_and_by_categoria() {
+        let _guard = fresh_db();
+        let cat_repo = SqliteCategoriaRepository::new();
+        let cat = create_categoria(&cat_repo);
+        let repo = SqliteSubCategoriaRepository::new();
+
+        let created = repo
+            .create(&SubCategoria::new("Sub A".to_string(), cat.id))
+            .unwrap();
+        assert_eq!(repo.find_by_name("Sub A").unwrap().unwrap().id, created.id);
+        assert!(repo.find_by_name("Missing").unwrap().is_none());
+
+        let list = repo.find_by_categoria(cat.id).unwrap();
+        assert!(list.iter().any(|s| s.id == created.id));
+    }
+
+    #[test]
+    fn update_moves_between_categorias() {
+        let _guard = fresh_db();
+        let cat_repo = SqliteCategoriaRepository::new();
+        let cat_a = create_categoria(&cat_repo);
+        let cat_b = cat_repo
+            .create(&Categoria::new("Cat SC B".to_string()))
+            .unwrap();
+        let repo = SqliteSubCategoriaRepository::new();
+
+        let mut created = repo
+            .create(&SubCategoria::new("Sub U".to_string(), cat_a.id))
+            .unwrap();
+        created.id_categoria = cat_b.id;
+        repo.update(&created).unwrap();
+
+        let updated = repo.find_by_id(created.id).unwrap().unwrap();
+        assert_eq!(updated.id_categoria, cat_b.id);
+    }
+
+    #[test]
+    fn delete_removes_sub_categoria() {
+        let _guard = fresh_db();
+        let cat_repo = SqliteCategoriaRepository::new();
+        let cat = create_categoria(&cat_repo);
+        let repo = SqliteSubCategoriaRepository::new();
+
+        let created = repo
+            .create(&SubCategoria::new("Sub D".to_string(), cat.id))
+            .unwrap();
+        repo.delete(created.id).unwrap();
+        assert!(repo.find_by_id(created.id).unwrap().is_none());
+    }
+
+    #[test]
+    fn has_articulos_returns_false_without_articulos() {
+        let _guard = fresh_db();
+        let cat_repo = SqliteCategoriaRepository::new();
+        let cat = create_categoria(&cat_repo);
+        let repo = SqliteSubCategoriaRepository::new();
+
+        let created = repo
+            .create(&SubCategoria::new("Sub H".to_string(), cat.id))
+            .unwrap();
+        assert!(!repo.has_articulos(created.id).unwrap());
+    }
+}

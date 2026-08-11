@@ -2,6 +2,7 @@ use std::sync::Mutex;
 use tauri::State;
 
 use crate::application::services::{log_audit, ArticuloService};
+use crate::api::commands::permissions::check_permission;
 use crate::domain::entities::{Articulo, AuditAction, AuditScreen, PermissionCode};
 use crate::infrastructure::error::AppError;
 
@@ -38,25 +39,6 @@ pub struct UpdateArticuloRequest {
     pub cod_articulo: String,
     pub id_sub_categoria: i64,
     pub id_proveedor: i64,
-}
-
-fn check_permission(user_id: i64, permission: PermissionCode) -> Result<(), AppError> {
-    let conn = crate::infrastructure::database::DB
-        .lock()
-        .map_err(|e| AppError::Internal(e.to_string()))?;
-
-    let count: i64 = conn.query_row(
-        "SELECT COUNT(*) FROM user_permissions up
-         INNER JOIN permissions p ON up.permission_id = p.id
-         WHERE up.user_id = ?1 AND p.permission = ?2",
-        rusqlite::params![user_id, permission.as_str()],
-        |row| row.get(0),
-    )?;
-
-    if count == 0 {
-        return Err(AppError::PermissionDenied);
-    }
-    Ok(())
 }
 
 #[tauri::command(async)]

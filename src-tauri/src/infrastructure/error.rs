@@ -331,3 +331,67 @@ impl serde::Serialize for AppError {
         state.end()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn code_returns_expected_strings() {
+        assert_eq!(AppError::UserNotFound.code(), "user_not_found");
+        assert_eq!(AppError::PermissionDenied.code(), "permission_denied");
+        assert_eq!(AppError::InsufficientStock.code(), "insufficient_stock");
+        assert_eq!(
+            AppError::CierreFechaFutura.code(),
+            "cierre_fecha_futura"
+        );
+        assert_eq!(AppError::Internal("x".to_string()).code(), "internal_error");
+    }
+
+    #[test]
+    fn user_message_returns_spanish_messages() {
+        assert_eq!(AppError::UserNotFound.user_message(), "El usuario no existe.");
+        assert_eq!(
+            AppError::DescuentoInvalido.user_message(),
+            "El descuento debe estar entre 0 y 100."
+        );
+        assert!(AppError::Database("boom".to_string())
+            .user_message()
+            .contains("base de datos"));
+        assert!(AppError::Internal("boom".to_string())
+            .user_message()
+            .contains("inesperado"));
+    }
+
+    #[test]
+    fn maps_unique_constraint_to_duplicate_value() {
+        let conn = rusqlite::Connection::open_in_memory().unwrap();
+        conn.execute_batch("CREATE TABLE t (a TEXT UNIQUE)").unwrap();
+        conn.execute("INSERT INTO t (a) VALUES ('x')", []).unwrap();
+        let err = conn
+            .execute("INSERT INTO t (a) VALUES ('x')", [])
+            .unwrap_err();
+        let app_err: AppError = err.into();
+        assert!(matches!(app_err, AppError::DuplicateValue), "{:?}", app_err);
+    }
+
+    #[test]
+    fn maps_foreign_key_constraint_to_foreign_key_error() {
+        let conn = rusqlite::Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "PRAGMA foreign_keys = ON;
+             CREATE TABLE parent (id INTEGER PRIMARY KEY);
+             CREATE TABLE child (pid INTEGER NOT NULL REFERENCES parent(id));",
+        )
+        .unwrap();
+        let err = conn
+            .execute("INSERT INTO child (pid) VALUES (999)", [])
+            .unwrap_err();
+        let app_err: AppError = err.into();
+        assert!(
+            matches!(app_err, AppError::ForeignKeyConstraint),
+            "{:?}",
+            app_err
+        );
+    }
+}
