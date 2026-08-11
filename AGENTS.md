@@ -18,7 +18,7 @@ Este documento proporciona instrucciones y convenciones para agentes de código 
 
 ### Backend Rust (Clean Architecture)
 
-```
+``` bash
 src-tauri/src/
 ├── domain/           # Entidades y traits de repositorio
 │   ├── entities/     # User, Permission, PermissionCode, Proveedor, Categoria, SubCategoria, Articulo, Stock
@@ -35,7 +35,7 @@ src-tauri/src/
 
 ### Frontend Vue (Clean Architecture)
 
-```
+``` bash
 src/
 ├── domain/           # Tipos e interfaces
 │   ├── entities/    # User, Permission, Proveedor, Categoria, SubCategoria, Articulo, Stock, PERMISSIONS
@@ -77,9 +77,22 @@ pnpm tauri build                  # Build de producción Tauri
 ```bash
 cd src-tauri && cargo check       # Verificar código sin compilar
 cd src-tauri && cargo build        # Compilar
-cd src-tauri && cargo test         # Ejecutar tests (no hay tests aún)
-cd src-tauri && cargo clippy       # Linter de Rust
+cd src-tauri && cargo test         # Ejecutar tests (unitarios + repos con DB en memoria)
+cd src-tauri && cargo clippy --lib --tests  # Linter de Rust
 ```
+
+### Tests (Rust)
+
+- **Nunca tocan la DB real**: en builds de test `get_db_path()` devuelve `:memory:` y `BCRYPT_COST` = 4. `app.db` queda intacta.
+- **Tests que tocan la DB** (repositorios, servicios): adquirir `TEST_LOCK` (serializa los tests de DB) y llamar `reset_test_db()` (borra tablas y recrea esquema + seeds). Ambas viven en `infrastructure/database/mod.rs` bajo `#[cfg(test)]`.
+
+```rust
+let _guard = TEST_LOCK.lock().unwrap();
+reset_test_db().unwrap();
+```
+
+- Tests unitarios puros (sin DB) se escriben como módulos `#[cfg(test)] mod tests` en el mismo archivo: entidades, `AppError`, `PermissionCode`.
+- `PermissionCode::all()` tiene un test que verifica los 41 permisos contra la lista seed de `infrastructure/database/mod.rs`.
 
 ---
 
@@ -172,9 +185,9 @@ async function fetchData() {
 
 ## 5. Convenciones de Código - Rust
 
-### Estructura de archivos
+### Estructura de archivos Rust
 
-```
+``` bash
 src-tauri/src/
 ├── domain/entities/    # Structs con derive Serialize
 ├── domain/repositories/# Traits
@@ -204,7 +217,7 @@ enum Status {
 }
 ```
 
-### Naming Conventions
+### Naming Conventions Codes
 
 - Funciones/variables: `snake_case`
 - Structs/Enums/Traits: `PascalCase`
@@ -250,6 +263,7 @@ const result = await invoke<UserResponse>("create_user", {
 ## 7. Modelos de Base de Datos
 
 ### Usuarios
+
 - `id`: INTEGER PRIMARY KEY
 - `username`: TEXT UNIQUE
 - `password`: TEXT (hashed con bcrypt)
@@ -258,16 +272,19 @@ const result = await invoke<UserResponse>("create_user", {
 - `modified_at`: TEXT (ISO 8601)
 
 ### Permisos
+
 - `id`: INTEGER PRIMARY KEY
 - `permission`: TEXT UNIQUE
 - `created`: TEXT (ISO 8601)
 
 ### user_permissions (relación muchos a muchos)
+
 - `user_id`: INTEGER FK
 - `permission_id`: INTEGER FK
 - `assigned_at`: TEXT (ISO 8601)
 
 ### Proveedores
+
 - `id`: INTEGER PRIMARY KEY
 - `cuit`: TEXT UNIQUE (opcional)
 - `proveedor`: TEXT NOT NULL
@@ -275,15 +292,18 @@ const result = await invoke<UserResponse>("create_user", {
 - `tel`, `email`, `observacion`: TEXT (opcionales)
 
 ### Categorías
+
 - `id`: INTEGER PRIMARY KEY
 - `categoria`: TEXT UNIQUE
 
 ### Sub Categorías
+
 - `id`: INTEGER PRIMARY KEY
 - `sub_categoria`: TEXT UNIQUE
 - `id_categoria`: INTEGER FK → categorias(id)
 
 ### Artículos
+
 - `id`: INTEGER PRIMARY KEY
 - `articulo`: TEXT UNIQUE
 - `cod_articulo`: TEXT UNIQUE
@@ -291,6 +311,7 @@ const result = await invoke<UserResponse>("create_user", {
 - `id_proveedor`: INTEGER FK → proveedores(id)
 
 ### Stock
+
 - `id`: INTEGER PRIMARY KEY
 - `id_articulo`: INTEGER FK → articulos(id)
 - `cantidad`: REAL
@@ -302,7 +323,7 @@ const result = await invoke<UserResponse>("create_user", {
 ## 8. API Commands (Tauri)
 
 | Command | Descripción |
-|---------|-------------|
+| --------- | ------------- |
 | `login` | Autenticar usuario |
 | `create_user` | Crear nuevo usuario |
 | `get_all_users` | Listar todos los usuarios |
@@ -349,8 +370,8 @@ const result = await invoke<UserResponse>("create_user", {
 3. **No olvidar el `.value`** al acceder a refs de Vue
 4. **En Rust, siempre manejar `Result` con `?` o match**
 5. **No hardcodear secrets** - usar variables de entorno
-6. **DB global** - `infrastructure::database::DB` es un `Lazy<Mutex<Connection>>` (rusqlite no es `Sync`); todos los repos lo bloquean. El esquema se crea en el primer arranque en el directorio de datos de `ProjectDirs` (`app.db`), sin migraciones. Se siembran 41 permisos y el usuario `admin` / `admin123` con todos los permisos
-7. **Sincronizar permisos en 3 lugares** (strings en español snake_case, ej. `ver_usuarios`): Rust `PermissionCode::as_str()` (`domain/entities/permission_code.rs`), TS `PERMISSIONS` (`src/domain/entities/permissions.ts`) y la lista seed (`infrastructure/database/mod.rs`). Agregar también el helper correspondiente en `usePermissions.ts` (frontend).
+6. **DB global** - `infrastructure::database::DB` es un `Lazy<Mutex<Connection>>` (rusqlite no es `Sync`); todos los repos lo bloquean. El esquema se crea en el primer arranque en el directorio de datos de `ProjectDirs` (`app.db`), sin migraciones. Se siembran 41 permisos y el usuario `admin` / `admin123` con todos los permisos. En builds de test apunta a `:memory:` y `BCRYPT_COST` baja a 4 (ver Tests en §3)
+7. **Sincronizar permisos en 3 lugares** (strings en español snake_case, ej. `ver_usuarios`): Rust `PermissionCode::as_str()` (`domain/entities/permission_code.rs`), TS `PERMISSIONS` (`src/domain/entities/permissions.ts`) y la lista seed (`infrastructure/database/mod.rs`). Agregar también el helper correspondiente en `usePermissions.ts` (frontend). El test `all_covers_seeded_permissions` verifica que `PermissionCode::all()` (41) esté sincronizado con la lista seed de Rust (no cubre TS)
 8. **No olvidar `user_id` en los comandos** - Todo comando recibe `user_id: i64` como primer argumento. Los de usuarios/permisos usan `AppState` + `UserService::has_permission`; los de dominio (articulo/categoria/...) duplican un `check_permission` propio que consulta la DB directo. Respetar el patrón al agregar comandos
 9. **Registrar comandos y estados en `lib.rs`** - `.manage(...)` + `tauri::generate_handler!` en `src-tauri/src/lib.rs`
 10. **Auth en frontend** - Usuario y permisos se persisten en `localStorage` (`currentUser`, `userPermissions`). Los repos leen `getCurrentUserId()` y lo pasan como `userId` a cada `invoke`. El guard del router llama `authStore.loadFromStorage()`
