@@ -115,7 +115,7 @@ async function handleLogin() {
     font-size: 2.75rem;
     font-weight: 700;
     text-align: center;
-    color: #667eeaaa;
+    color: #3F2281aa;
 }
 
 .login-container::before {
@@ -174,13 +174,13 @@ input {
 
 input:focus {
     outline: none;
-    border-color: #667eea;
+    border-color: #3F2281;
 }
 
 button {
     width: 100%;
     padding: 0.75rem;
-    background: #667eea;
+    background: #3F2281;
     color: white;
     border: none;
     border-radius: 6px;

@@ -376,7 +376,37 @@ function generarPdf() {
                     </option>
                 </select>
             </div>
-            <div v-if="canViewClientes()" class="form-group obs-group cliente-group">
+           
+            <div class="acciones">
+                <button
+                    v-if="canGenerarPresupuesto()"
+                    type="button"
+                    @click="generarPdf"
+                    class="btn-tertiary"
+                    :disabled="cart.length === 0"
+                >
+                    PDF
+                </button>
+                <button
+                    type="button"
+                    @click="cancelar"
+                    class="btn-secondary"
+                >
+                    Cancelar
+                </button>
+                <button
+                    type="button"
+                    @click="handleCreate"
+                    class="btn-primary"
+                    :disabled="!carritoValido || ventasStore.diaCerrado"
+                >
+                    Registrar Venta
+                </button>
+            </div>
+        </div>
+
+        <div class="venta-section totals-section">
+             <div v-if="canViewClientes()" class="form-group obs-group cliente-group">
                 <label>Cliente</label>
                 <div class="cliente-selector">
                     <input
@@ -431,35 +461,6 @@ function generarPdf() {
                     </button>
                 </div>
             </div>
-            <div class="acciones">
-                <button
-                    v-if="canGenerarPresupuesto()"
-                    type="button"
-                    @click="generarPdf"
-                    class="btn-secondary"
-                    :disabled="cart.length === 0"
-                >
-                    Generar PDF
-                </button>
-                <button
-                    type="button"
-                    @click="cancelar"
-                    class="btn-secondary"
-                >
-                    Cancelar
-                </button>
-                <button
-                    type="button"
-                    @click="handleCreate"
-                    class="btn-primary"
-                    :disabled="!carritoValido || ventasStore.diaCerrado"
-                >
-                    Registrar Venta
-                </button>
-            </div>
-        </div>
-
-        <div class="venta-section totals-section">
             <div class="total-box">
                 <span class="total-label">Subtotal</span>
                 <span class="total-value">{{ formatMoney(carritoSubtotal) }}</span>
@@ -488,6 +489,17 @@ function generarPdf() {
         </div>
 
         <div class="venta-section search-section">
+            <div class="cart-header">
+                <h2>Artículos de la venta</h2>
+                <button
+                    v-if="cart.length > 0"
+                    type="button"
+                    @click="vaciarCarrito"
+                    class="btn-secondary"
+                >
+                    Vaciar
+                </button>
+            </div>
             <div class="form-group">
                 <label>Buscar artículo por código o nombre</label>
                 <input
@@ -522,20 +534,8 @@ function generarPdf() {
             >
                 Sin coincidencias
             </div>
-        </div>
 
-        <div class="venta-section cart-section">
-            <div class="cart-header">
-                <h2>Artículos de la venta</h2>
-                <button
-                    v-if="cart.length > 0"
-                    type="button"
-                    @click="vaciarCarrito"
-                    class="btn-secondary"
-                >
-                    Vaciar
-                </button>
-            </div>
+            
 
             <table v-if="cart.length > 0" class="cart-table">
                 <thead>
@@ -545,7 +545,7 @@ function generarPdf() {
                         <th>Cantidad</th>
                         <th>Precio</th>
                         <th>Subtotal</th>
-                        <th></th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -711,13 +711,13 @@ function generarPdf() {
 
 <style scoped>
 .nueva-venta-page {
-    padding: 2rem;
+    padding: 1rem;
     background: var(--color-bg);
     min-height: 100%;
 }
 
 .page-header {
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
 }
 
 .header-left {
@@ -736,7 +736,7 @@ function generarPdf() {
     border: 1px solid rgba(229, 62, 62, 0.3);
     padding: 0.75rem 1rem;
     border-radius: 6px;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
     font-weight: 600;
 }
 
@@ -744,7 +744,7 @@ function generarPdf() {
     background: var(--color-surface);
     border-radius: 12px;
     padding: 1.5rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
@@ -785,7 +785,7 @@ function generarPdf() {
 }
 
 .total-final {
-    background: #667eea;
+    background: #2D195D;
     color: white;
 }
 
@@ -878,10 +878,11 @@ function generarPdf() {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1rem;
+    margin-bottom: 0.5rem;
 }
 
 .cart-header h2 {
+    font-size: 1.4rem;
     margin: 0;
 }
 
@@ -896,7 +897,7 @@ function generarPdf() {
 }
 
 .btn-primary {
-    background: #667eea;
+    background: #3F2281;
     color: white;
     border: none;
     padding: 0.75rem 1.5rem;
@@ -905,7 +906,7 @@ function generarPdf() {
 }
 
 .btn-primary:hover:not(:disabled) {
-    background: #5568d3;
+    background: #3F2281;
 }
 
 .btn-primary:disabled {
@@ -917,13 +918,28 @@ function generarPdf() {
     background: var(--color-surface-2);
     color: var(--color-text);
     border: none;
-    padding: 0.75rem 1.5rem;
+    padding: 0.75rem 1rem;
     border-radius: 6px;
     cursor: pointer;
 }
 
 .btn-secondary:disabled {
     opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-tertiary {
+    background: transparent;
+    color: var(--color-text);
+    border: 1px solid #e53e3e;
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.btn-tertiary:disabled {
+    opacity: 0.6;
+    border:none;
     cursor: not-allowed;
 }
 

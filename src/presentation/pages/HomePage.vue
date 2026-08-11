@@ -442,7 +442,7 @@ p {
 
 .card h3 {
     margin: 0 0 0.5rem;
-    color: #667eea;
+    color: #9A7EDD;
 }
 
 .card p {
@@ -488,7 +488,7 @@ p {
 
 .subcategory-tag {
     background: var(--color-surface-2);
-    color: #667eea;
+    color: #9A7EDD;
     padding: 0.25rem 0.75rem;
     border-radius: 20px;
     font-size: 0.8rem;
@@ -544,7 +544,7 @@ p {
 .card-link {
     display: inline-block;
     padding: 0.5rem 1rem;
-    background: #667eea;
+    background: #9A7EDD;
     color: white;
     text-decoration: none;
     border-radius: 6px;

@@ -419,11 +419,11 @@ async function handleDelete(id: number) {
 
 .search-input:focus {
     outline: none;
-    border-color: #667eea;
+    border-color: #3F2281;
 }
 
 .btn-primary {
-    background: #667eea;
+    background: #3F2281;
     color: white;
     border: none;
     padding: 0.75rem 1.5rem;

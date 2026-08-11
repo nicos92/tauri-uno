@@ -339,7 +339,7 @@ function clienteLabel(cliente: Cliente): string {
 }
 
 .btn-primary {
-    background: #667eea;
+    background: #3F2281;
     color: white;
     border: none;
     padding: 0.75rem 1.5rem;
@@ -394,7 +394,7 @@ function clienteLabel(cliente: Cliente): string {
     font-size: 0.7rem;
     border-radius: 999px;
     background: rgba(102, 126, 234, 0.15);
-    color: #667eea;
+    color: #3F2281;
 }
 
 .actions {

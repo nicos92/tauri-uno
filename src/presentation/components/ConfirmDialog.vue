@@ -98,7 +98,7 @@ onBeforeUnmount(() => {
 }
 
 .btn-primary {
-  background: #667eea;
+  background: #3F2281;
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
@@ -111,7 +111,8 @@ onBeforeUnmount(() => {
 }
 
 .btn-primary.btn-danger {
-  background: #e53e3e;
+  background: transparent;
+  border: 1px solid #c53030;
 }
 
 .btn-primary.btn-danger:hover {
@@ -119,11 +120,15 @@ onBeforeUnmount(() => {
 }
 
 .btn-secondary {
-  background: var(--color-surface-2);
+  background: var(--color-surface);
   color: var(--color-text);
-  border: none;
+  border: 1px solid var(--color-border);
   padding: 0.75rem 1.5rem;
   border-radius: 6px;
   cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background: var(--color-border);
 }
 </style>
