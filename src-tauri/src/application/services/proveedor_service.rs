@@ -54,38 +54,29 @@ impl ProveedorService {
             .ok_or(AppError::ProveedorNotFound)
     }
 
-    pub fn update(
-        &self,
-        id: i64,
-        proveedor: String,
-        nombre: String,
-        cuit: Option<String>,
-        tel: Option<String>,
-        email: Option<String>,
-        observacion: Option<String>,
-    ) -> Result<Proveedor, AppError> {
+    pub fn update(&self, proveedor: &Proveedor) -> Result<Proveedor, AppError> {
         let mut existing = self
             .repository
-            .find_by_id(id)?
+            .find_by_id(proveedor.id)?
             .ok_or(AppError::ProveedorNotFound)?;
 
-        if let Some(ref c) = cuit {
+        if let Some(ref c) = proveedor.cuit {
             if !c.is_empty() {
                 let existing_cuit = self.repository.find_by_cuit(c)?;
                 if let Some(ref ec) = existing_cuit {
-                    if ec.id != id {
+                    if ec.id != proveedor.id {
                         return Err(AppError::DuplicateCuit);
                     }
                 }
             }
         }
 
-        existing.proveedor = proveedor;
-        existing.nombre = nombre;
-        existing.cuit = cuit;
-        existing.tel = tel;
-        existing.email = email;
-        existing.observacion = observacion;
+        existing.proveedor = proveedor.proveedor.clone();
+        existing.nombre = proveedor.nombre.clone();
+        existing.cuit = proveedor.cuit.clone();
+        existing.tel = proveedor.tel.clone();
+        existing.email = proveedor.email.clone();
+        existing.observacion = proveedor.observacion.clone();
 
         self.repository.update(&existing)
     }

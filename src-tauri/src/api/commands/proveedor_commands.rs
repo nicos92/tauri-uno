@@ -136,15 +136,16 @@ pub fn update_proveedor(
         .lock()
         .map_err(|e| AppError::Internal(e.to_string()))?;
     check_permission(&service, user_id, PermissionCode::UpdateProveedor)?;
-    let result = service.update(
-        request.id,
-        request.proveedor,
-        request.nombre,
-        request.cuit,
-        request.tel,
-        request.email,
-        request.observacion,
-    )?;
+    let proveedor = Proveedor {
+        id: request.id,
+        proveedor: request.proveedor,
+        nombre: request.nombre,
+        cuit: request.cuit,
+        tel: request.tel,
+        email: request.email,
+        observacion: request.observacion,
+    };
+    let result = service.update(&proveedor)?;
     log_audit(
         user_id,
         AuditScreen::Proveedores,
