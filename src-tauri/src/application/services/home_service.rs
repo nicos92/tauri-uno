@@ -25,7 +25,7 @@ impl HomeService {
         )?;
 
         let (total_usuarios, usuarios_activos): (i64, i64) = conn.query_row(
-            "SELECT COUNT(*), COALESCE(SUM(active), 0) FROM users",
+            "SELECT COUNT(*), COALESCE(SUM(active), 0) FROM users WHERE ID != 1",
             [],
             |row| Ok((row.get(0)?, row.get(1)?)),
         )?;
