@@ -55,6 +55,7 @@ pub fn reset_test_db() -> Result<(), rusqlite::Error> {
          DROP TABLE IF EXISTS sub_categorias;
          DROP TABLE IF EXISTS categorias;
          DROP TABLE IF EXISTS proveedores;
+         DROP TABLE IF EXISTS clientes;
          DROP TABLE IF EXISTS user_permissions;
          DROP TABLE IF EXISTS users;
          DROP TABLE IF EXISTS permissions;
@@ -80,6 +81,11 @@ const PERMISSIONS: &[&str] = &[
     "crear_proveedor",
     "modificar_proveedor",
     "eliminar_proveedor",
+    // Clientes
+    "ver_clientes",
+    "crear_cliente",
+    "modificar_cliente",
+    "eliminar_cliente",
     // Categorias
     "ver_categorias",
     "crear_categorias",
@@ -163,6 +169,17 @@ fn apply_schema(conn: &Connection) -> Result<(), rusqlite::Error> {
             tel TEXT,
             email TEXT,
             observacion TEXT
+        );
+        
+        CREATE TABLE IF NOT EXISTS clientes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre TEXT,
+            apellido TEXT,
+            telefono TEXT,
+            email TEXT,
+            direccion TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
         );
         
         CREATE TABLE IF NOT EXISTS categorias (
@@ -286,6 +303,7 @@ fn apply_schema(conn: &Connection) -> Result<(), rusqlite::Error> {
 
     seed_permissions(conn)?;
     seed_admin_user(conn)?;
+    seed_cliente_defecto(conn)?;
     seed_demo_data(conn)?;
 
     purge_old_audit_logs(conn)?;
@@ -355,6 +373,21 @@ fn seed_permissions(conn: &Connection) -> Result<(), rusqlite::Error> {
             rusqlite::params![permission, now],
         )?;
     }
+
+    Ok(())
+}
+
+fn seed_cliente_defecto(conn: &Connection) -> Result<(), rusqlite::Error> {
+    let now = chrono::Utc::now().to_rfc3339();
+
+    conn.execute(
+        "INSERT INTO clientes (nombre, apellido, telefono, email, direccion, created_at, updated_at)
+         SELECT 'Consumidor', 'Final', NULL, NULL, NULL, ?1, ?1
+         WHERE NOT EXISTS (
+             SELECT 1 FROM clientes WHERE nombre = 'Consumidor' AND apellido = 'Final'
+         )",
+        rusqlite::params![now],
+    )?;
 
     Ok(())
 }
@@ -760,6 +793,9 @@ const DEMO_USER_PERMISSIONS: &[(&str, &[&str])] = &[
             "ver_proveedor",
             "crear_proveedor",
             "modificar_proveedor",
+            "ver_clientes",
+            "crear_cliente",
+            "modificar_cliente",
             "ver_categorias",
             "crear_categorias",
             "modificar_categorias",

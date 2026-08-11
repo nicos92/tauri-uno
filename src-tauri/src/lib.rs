@@ -4,18 +4,21 @@ pub mod domain;
 pub mod infrastructure;
 
 use api::commands::{
-    add_permission_to_user, anular_venta, change_password, crear_cierre, create_articulo,
-    create_categoria,
+    actualizar_cliente, add_permission_to_user, anular_venta, change_password, crear_cierre,
+    crear_cliente, create_articulo, create_categoria,
     create_permission, create_proveedor, create_stock, create_sub_categoria, create_tipo_venta,
     create_user, create_venta, delete_articulo, delete_categoria, delete_proveedor, delete_stock,
-    delete_sub_categoria, delete_tipo_venta, delete_user, ensure_db_ready, get_all_articulos,
-    get_all_categorias, get_all_cierres, get_all_permissions, get_all_proveedores, get_all_stock,
+    delete_sub_categoria, delete_tipo_venta, delete_user, eliminar_cliente, ensure_db_ready,
+    get_all_articulos, get_all_categorias, get_all_cierres, get_all_clientes, get_all_permissions,
+    get_all_proveedores, get_all_stock,
     get_all_sub_categorias, get_all_tipos_venta, get_all_users, get_all_ventas,
-    get_audit_logs, get_home_stats, get_precio_venta, get_proveedor_by_id, get_stock_by_articulo,
+    get_audit_logs, get_cliente_by_id, get_cliente_defecto, get_home_stats, get_precio_venta,
+    get_proveedor_by_id, get_stock_by_articulo,
     get_stock_by_id, get_sub_categorias_by_categoria, get_user_permissions, get_venta_by_id,
     is_dia_cerrado, login, reabrir_cierre, remove_permission_from_user, update_articulo, update_categoria, update_proveedor,
     update_stock, update_sub_categoria, update_tipo_venta, update_user, AppState,
-    ArticuloAppState, AuditLogAppState, CategoriaAppState, CierreAppState, HomeStatsAppState,
+    ArticuloAppState, AuditLogAppState, CategoriaAppState, CierreAppState, ClienteAppState,
+    HomeStatsAppState,
     ProveedorAppState,
     StockAppState, SubCategoriaAppState, TipoVentaAppState, VentaAppState,
 };
@@ -35,6 +38,7 @@ pub fn run() {
         .manage(VentaAppState::new())
         .manage(TipoVentaAppState::new())
         .manage(CierreAppState::new())
+        .manage(ClienteAppState::new())
         .invoke_handler(tauri::generate_handler![
             ensure_db_ready,
             get_home_stats,
@@ -86,7 +90,13 @@ pub fn run() {
             crear_cierre,
             get_all_cierres,
             reabrir_cierre,
-            is_dia_cerrado
+            is_dia_cerrado,
+            get_all_clientes,
+            get_cliente_by_id,
+            get_cliente_defecto,
+            crear_cliente,
+            actualizar_cliente,
+            eliminar_cliente
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

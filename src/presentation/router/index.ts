@@ -32,6 +32,12 @@ const routes = [
         meta: { permission: PERMISSIONS.VIEW_PROVEEDORES },
       },
       {
+        path: "clientes",
+        name: "clientes",
+        component: () => import("../pages/ClientesPage.vue"),
+        meta: { permission: PERMISSIONS.VIEW_CLIENTES },
+      },
+      {
         path: "categorias",
         name: "categorias",
         component: () => import("../pages/CategoriasPage.vue"),

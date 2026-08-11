@@ -78,6 +78,18 @@ pub enum AppError {
     #[error("Proveedor has articulos")]
     ProveedorHasArticulos,
 
+    #[error("Cliente not found")]
+    ClienteNotFound,
+
+    #[error("El cliente debe contar al menos con un dato de contacto")]
+    ClienteSinDatosDeContacto,
+
+    #[error("Cannot delete the default client")]
+    NoSePuedeEliminarClienteDefecto,
+
+    #[error("Default client not found")]
+    ClienteDefectoNotFound,
+
     #[error("Cannot delete the current user")]
     CannotDeleteSelf,
 
@@ -190,6 +202,10 @@ impl AppError {
             AppError::StockNotFound => "stock_not_found",
             AppError::StockExistsForArticulo => "stock_exists_for_articulo",
             AppError::ProveedorHasArticulos => "proveedor_has_articulos",
+            AppError::ClienteNotFound => "cliente_not_found",
+            AppError::ClienteSinDatosDeContacto => "cliente_sin_datos_de_contacto",
+            AppError::NoSePuedeEliminarClienteDefecto => "no_se_puede_eliminar_cliente_defecto",
+            AppError::ClienteDefectoNotFound => "cliente_defecto_not_found",
             AppError::CannotDeleteSelf => "cannot_delete_self",
             AppError::CannotDeleteAdmin => "cannot_delete_admin",
             AppError::EmptyPassword => "empty_password",
@@ -267,6 +283,17 @@ impl AppError {
             AppError::ProveedorHasArticulos => {
                 "No se puede eliminar el proveedor porque tiene artículos asociados."
                     .to_string()
+            }
+            AppError::ClienteNotFound => "El cliente no existe.".to_string(),
+            AppError::ClienteSinDatosDeContacto => {
+                "El cliente debe contar al menos con un dato de contacto o identificación."
+                    .to_string()
+            }
+            AppError::NoSePuedeEliminarClienteDefecto => {
+                "No se puede eliminar el cliente 'Consumidor Final'.".to_string()
+            }
+            AppError::ClienteDefectoNotFound => {
+                "El cliente por defecto no existe. Reinicie la base de datos.".to_string()
             }
             AppError::CannotDeleteSelf => {
                 "No se puede eliminar a sí mismo.".to_string()
@@ -352,6 +379,14 @@ mod tests {
         assert_eq!(
             AppError::CierreFechaFutura.code(),
             "cierre_fecha_futura"
+        );
+        assert_eq!(
+            AppError::ClienteSinDatosDeContacto.code(),
+            "cliente_sin_datos_de_contacto"
+        );
+        assert_eq!(
+            AppError::NoSePuedeEliminarClienteDefecto.code(),
+            "no_se_puede_eliminar_cliente_defecto"
         );
         assert_eq!(AppError::Internal("x".to_string()).code(), "internal_error");
     }

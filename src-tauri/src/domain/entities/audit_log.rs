@@ -26,6 +26,7 @@ impl AuditAction {
 pub enum AuditScreen {
     Usuarios,
     Proveedores,
+    Clientes,
     Categorias,
     SubCategorias,
     Articulos,
@@ -42,6 +43,7 @@ impl AuditScreen {
         match self {
             AuditScreen::Usuarios => "Usuarios",
             AuditScreen::Proveedores => "Proveedores",
+            AuditScreen::Clientes => "Clientes",
             AuditScreen::Categorias => "Categorias",
             AuditScreen::SubCategorias => "SubCategorias",
             AuditScreen::Articulos => "Articulos",

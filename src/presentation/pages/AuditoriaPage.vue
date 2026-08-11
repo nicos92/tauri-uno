@@ -18,6 +18,7 @@ const offset = ref(0);
 const screens = [
     "Usuarios",
     "Proveedores",
+    "Clientes",
     "Categorias",
     "SubCategorias",
     "Articulos",

@@ -25,6 +25,12 @@ const menuItems = computed(() => {
             permission: "ver_proveedor",
         },
         {
+            name: "clientes",
+            label: "Clientes",
+            icon: "cliente",
+            permission: "ver_clientes",
+        },
+        {
             name: "categorias",
             label: "Categorías",
             icon: "category",

@@ -1,6 +1,7 @@
 pub mod articulo;
 pub mod audit_log;
 pub mod categoria;
+pub mod cliente;
 pub mod cierre;
 pub mod home;
 pub mod permission;
@@ -16,6 +17,7 @@ pub use articulo::Articulo;
 pub use audit_log::{AuditAction, AuditLog, AuditScreen};
 pub use categoria::Categoria;
 pub use cierre::{Cierre, CierreTipo, CierreWithTipos};
+pub use cliente::Cliente;
 pub use home::{CategoriaConSub, HomeStats, StockBajoItem, SubCategoriaInfo};
 pub use permission::{Permission, UserPermission};
 pub use permission_code::PermissionCode;

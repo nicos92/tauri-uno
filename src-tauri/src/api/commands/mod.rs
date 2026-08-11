@@ -12,6 +12,7 @@ pub mod articulo_commands;
 pub mod audit_log_commands;
 pub mod categoria_commands;
 pub mod cierre_commands;
+pub mod cliente_commands;
 pub mod home_commands;
 pub mod permissions;
 pub mod proveedor_commands;
@@ -29,6 +30,10 @@ pub use categoria_commands::{
 };
 pub use cierre_commands::{
     crear_cierre, get_all_cierres, is_dia_cerrado, reabrir_cierre, CierreAppState,
+};
+pub use cliente_commands::{
+    actualizar_cliente, crear_cliente, eliminar_cliente, get_all_clientes,
+    get_cliente_by_id, get_cliente_defecto, ClienteAppState,
 };
 pub use home_commands::{get_home_stats, HomeStatsAppState};
 pub use proveedor_commands::{

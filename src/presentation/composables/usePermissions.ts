@@ -59,6 +59,22 @@ export function usePermissions() {
     return can(PERMISSIONS.DELETE_PROVEEDOR);
   }
 
+  function canViewClientes(): boolean {
+    return can(PERMISSIONS.VIEW_CLIENTES);
+  }
+
+  function canCreateCliente(): boolean {
+    return can(PERMISSIONS.CREATE_CLIENTE);
+  }
+
+  function canUpdateCliente(): boolean {
+    return can(PERMISSIONS.UPDATE_CLIENTE);
+  }
+
+  function canDeleteCliente(): boolean {
+    return can(PERMISSIONS.DELETE_CLIENTE);
+  }
+
   function canViewCategorias(): boolean {
     return can(PERMISSIONS.VIEW_CATEGORIAS);
   }
@@ -190,6 +206,10 @@ export function usePermissions() {
     canCreateProveedor,
     canUpdateProveedor,
     canDeleteProveedor,
+    canViewClientes,
+    canCreateCliente,
+    canUpdateCliente,
+    canDeleteCliente,
     canViewCategorias,
     canCreateCategoria,
     canUpdateCategoria,
