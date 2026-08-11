@@ -243,6 +243,7 @@ fn apply_schema(conn: &Connection) -> Result<(), rusqlite::Error> {
             anulada INTEGER NOT NULL DEFAULT 0,
             observacion TEXT,
             id_tipo_venta INTEGER REFERENCES tipos_venta(id),
+            cliente_id INTEGER NOT NULL REFERENCES clientes(id),
             created_at TEXT NOT NULL,
             FOREIGN KEY (user_id) REFERENCES users(id)
         );
@@ -293,6 +294,16 @@ fn apply_schema(conn: &Connection) -> Result<(), rusqlite::Error> {
         "id_tipo_venta",
         "INTEGER REFERENCES tipos_venta(id)",
     )?;
+    ensure_column(
+        conn,
+        "ventas",
+        "cliente_id",
+        "INTEGER REFERENCES clientes(id)",
+    )?;
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_ventas_cliente_id ON ventas(cliente_id)",
+        [],
+    )?;
 
     seed_tipos_venta(conn)?;
 
@@ -304,6 +315,14 @@ fn apply_schema(conn: &Connection) -> Result<(), rusqlite::Error> {
     seed_permissions(conn)?;
     seed_admin_user(conn)?;
     seed_cliente_defecto(conn)?;
+
+    conn.execute(
+        "UPDATE ventas
+         SET cliente_id = (SELECT id FROM clientes WHERE nombre = 'Consumidor' AND apellido = 'Final' LIMIT 1)
+         WHERE cliente_id IS NULL",
+        [],
+    )?;
+
     seed_demo_data(conn)?;
 
     purge_old_audit_logs(conn)?;
@@ -728,6 +747,8 @@ const DEMO_USER_PERMISSIONS: &[(&str, &[&str])] = &[
             "anular_venta",
             "generar_presupuesto",
             "vender_sin_stock",
+            "ver_clientes",
+            "crear_cliente",
             "ver_articulos",
             "ver_stock",
             "ver_tipos_venta",
@@ -741,6 +762,8 @@ const DEMO_USER_PERMISSIONS: &[(&str, &[&str])] = &[
             "anular_venta",
             "generar_presupuesto",
             "vender_sin_stock",
+            "ver_clientes",
+            "crear_cliente",
             "ver_articulos",
             "ver_stock",
             "ver_tipos_venta",

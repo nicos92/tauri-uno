@@ -253,7 +253,8 @@ mod tests {
             .unwrap();
         let now = chrono::Utc::now().to_rfc3339();
         conn.execute(
-            "INSERT INTO ventas (user_id, fecha, total, descuento, anulada, observacion, id_tipo_venta, created_at) VALUES (?1, ?2, 150.0, 0, 0, NULL, NULL, ?3)",
+            "INSERT INTO ventas (user_id, fecha, total, descuento, anulada, observacion, id_tipo_venta, created_at, cliente_id)
+             VALUES (?1, ?2, 150.0, 0, 0, NULL, NULL, ?3, (SELECT id FROM clientes WHERE nombre = 'Consumidor' AND apellido = 'Final' LIMIT 1))",
             params![user_id, now, now],
         )
         .unwrap();

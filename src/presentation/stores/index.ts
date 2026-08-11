@@ -731,6 +731,17 @@ export const useVentasStore = defineStore("ventas", () => {
     }
   }
 
+  async function getVentasPorCliente(
+    clienteId: number,
+  ): Promise<VentaWithDetalle[] | null> {
+    try {
+      return await ventasRepository.getVentasPorCliente(clienteId);
+    } catch (e) {
+      error.value = toErrorMessage(e);
+      return null;
+    }
+  }
+
   async function createVenta(
     request: CreateVentaRequest,
   ): Promise<VentaWithDetalle | null> {
@@ -769,6 +780,7 @@ export const useVentasStore = defineStore("ventas", () => {
     offset,
     fetchVentas,
     getVentaById,
+    getVentasPorCliente,
     createVenta,
     anularVenta,
     checkDiaCerrado,
@@ -958,15 +970,15 @@ export const useClientesStore = defineStore("clientes", () => {
     }
   }
 
-  async function crearCliente(request: CreateClienteRequest): Promise<boolean> {
+  async function crearCliente(request: CreateClienteRequest): Promise<Cliente | null> {
     error.value = null;
     try {
       const nuevoCliente = await clienteRepository.crearCliente(request);
       clientes.value.push(nuevoCliente);
-      return true;
+      return nuevoCliente;
     } catch (e) {
       error.value = toErrorMessage(e);
-      return false;
+      return null;
     }
   }
 

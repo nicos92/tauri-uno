@@ -6,18 +6,29 @@ import {
   useStockStore,
   useArticulosStore,
   useTiposVentaStore,
+  useClientesStore,
 } from "../stores";
 import { usePermissions } from "../composables/usePermissions";
 import { useToasts } from "../composables/useToasts";
 import { formatMoney } from "../utils/format";
-import type { CreateVentaRequest } from "../../domain/entities";
+import type {
+  Cliente,
+  CreateClienteRequest,
+  CreateVentaRequest,
+} from "../../domain/entities";
 
 const router = useRouter();
 const ventasStore = useVentasStore();
 const stockStore = useStockStore();
 const articulosStore = useArticulosStore();
 const tiposVentaStore = useTiposVentaStore();
-const { canVenderSinStock, canGenerarPresupuesto } = usePermissions();
+const clientesStore = useClientesStore();
+const {
+  canVenderSinStock,
+  canGenerarPresupuesto,
+  canViewClientes,
+  canCreateCliente,
+} = usePermissions();
 const { error: toastError, success: toastSuccess } = useToasts();
 
 interface CartItem {
@@ -44,6 +55,47 @@ const observacion = ref("");
 const descuento = ref<number>(0);
 const cart = ref<CartItem[]>([]);
 const tipoVentaId = ref<number | null>(null);
+
+const clienteSeleccionado = ref<Cliente | null>(null);
+const clienteDefecto = ref<Cliente | null>(null);
+const clienteQuery = ref("");
+const mostrandoClientes = ref(false);
+const mostrarModalNuevoCliente = ref(false);
+
+const nuevoNombre = ref("");
+const nuevoApellido = ref("");
+const nuevoTelefono = ref("");
+const nuevoEmail = ref("");
+const nuevoDireccion = ref("");
+
+const nuevoClienteInvalido = computed(
+  () =>
+    !nuevoNombre.value.trim() &&
+    !nuevoApellido.value.trim() &&
+    !nuevoTelefono.value.trim() &&
+    !nuevoEmail.value.trim() &&
+    !nuevoDireccion.value.trim(),
+);
+
+function clienteLabel(cliente: Cliente): string {
+  const name = [cliente.nombre, cliente.apellido]
+    .filter(Boolean)
+    .join(" ");
+  return name || cliente.telefono || cliente.email || "Sin datos";
+}
+
+const clientesFiltrados = computed<Cliente[]>(() => {
+  const query = clienteQuery.value.trim().toLowerCase();
+  const base = clientesStore.clientes;
+  if (!query) return base;
+  return base.filter(
+    (c) =>
+      (c.nombre || "").toLowerCase().includes(query) ||
+      (c.apellido || "").toLowerCase().includes(query) ||
+      (c.telefono || "").toLowerCase().includes(query) ||
+      (c.email || "").toLowerCase().includes(query),
+  );
+});
 
 watch(
     () => tiposVentaStore.tipos,
@@ -117,8 +169,14 @@ onMounted(async () => {
     stockStore.fetchStock(),
     articulosStore.fetchArticulos(),
     tiposVentaStore.fetchTiposVenta(),
+    canViewClientes() ? clientesStore.fetchClientes() : Promise.resolve(),
   ]);
   await ventasStore.checkDiaCerrado();
+  if (canViewClientes()) {
+    const clienteDef = await clientesStore.getClienteDefecto();
+    clienteDefecto.value = clienteDef;
+    clienteSeleccionado.value = clienteDef;
+  }
   focusSearch();
 });
 
@@ -196,6 +254,53 @@ function resetForm() {
   tipoVentaId.value = efectivo
     ? efectivo.id
     : tiposVentaStore.tipos[0]?.id ?? null;
+  clienteSeleccionado.value = clienteDefecto.value;
+  clienteQuery.value = "";
+  mostrandoClientes.value = false;
+}
+
+function onClienteBlur() {
+  setTimeout(() => {
+    mostrandoClientes.value = false;
+  }, 150);
+}
+
+function seleccionarCliente(cliente: Cliente) {
+  clienteSeleccionado.value = cliente;
+  clienteQuery.value = "";
+  mostrandoClientes.value = false;
+}
+
+function quitarCliente() {
+  clienteSeleccionado.value = clienteDefecto.value;
+  clienteQuery.value = "";
+  mostrandoClientes.value = false;
+}
+
+function abrirModalNuevoCliente() {
+  nuevoNombre.value = "";
+  nuevoApellido.value = "";
+  nuevoTelefono.value = "";
+  nuevoEmail.value = "";
+  nuevoDireccion.value = "";
+  clientesStore.error = null;
+  mostrarModalNuevoCliente.value = true;
+}
+
+async function crearClienteRapido() {
+  if (nuevoClienteInvalido.value) return;
+  const request: CreateClienteRequest = {
+    nombre: nuevoNombre.value.trim() || undefined,
+    apellido: nuevoApellido.value.trim() || undefined,
+    telefono: nuevoTelefono.value.trim() || undefined,
+    email: nuevoEmail.value.trim() || undefined,
+    direccion: nuevoDireccion.value.trim() || undefined,
+  };
+  const nuevoCliente = await clientesStore.crearCliente(request);
+  if (nuevoCliente) {
+    seleccionarCliente(nuevoCliente);
+    mostrarModalNuevoCliente.value = false;
+  }
 }
 
 async function handleCreate() {
@@ -209,6 +314,7 @@ async function handleCreate() {
     descuento: descuento.value || 0,
     observacion: observacion.value.trim() || undefined,
     id_tipo_venta: tipoVentaId.value || undefined,
+    cliente_id: clienteSeleccionado.value?.id,
   };
   const venta = await ventasStore.createVenta(request);
   if (venta) {
@@ -269,6 +375,61 @@ function generarPdf() {
                         {{ tipo.nombre }}
                     </option>
                 </select>
+            </div>
+            <div v-if="canViewClientes()" class="form-group obs-group cliente-group">
+                <label>Cliente</label>
+                <div class="cliente-selector">
+                    <input
+                        v-model="clienteQuery"
+                        type="text"
+                        placeholder="Buscar por nombre, apellido o teléfono..."
+                        @focus="mostrandoClientes = true"
+                        @input="mostrandoClientes = true"
+                        @blur="onClienteBlur"
+                    />
+                    <button
+                        v-if="canCreateCliente()"
+                        type="button"
+                        class="btn-nuevo-cliente"
+                        title="Crear nuevo cliente"
+                        @click="abrirModalNuevoCliente"
+                    >
+                        + Nuevo
+                    </button>
+                </div>
+                <div v-if="mostrandoClientes" class="cliente-dropdown">
+                    <button
+                        v-for="cliente in clientesFiltrados"
+                        :key="cliente.id"
+                        type="button"
+                        class="cliente-option"
+                        @mousedown.prevent="seleccionarCliente(cliente)"
+                    >
+                        <span class="cliente-nombre">
+                            {{ clienteLabel(cliente) }}
+                        </span>
+                        <span v-if="cliente.telefono" class="cliente-tel">
+                            {{ cliente.telefono }}
+                        </span>
+                    </button>
+                    <div v-if="clientesFiltrados.length === 0" class="cliente-empty">
+                        Sin coincidencias
+                    </div>
+                </div>
+                <div
+                    v-if="clienteSeleccionado && !mostrandoClientes"
+                    class="cliente-seleccionado"
+                >
+                    <span>{{ clienteLabel(clienteSeleccionado) }}</span>
+                    <button
+                        type="button"
+                        class="cliente-limpiar"
+                        title="Usar Consumidor Final"
+                        @click="quitarCliente"
+                    >
+                        ×
+                    </button>
+                </div>
             </div>
             <div class="acciones">
                 <button
@@ -445,12 +606,75 @@ function generarPdf() {
         <div v-if="ventasStore.error" class="error-banner">
             {{ ventasStore.error }}
         </div>
+
+        <div
+            v-if="mostrarModalNuevoCliente"
+            class="modal-overlay"
+            @click.self="mostrarModalNuevoCliente = false"
+        >
+            <div class="modal-card">
+                <div class="modal-header">
+                    <h2>Nuevo cliente</h2>
+                    <button
+                        type="button"
+                        class="btn-icon"
+                        @click="mostrarModalNuevoCliente = false"
+                    >
+                        ×
+                    </button>
+                </div>
+                <form @submit.prevent="crearClienteRapido">
+                    <div class="form-group">
+                        <label>Nombre</label>
+                        <input v-model="nuevoNombre" type="text" placeholder="Nombre" />
+                    </div>
+                    <div class="form-group">
+                        <label>Apellido</label>
+                        <input v-model="nuevoApellido" type="text" placeholder="Apellido" />
+                    </div>
+                    <div class="form-group">
+                        <label>Teléfono</label>
+                        <input v-model="nuevoTelefono" type="text" placeholder="Teléfono" />
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input v-model="nuevoEmail" type="email" placeholder="Email" />
+                    </div>
+                    <div class="form-group">
+                        <label>Dirección</label>
+                        <input v-model="nuevoDireccion" type="text" placeholder="Dirección" />
+                    </div>
+                    <div v-if="clientesStore.error" class="error-text">
+                        {{ clientesStore.error }}
+                    </div>
+                    <div class="modal-actions">
+                        <button
+                            type="button"
+                            class="btn-secondary"
+                            @click="mostrarModalNuevoCliente = false"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            type="submit"
+                            class="btn-primary"
+                            :disabled="nuevoClienteInvalido"
+                        >
+                            Crear y seleccionar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 
     <Teleport to="body">
         <div class="print-area" id="print-area">
             <h1>Presupuesto</h1>
             <p>Fecha: {{ fechaHoy }}</p>
+            <p v-if="clienteSeleccionado">
+                Cliente: {{ clienteLabel(clienteSeleccionado) }}
+            </p>
             <div class="print-summary">
                 <p class="print-line">Subtotal: {{ formatMoney(carritoSubtotal) }}</p>
                 <p v-if="descuento > 0" class="print-line">
@@ -786,6 +1010,160 @@ function generarPdf() {
     padding: 0.75rem 1rem;
     border-radius: 6px;
     margin-bottom: 1rem;
+}
+
+.cliente-group {
+    position: relative;
+    min-width: 280px;
+}
+
+.cliente-selector {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.cliente-selector input {
+    flex: 1;
+}
+
+.btn-nuevo-cliente {
+    background: var(--color-surface-2);
+    color: var(--color-text);
+    border: none;
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+    font-weight: 500;
+}
+
+.btn-nuevo-cliente:hover {
+    background: var(--color-border);
+}
+
+.cliente-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 30;
+    max-height: 220px;
+    overflow-y: auto;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    margin-top: 0.25rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.cliente-option {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    text-align: left;
+    padding: 0.6rem 0.75rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--color-text);
+}
+
+.cliente-option:hover {
+    background: var(--color-surface-2);
+}
+
+.cliente-nombre {
+    font-weight: 500;
+}
+
+.cliente-tel {
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
+}
+
+.cliente-empty {
+    padding: 0.6rem 0.75rem;
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+}
+
+.cliente-seleccionado {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--color-surface-2);
+    border-radius: 6px;
+    font-weight: 500;
+}
+
+.cliente-limpiar {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--color-text-muted);
+    font-size: 1.1rem;
+    line-height: 1;
+    padding: 0 0.25rem;
+}
+
+.cliente-limpiar:hover {
+    color: #e53e3e;
+}
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 1rem;
+}
+
+.modal-card {
+    background: var(--color-surface);
+    border-radius: 12px;
+    padding: 1.5rem;
+    width: 100%;
+    max-width: 420px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.modal-header h2 {
+    margin: 0;
+}
+
+.modal-header .btn-icon {
+    font-size: 1.25rem;
+    color: var(--color-text-muted);
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.error-text {
+    color: #e53e3e;
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
 }
 
 .loading,

@@ -53,7 +53,8 @@ pub use tipo_venta_commands::{
     TipoVentaAppState,
 };
 pub use venta_commands::{
-    anular_venta, create_venta, get_all_ventas, get_venta_by_id, VentaAppState,
+    anular_venta, create_venta, get_all_ventas, get_venta_by_id, get_ventas_por_cliente,
+    VentaAppState,
 };
 
 pub struct AppState {

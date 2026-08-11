@@ -32,6 +32,13 @@ export class VentasApiRepository {
     });
   }
 
+  async getVentasPorCliente(clienteId: number): Promise<VentaWithDetalle[]> {
+    return await invoke<VentaWithDetalle[]>("get_ventas_por_cliente", {
+      userId: this.getCurrentUserId(),
+      clienteId,
+    });
+  }
+
   async createVenta(request: CreateVentaRequest): Promise<VentaWithDetalle> {
     return await invoke<VentaWithDetalle>("create_venta", {
       userId: this.getCurrentUserId(),

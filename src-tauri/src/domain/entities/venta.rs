@@ -10,6 +10,7 @@ pub struct Venta {
     pub anulada: bool,
     pub observacion: Option<String>,
     pub id_tipo_venta: Option<i64>,
+    pub cliente_id: i64,
     pub created_at: String,
 }
 
@@ -24,6 +25,7 @@ impl Venta {
             anulada: false,
             observacion,
             id_tipo_venta: None,
+            cliente_id: 0,
             created_at: String::new(),
         }
     }
@@ -83,6 +85,9 @@ pub struct VentaWithDetalle {
     pub anulada: bool,
     pub observacion: Option<String>,
     pub tipo_venta: Option<String>,
+    pub cliente_id: i64,
+    pub cliente_nombre: Option<String>,
+    pub cliente_apellido: Option<String>,
     pub created_at: String,
     pub items: Vec<VentaDetalleConArticulo>,
 }

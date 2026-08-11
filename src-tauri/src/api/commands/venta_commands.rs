@@ -40,6 +40,7 @@ pub struct CreateVentaRequest {
     pub descuento: Option<f64>,
     pub observacion: Option<String>,
     pub id_tipo_venta: Option<i64>,
+    pub cliente_id: Option<i64>,
 }
 
 #[derive(serde::Deserialize)]
@@ -88,6 +89,7 @@ pub fn create_venta(
         request.descuento.unwrap_or(0.0),
         request.observacion,
         request.id_tipo_venta,
+        request.cliente_id,
         allow_negative_stock,
     )?;
     log_audit(
@@ -127,6 +129,20 @@ pub fn get_venta_by_id(
         .map_err(|e| AppError::Internal(e.to_string()))?;
     check_permission(user_id, PermissionCode::ViewVentas)?;
     service.get_by_id(id)
+}
+
+#[tauri::command(async)]
+pub fn get_ventas_por_cliente(
+    user_id: i64,
+    cliente_id: i64,
+    state: State<VentaAppState>,
+) -> Result<Vec<VentaWithDetalle>, AppError> {
+    let service = state
+        .venta_service
+        .lock()
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+    check_permission(user_id, PermissionCode::ViewVentas)?;
+    service.get_ventas_por_cliente(cliente_id)
 }
 
 #[tauri::command(async)]

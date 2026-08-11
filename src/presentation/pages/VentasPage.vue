@@ -86,6 +86,13 @@ function generarPdfDetalle() {
     if (!selectedVenta.value) return;
     window.print();
 }
+
+function clienteNombre(venta: VentaWithDetalle): string {
+    const name = [venta.cliente_nombre, venta.cliente_apellido]
+        .filter(Boolean)
+        .join(" ");
+    return name || "Consumidor Final";
+}
 </script>
 
 <template>
@@ -224,6 +231,9 @@ function generarPdfDetalle() {
                         {{ selectedVenta.anulada ? "Anulada" : "Activa" }}
                     </span>
                 </p>
+                <p class="detail-meta">
+                    Cliente: {{ clienteNombre(selectedVenta) }}
+                </p>
                 <p v-if="selectedVenta.observacion" class="detail-meta">
                     Observación: {{ selectedVenta.observacion }}
                 </p>
@@ -287,6 +297,7 @@ function generarPdfDetalle() {
             <h1>Venta N° {{ selectedVenta.id }}</h1>
             <p>Fecha: {{ new Date(selectedVenta.fecha).toLocaleString() }}</p>
             <p>Usuario: {{ selectedVenta.username }}</p>
+            <p>Cliente: {{ clienteNombre(selectedVenta) }}</p>
             <p v-if="selectedVenta.observacion">
                 Observación: {{ selectedVenta.observacion }}
             </p>

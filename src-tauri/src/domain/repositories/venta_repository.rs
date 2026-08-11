@@ -11,6 +11,7 @@ pub trait VentaRepository: Send + Sync {
         allow_negative_stock: bool,
     ) -> Result<VentaWithDetalle, AppError>;
     fn find_by_id(&self, id: i64) -> Result<Option<VentaWithDetalle>, AppError>;
+    fn find_by_cliente(&self, cliente_id: i64) -> Result<Vec<VentaWithDetalle>, AppError>;
     fn find_all(&self) -> Result<Vec<VentaWithDetalle>, AppError>;
     fn find_page(&self, limit: i64, offset: i64) -> Result<Page<VentaWithDetalle>, AppError>;
     fn anular(&self, id: i64) -> Result<(), AppError>;

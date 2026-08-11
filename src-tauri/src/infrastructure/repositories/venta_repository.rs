@@ -81,7 +81,7 @@ impl VentaRepository for SqliteVentaRepository {
         let now = chrono::Utc::now().to_rfc3339();
         total = (total * (1.0 - venta.descuento / 100.0) * 100.0).round() / 100.0;
         tx.execute(
-            "INSERT INTO ventas (user_id, fecha, total, descuento, anulada, observacion, id_tipo_venta, created_at) VALUES (?1, ?2, ?3, ?4, 0, ?5, ?6, ?7)",
+            "INSERT INTO ventas (user_id, fecha, total, descuento, anulada, observacion, id_tipo_venta, cliente_id, created_at) VALUES (?1, ?2, ?3, ?4, 0, ?5, ?6, ?7, ?8)",
             params![
                 venta.user_id,
                 now,
@@ -89,6 +89,7 @@ impl VentaRepository for SqliteVentaRepository {
                 venta.descuento,
                 &venta.observacion,
                 venta.id_tipo_venta,
+                venta.cliente_id,
                 now
             ],
         )?;
@@ -134,14 +135,41 @@ impl VentaRepository for SqliteVentaRepository {
         Ok(venta)
     }
 
+    fn find_by_cliente(&self, cliente_id: i64) -> Result<Vec<VentaWithDetalle>, AppError> {
+        let conn = DB.lock().map_err(|e| AppError::Internal(e.to_string()))?;
+
+        let mut stmt = conn.prepare(
+            "SELECT v.id, v.user_id, COALESCE(u.username, ''), v.fecha, v.total, v.descuento, v.anulada, v.observacion, COALESCE(t.nombre, 'Efectivo'), v.created_at, v.cliente_id, COALESCE(c.nombre, ''), COALESCE(c.apellido, '')
+             FROM ventas v
+             LEFT JOIN users u ON u.id = v.user_id
+             LEFT JOIN tipos_venta t ON t.id = v.id_tipo_venta
+             LEFT JOIN clientes c ON c.id = v.cliente_id
+             WHERE v.cliente_id = ?1
+             ORDER BY v.id DESC",
+        )?;
+
+        let mut rows = stmt.query(params![cliente_id])?;
+        let mut ventas = Vec::new();
+
+        while let Some(row) = rows.next()? {
+            let mut venta = self.row_to_venta(row)?;
+            venta.items = self.load_items(&conn, venta.id)?;
+            venta.subtotal = venta.items.iter().map(|i| i.subtotal).sum();
+            ventas.push(venta);
+        }
+
+        Ok(ventas)
+    }
+
     fn find_all(&self) -> Result<Vec<VentaWithDetalle>, AppError> {
         let conn = DB.lock().map_err(|e| AppError::Internal(e.to_string()))?;
 
         let mut stmt = conn.prepare(
-            "SELECT v.id, v.user_id, COALESCE(u.username, ''), v.fecha, v.total, v.descuento, v.anulada, v.observacion, COALESCE(t.nombre, 'Efectivo'), v.created_at
+            "SELECT v.id, v.user_id, COALESCE(u.username, ''), v.fecha, v.total, v.descuento, v.anulada, v.observacion, COALESCE(t.nombre, 'Efectivo'), v.created_at, v.cliente_id, COALESCE(c.nombre, ''), COALESCE(c.apellido, '')
              FROM ventas v
              LEFT JOIN users u ON u.id = v.user_id
              LEFT JOIN tipos_venta t ON t.id = v.id_tipo_venta
+             LEFT JOIN clientes c ON c.id = v.cliente_id
              ORDER BY v.id DESC",
         )?;
 
@@ -169,10 +197,11 @@ impl VentaRepository for SqliteVentaRepository {
         })?;
 
         let mut stmt = conn.prepare(
-            "SELECT v.id, v.user_id, COALESCE(u.username, ''), v.fecha, v.total, v.descuento, v.anulada, v.observacion, COALESCE(t.nombre, 'Efectivo'), v.created_at
+            "SELECT v.id, v.user_id, COALESCE(u.username, ''), v.fecha, v.total, v.descuento, v.anulada, v.observacion, COALESCE(t.nombre, 'Efectivo'), v.created_at, v.cliente_id, COALESCE(c.nombre, ''), COALESCE(c.apellido, '')
              FROM ventas v
              LEFT JOIN users u ON u.id = v.user_id
              LEFT JOIN tipos_venta t ON t.id = v.id_tipo_venta
+             LEFT JOIN clientes c ON c.id = v.cliente_id
              ORDER BY v.id DESC
              LIMIT ?1 OFFSET ?2",
         )?;
@@ -286,6 +315,9 @@ impl SqliteVentaRepository {
             observacion: row.get(7)?,
             tipo_venta: row.get(8)?,
             created_at: row.get(9)?,
+            cliente_id: row.get(10)?,
+            cliente_nombre: row.get(11)?,
+            cliente_apellido: row.get(12)?,
             items: Vec::new(),
         })
     }
@@ -296,10 +328,11 @@ impl SqliteVentaRepository {
         id: i64,
     ) -> Result<Option<VentaWithDetalle>, AppError> {
         let mut stmt = conn.prepare(
-            "SELECT v.id, v.user_id, COALESCE(u.username, ''), v.fecha, v.total, v.descuento, v.anulada, v.observacion, COALESCE(t.nombre, 'Efectivo'), v.created_at
+            "SELECT v.id, v.user_id, COALESCE(u.username, ''), v.fecha, v.total, v.descuento, v.anulada, v.observacion, COALESCE(t.nombre, 'Efectivo'), v.created_at, v.cliente_id, COALESCE(c.nombre, ''), COALESCE(c.apellido, '')
              FROM ventas v
              LEFT JOIN users u ON u.id = v.user_id
              LEFT JOIN tipos_venta t ON t.id = v.id_tipo_venta
+             LEFT JOIN clientes c ON c.id = v.cliente_id
              WHERE v.id = ?1",
         )?;
 
@@ -387,5 +420,124 @@ impl SqliteVentaRepository {
         }
 
         Ok(map)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::domain::entities::Cliente;
+    use crate::domain::repositories::ClienteRepository;
+    use crate::infrastructure::database::{reset_test_db, TEST_LOCK};
+    use crate::infrastructure::repositories::SqliteClienteRepository;
+    use std::sync::MutexGuard;
+
+    fn fresh_db() -> MutexGuard<'static, ()> {
+        let guard = TEST_LOCK.lock().unwrap();
+        reset_test_db().unwrap();
+        guard
+    }
+
+    fn admin_user_id() -> i64 {
+        let conn = DB.lock().unwrap();
+        conn.query_row(
+            "SELECT id FROM users WHERE username = 'admin'",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap()
+    }
+
+    fn create_cliente(nombre: &str, apellido: &str) -> Cliente {
+        SqliteClienteRepository::new()
+            .create(&Cliente::new(
+                Some(nombre.to_string()),
+                Some(apellido.to_string()),
+                None,
+                None,
+                None,
+            ))
+            .unwrap()
+    }
+
+    fn venta_con_detalle(cliente_id: i64) -> VentaWithDetalle {
+        let id_articulo: i64 = {
+            let conn = DB.lock().unwrap();
+            conn.query_row(
+                "SELECT id_articulo FROM stock LIMIT 1",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap()
+        };
+
+        let mut venta = Venta::new(
+            admin_user_id(),
+            "2026-01-01T00:00:00Z".to_string(),
+            0.0,
+            None,
+        );
+        venta.cliente_id = cliente_id;
+
+        let detalle = VentaDetalle::new(id_articulo, 1.0, 0.0, 100.0);
+        SqliteVentaRepository::new()
+            .create(&venta, &[detalle], false)
+            .unwrap()
+    }
+
+    #[test]
+    fn create_persists_cliente_id_and_name() {
+        let _guard = fresh_db();
+        let cliente = create_cliente("Ana", "López");
+
+        let created = venta_con_detalle(cliente.id);
+        assert_eq!(created.cliente_id, cliente.id);
+        assert_eq!(created.cliente_nombre.as_deref(), Some("Ana"));
+        assert_eq!(created.cliente_apellido.as_deref(), Some("López"));
+
+        let found = SqliteVentaRepository::new()
+            .find_by_id(created.id)
+            .unwrap()
+            .unwrap();
+        assert_eq!(found.cliente_id, cliente.id);
+        assert_eq!(found.cliente_nombre.as_deref(), Some("Ana"));
+    }
+
+    #[test]
+    fn create_with_default_client_returns_consumidor_final() {
+        let _guard = fresh_db();
+        let default_id: i64 = {
+            let conn = DB.lock().unwrap();
+            conn.query_row(
+                "SELECT id FROM clientes WHERE nombre = 'Consumidor' AND apellido = 'Final'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap()
+        };
+
+        let created = venta_con_detalle(default_id);
+        assert_eq!(created.cliente_nombre.as_deref(), Some("Consumidor"));
+        assert_eq!(created.cliente_apellido.as_deref(), Some("Final"));
+    }
+
+    #[test]
+    fn find_by_cliente_returns_only_that_clients_sales() {
+        let _guard = fresh_db();
+        let cliente_a = create_cliente("Ana", "López");
+        let cliente_b = create_cliente("Bruno", "Gómez");
+
+        let v1 = venta_con_detalle(cliente_a.id);
+        let _v2 = venta_con_detalle(cliente_b.id);
+
+        let repo = SqliteVentaRepository::new();
+        let de_a = repo.find_by_cliente(cliente_a.id).unwrap();
+        assert_eq!(de_a.len(), 1);
+        assert_eq!(de_a[0].id, v1.id);
+        assert_eq!(de_a[0].cliente_nombre.as_deref(), Some("Ana"));
+
+        let de_b = repo.find_by_cliente(cliente_b.id).unwrap();
+        assert_eq!(de_b.len(), 1);
+        assert_eq!(de_b[0].cliente_nombre.as_deref(), Some("Bruno"));
     }
 }

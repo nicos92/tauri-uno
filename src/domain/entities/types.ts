@@ -268,6 +268,9 @@ export interface VentaWithDetalle {
   anulada: boolean;
   observacion: string | null;
   tipo_venta: string | null;
+  cliente_id: number;
+  cliente_nombre: string | null;
+  cliente_apellido: string | null;
   created_at: string;
   items: VentaDetalleConArticulo[];
 }
@@ -283,6 +286,7 @@ export interface CreateVentaRequest {
   descuento?: number;
   observacion?: string;
   id_tipo_venta?: number;
+  cliente_id?: number;
 }
 
 export interface VentaPage {
