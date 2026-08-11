@@ -9,4 +9,5 @@ pub trait StockRepository: Send + Sync {
     fn find_all(&self) -> Result<Vec<Stock>, AppError>;
     fn update(&self, stock: &Stock) -> Result<Stock, AppError>;
     fn delete(&self, id: i64) -> Result<(), AppError>;
+    fn has_ventas(&self, id_articulo: i64) -> Result<bool, AppError>;
 }

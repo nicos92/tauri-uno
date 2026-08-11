@@ -104,6 +104,18 @@ impl StockRepository for SqliteStockRepository {
         conn.execute("DELETE FROM stock WHERE id = ?1", params![id])?;
         Ok(())
     }
+
+    fn has_ventas(&self, id_articulo: i64) -> Result<bool, AppError> {
+        let conn = DB.lock().map_err(|e| AppError::Internal(e.to_string()))?;
+
+        let count: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM venta_detalle WHERE id_articulo = ?1",
+            params![id_articulo],
+            |row| row.get(0),
+        )?;
+
+        Ok(count > 0)
+    }
 }
 
 impl SqliteStockRepository {
@@ -125,7 +137,7 @@ mod tests {
     use crate::domain::repositories::{
         ArticuloRepository, CategoriaRepository, ProveedorRepository, SubCategoriaRepository,
     };
-    use crate::infrastructure::database::{reset_test_db, TEST_LOCK};
+    use crate::infrastructure::database::{reset_test_db, DB, TEST_LOCK};
     use crate::infrastructure::repositories::{
         SqliteArticuloRepository, SqliteCategoriaRepository, SqliteProveedorRepository,
         SqliteSubCategoriaRepository,
@@ -228,5 +240,53 @@ mod tests {
         repo.delete(created.id).unwrap();
         assert!(repo.find_by_id(created.id).unwrap().is_none());
         assert!(repo.find_all().unwrap().iter().all(|s| s.id != created.id));
+    }
+
+    fn insert_venta_for_articulo(id_articulo: i64) {
+        let conn = DB.lock().unwrap();
+        let user_id: i64 = conn
+            .query_row(
+                "SELECT id FROM users WHERE username = 'admin'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        let now = chrono::Utc::now().to_rfc3339();
+        conn.execute(
+            "INSERT INTO ventas (user_id, fecha, total, descuento, anulada, observacion, id_tipo_venta, created_at) VALUES (?1, ?2, 150.0, 0, 0, NULL, NULL, ?3)",
+            params![user_id, now, now],
+        )
+        .unwrap();
+        let venta_id = conn.last_insert_rowid();
+        conn.execute(
+            "INSERT INTO venta_detalle (id_venta, id_articulo, cantidad, costo_unitario, precio_unitario, subtotal) VALUES (?1, ?2, 1.0, 100.0, 150.0, 150.0)",
+            params![venta_id, id_articulo],
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn has_ventas_returns_true_when_article_has_sales() {
+        let _guard = fresh_db();
+        let articulo = create_articulo();
+        let repo = SqliteStockRepository::new();
+        repo.create(&Stock::new(articulo.id, 10.0, 100.0, 25.0))
+            .unwrap();
+
+        insert_venta_for_articulo(articulo.id);
+
+        assert!(repo.has_ventas(articulo.id).unwrap());
+    }
+
+    #[test]
+    fn has_ventas_returns_false_when_article_has_no_sales() {
+        let _guard = fresh_db();
+        let articulo = create_articulo();
+        let repo = SqliteStockRepository::new();
+        repo.create(&Stock::new(articulo.id, 10.0, 100.0, 25.0))
+            .unwrap();
+
+        assert!(!repo.has_ventas(articulo.id).unwrap());
+        assert!(!repo.has_ventas(99999).unwrap());
     }
 }

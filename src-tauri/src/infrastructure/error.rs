@@ -111,6 +111,9 @@ pub enum AppError {
     #[error("Tipo de venta in use")]
     TipoVentaInUse,
 
+    #[error("Stock has ventas")]
+    StockHasVentas,
+
     #[error("Tipo de venta nombre inválido")]
     TipoVentaNombreInvalido,
 
@@ -198,6 +201,7 @@ impl AppError {
             AppError::TipoVentaNotFound => "tipo_venta_not_found",
             AppError::TipoVentaExists => "tipo_venta_exists",
             AppError::TipoVentaInUse => "tipo_venta_in_use",
+            AppError::StockHasVentas => "stock_has_ventas",
             AppError::TipoVentaNombreInvalido => "tipo_venta_nombre_invalido",
             AppError::CierreYaExiste => "cierre_ya_existe",
             AppError::CierreNotFound => "cierre_not_found",
@@ -290,6 +294,10 @@ impl AppError {
             }
             AppError::TipoVentaInUse => {
                 "No se puede eliminar el tipo de venta porque tiene ventas asociadas."
+                    .to_string()
+            }
+            AppError::StockHasVentas => {
+                "No se puede eliminar el stock porque el artículo tiene ventas asociadas."
                     .to_string()
             }
             AppError::TipoVentaNombreInvalido => {
