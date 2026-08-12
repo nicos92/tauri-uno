@@ -37,8 +37,7 @@ pub use cliente_commands::{
     get_cliente_by_id, get_cliente_defecto, ClienteAppState,
 };
 pub use dollar_commands::{
-    fetch_dollar_rates_manual, get_latest_dollar_rates, update_polling_interval,
-    DollarAppState, DEFAULT_POLLING_INTERVAL_SECONDS,
+    delete_dollar_quote, fetch_dollar_rates_manual, get_dollar_quotes, DollarAppState,
 };
 pub use home_commands::{get_home_stats, HomeStatsAppState};
 pub use proveedor_commands::{

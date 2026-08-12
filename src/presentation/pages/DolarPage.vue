@@ -1,30 +1,19 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from "vue";
-import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { onMounted } from "vue";
 import { useDolarStore } from "../stores";
 import { useToasts } from "../composables/useToasts";
+import { useConfirm } from "../composables/useConfirm";
 import { formatMoney } from "../utils/format";
-import type { DollarRate } from "../../domain/entities";
+import type { DollarQuote } from "../../domain/entities";
 
 const dolarStore = useDolarStore();
 const { error: toastError, success: toastSuccess } = useToasts();
+const { confirm } = useConfirm();
 
-const INTERVAL_OPTIONS = [
-  { label: "30 segundos", value: 30 },
-  { label: "1 minuto", value: 60 },
-  { label: "5 minutos", value: 300 },
-  { label: "10 minutos", value: 600 },
-  { label: "30 minutos", value: 1800 },
-];
-
-const selectedInterval = ref(300);
-
-let unlistenUpdated: UnlistenFn | undefined;
-let unlistenError: UnlistenFn | undefined;
-let unsubscribe: (() => void) | undefined;
-
-const oficial = ref<DollarRate | undefined>(undefined);
-const blue = ref<DollarRate | undefined>(undefined);
+function formatTimestamp(timestamp: string): string {
+  const date = new Date(timestamp.replace(" ", "T") + "Z");
+  return isNaN(date.getTime()) ? timestamp : date.toLocaleString();
+}
 
 async function handleRefresh() {
   const ok = await dolarStore.fetchManual();
@@ -35,38 +24,22 @@ async function handleRefresh() {
   }
 }
 
-async function handleIntervalChange() {
-  const ok = await dolarStore.setPollingInterval(selectedInterval.value);
-  if (ok) {
-    toastSuccess(`Actualización automática cada ${selectedInterval.value} segundos.`);
+async function handleDelete(quote: DollarQuote) {
+  const ok = await confirm({
+    message: "¿Está seguro de eliminar esta cotización?",
+  });
+  if (!ok) return;
+
+  const deleted = await dolarStore.deleteQuote(quote.id);
+  if (deleted) {
+    toastSuccess("Cotización eliminada.");
   } else {
-    toastError(dolarStore.error || "No se pudo cambiar el intervalo.");
+    toastError(dolarStore.error || "No se pudo eliminar la cotización.");
   }
 }
 
 onMounted(async () => {
-  unsubscribe = dolarStore.$subscribe((_mutation, state) => {
-    oficial.value = state.rates.find((r) => r.dollar_type === "oficial");
-    blue.value = state.rates.find((r) => r.dollar_type === "blue");
-  });
-
-  unlistenUpdated = await listen<DollarRate[]>("dollar-rates-updated", (event) => {
-    dolarStore.applyRates(event.payload);
-  });
-
-  unlistenError = await listen<string>("dollar-rates-fetch-error", () => {
-    toastError("No se pudo actualizar la cotización del dólar.");
-  });
-
-  await dolarStore.fetchRates();
-  oficial.value = dolarStore.rates.find((r) => r.dollar_type === "oficial");
-  blue.value = dolarStore.rates.find((r) => r.dollar_type === "blue");
-});
-
-onUnmounted(() => {
-  if (unlistenUpdated) unlistenUpdated();
-  if (unlistenError) unlistenError();
-  if (unsubscribe) unsubscribe();
+  await dolarStore.fetchQuotes();
 });
 </script>
 
@@ -84,23 +57,6 @@ onUnmounted(() => {
             >
                 {{ dolarStore.updating ? "Actualizando..." : "Actualizar ahora" }}
             </button>
-            <div class="interval-control">
-                <label for="interval">Actualización automática</label>
-                <select
-                    id="interval"
-                    v-model="selectedInterval"
-                    class="filter-input"
-                    @change="handleIntervalChange"
-                >
-                    <option
-                        v-for="opt in INTERVAL_OPTIONS"
-                        :key="opt.value"
-                        :value="opt.value"
-                    >
-                        {{ opt.label }}
-                    </option>
-                </select>
-            </div>
             <div class="toolbar-spacer"></div>
             <span v-if="dolarStore.lastUpdated" class="last-updated">
                 Última actualización:
@@ -114,25 +70,25 @@ onUnmounted(() => {
             {{ dolarStore.error }}
         </div>
 
-        <div class="cards">
+        <div v-if="dolarStore.latest" class="cards">
             <div class="rate-card">
                 <div class="rate-card-header">
                     <span class="rate-type">Dólar Oficial</span>
-                    <span class="rate-date" v-if="oficial">
-                        {{ oficial.updated_at }}
+                    <span class="rate-date">
+                        {{ formatTimestamp(dolarStore.latest.timestamp) }}
                     </span>
                 </div>
                 <div class="rate-values">
                     <div class="rate-value">
                         <span class="rate-label">Compra</span>
                         <span class="rate-amount">
-                            {{ oficial ? formatMoney(oficial.buy_price) : "—" }}
+                            {{ formatMoney(dolarStore.latest.official_buy) }}
                         </span>
                     </div>
                     <div class="rate-value">
                         <span class="rate-label">Venta</span>
                         <span class="rate-amount">
-                            {{ oficial ? formatMoney(oficial.sell_price) : "—" }}
+                            {{ formatMoney(dolarStore.latest.official_sell) }}
                         </span>
                     </div>
                 </div>
@@ -141,29 +97,73 @@ onUnmounted(() => {
             <div class="rate-card">
                 <div class="rate-card-header">
                     <span class="rate-type">Dólar Blue</span>
-                    <span class="rate-date" v-if="blue">
-                        {{ blue.updated_at }}
+                    <span class="rate-date">
+                        {{ formatTimestamp(dolarStore.latest.timestamp) }}
                     </span>
                 </div>
                 <div class="rate-values">
                     <div class="rate-value">
                         <span class="rate-label">Compra</span>
                         <span class="rate-amount">
-                            {{ blue ? formatMoney(blue.buy_price) : "—" }}
+                            {{ formatMoney(dolarStore.latest.blue_buy) }}
                         </span>
                     </div>
                     <div class="rate-value">
                         <span class="rate-label">Venta</span>
                         <span class="rate-amount">
-                            {{ blue ? formatMoney(blue.sell_price) : "—" }}
+                            {{ formatMoney(dolarStore.latest.blue_sell) }}
                         </span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div v-if="!dolarStore.loading && dolarStore.rates.length === 0" class="empty-state">
-            No hay cotizaciones registradas.
+        <div class="history-section">
+            <h2>Historial de cotizaciones</h2>
+
+            <div
+                v-if="!dolarStore.loading && dolarStore.quotes.length === 0"
+                class="empty-state"
+            >
+                No hay cotizaciones registradas.
+            </div>
+
+            <table
+                v-if="dolarStore.quotes.length > 0"
+                class="data-table"
+            >
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Oficial Compra</th>
+                        <th>Oficial Venta</th>
+                        <th>Blue Compra</th>
+                        <th>Blue Venta</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr
+                        v-for="quote in dolarStore.quotes"
+                        :key="quote.id"
+                    >
+                        <td>{{ formatTimestamp(quote.timestamp) }}</td>
+                        <td>{{ formatMoney(quote.official_buy) }}</td>
+                        <td>{{ formatMoney(quote.official_sell) }}</td>
+                        <td>{{ formatMoney(quote.blue_buy) }}</td>
+                        <td>{{ formatMoney(quote.blue_sell) }}</td>
+                        <td>
+                            <button
+                                class="btn-delete"
+                                :disabled="dolarStore.updating"
+                                @click="handleDelete(quote)"
+                            >
+                                Eliminar
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
 </template>
@@ -203,33 +203,6 @@ onUnmounted(() => {
     font-size: 0.9rem;
 }
 
-.interval-control {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.interval-control label {
-    font-size: 0.9rem;
-    color: var(--color-text-muted);
-}
-
-.filter-input {
-    padding: 0.6rem 0.75rem;
-    border: 1px solid var(--color-border);
-    border-radius: 6px;
-    background: var(--color-surface);
-    color: var(--color-text);
-    font-size: 0.95rem;
-}
-
-select.filter-input {
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>");
-    background-repeat: no-repeat;
-    background-position: right 0.75rem center;
-    padding-right: 2.5rem;
-}
-
 .btn-primary {
     background: #3F2281;
     color: white;
@@ -245,6 +218,25 @@ select.filter-input {
 
 .btn-primary:disabled {
     opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-delete {
+    background: transparent;
+    color: #e53e3e;
+    border: 1px solid rgba(229, 62, 62, 0.4);
+    padding: 0.4rem 0.9rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+
+.btn-delete:hover:not(:disabled) {
+    background: rgba(229, 62, 62, 0.1);
+}
+
+.btn-delete:disabled {
+    opacity: 0.5;
     cursor: not-allowed;
 }
 
@@ -267,6 +259,7 @@ select.filter-input {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 1rem;
+    gap: 0.5rem;
 }
 
 .rate-type {
@@ -277,6 +270,7 @@ select.filter-input {
 .rate-date {
     color: var(--color-text-muted);
     font-size: 0.85rem;
+    text-align: right;
 }
 
 .rate-values {
@@ -299,6 +293,47 @@ select.filter-input {
 .rate-amount {
     font-size: 1.5rem;
     font-weight: 700;
+}
+
+.history-section {
+    margin-top: 2rem;
+}
+
+.history-section h2 {
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--color-surface);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.data-table th,
+.data-table td {
+    padding: 0.75rem 1rem;
+    text-align: right;
+    border-bottom: 1px solid var(--color-border);
+    font-size: 0.92rem;
+}
+
+.data-table th {
+    background: var(--color-surface-alt);
+    font-weight: 600;
+    color: var(--color-text-muted);
+}
+
+.data-table th:first-child,
+.data-table td:first-child {
+    text-align: left;
+}
+
+.data-table tbody tr:last-child td {
+    border-bottom: none;
 }
 
 .error-banner {

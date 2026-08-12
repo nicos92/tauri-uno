@@ -3,17 +3,17 @@ use std::time::Duration;
 
 use serde::Deserialize;
 
-use crate::domain::entities::DollarRate;
-use crate::domain::repositories::DollarRateRepository;
+use crate::domain::entities::{DollarQuote, DollarRate};
+use crate::domain::repositories::DollarQuoteRepository;
 use crate::infrastructure::error::AppError;
-use crate::infrastructure::repositories::SqliteDollarRateRepository;
+use crate::infrastructure::repositories::SqliteDollarQuoteRepository;
 
 const DOLAR_API_URL: &str = "https://dolarapi.com/v1/dolares";
 const HTTP_TIMEOUT_SECONDS: u64 = 10;
 
 #[derive(Clone)]
 pub struct DollarService {
-    repository: Arc<dyn DollarRateRepository>,
+    repository: Arc<dyn DollarQuoteRepository>,
     client: Arc<DollarHttpClient>,
 }
 
@@ -26,13 +26,13 @@ impl Default for DollarService {
 impl DollarService {
     pub fn new() -> Self {
         Self::with_repository_and_client(
-            Arc::new(SqliteDollarRateRepository::new()),
+            Arc::new(SqliteDollarQuoteRepository::new()),
             Arc::new(DollarHttpClient::new()),
         )
     }
 
     pub fn with_repository(
-        repository: Arc<dyn DollarRateRepository>,
+        repository: Arc<dyn DollarQuoteRepository>,
         base_url: &str,
     ) -> Self {
         Self::with_repository_and_client(
@@ -42,7 +42,7 @@ impl DollarService {
     }
 
     pub fn with_repository_and_client(
-        repository: Arc<dyn DollarRateRepository>,
+        repository: Arc<dyn DollarQuoteRepository>,
         client: Arc<DollarHttpClient>,
     ) -> Self {
         Self { repository, client }
@@ -52,23 +52,47 @@ impl DollarService {
         self.client.fetch_rates().await
     }
 
-    pub async fn fetch_and_persist(&self) -> Result<Vec<DollarRate>, AppError> {
+    pub async fn fetch_and_persist(&self) -> Result<DollarQuote, AppError> {
         let rates = self.client.fetch_rates().await?;
-
-        for rate in &rates {
-            self.repository.upsert(rate)?;
-        }
-
-        Ok(rates)
+        let quote = build_quote_from_rates(&rates)?;
+        self.repository.save(&quote)
     }
 
-    pub fn get_latest(&self) -> Result<Vec<DollarRate>, AppError> {
+    pub fn get_history(&self) -> Result<Vec<DollarQuote>, AppError> {
         self.repository.find_all()
     }
 
-    pub fn get_by_type(&self, dollar_type: &str) -> Result<Option<DollarRate>, AppError> {
-        self.repository.find_by_type(dollar_type)
+    pub fn get_latest(&self) -> Result<Option<DollarQuote>, AppError> {
+        Ok(self.repository.find_all()?.into_iter().next())
     }
+
+    pub fn delete(&self, id: i64) -> Result<(), AppError> {
+        self.repository.delete_by_id(id)
+    }
+}
+
+pub fn build_quote_from_rates(rates: &[DollarRate]) -> Result<DollarQuote, AppError> {
+    let oficial = rates
+        .iter()
+        .find(|r| r.dollar_type == "oficial")
+        .ok_or_else(|| {
+            AppError::DollarFetchError(
+                "La API no devolvió la cotización oficial.".to_string(),
+            )
+        })?;
+    let blue = rates
+        .iter()
+        .find(|r| r.dollar_type == "blue")
+        .ok_or_else(|| {
+            AppError::DollarFetchError("La API no devolvió la cotización blue.".to_string())
+        })?;
+
+    Ok(DollarQuote::new(
+        oficial.buy_price,
+        oficial.sell_price,
+        blue.buy_price,
+        blue.sell_price,
+    ))
 }
 
 #[derive(Clone)]
@@ -153,10 +177,27 @@ pub fn parse_api_response(body: &str) -> Result<Vec<DollarRate>, AppError> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::domain::repositories::dollar_rate_repository::MockDollarRateRepository;
+    use crate::domain::repositories::dollar_quote_repository::MockDollarQuoteRepository;
     use mockall::predicate::*;
 
     const UNREACHABLE_URL: &str = "http://127.0.0.1:9/dolares";
+
+    fn sample_rates() -> Vec<DollarRate> {
+        vec![
+            DollarRate {
+                dollar_type: "oficial".to_string(),
+                buy_price: 1000.0,
+                sell_price: 1040.0,
+                updated_at: "2025-01-15T12:30:00.000-03:00".to_string(),
+            },
+            DollarRate {
+                dollar_type: "blue".to_string(),
+                buy_price: 1200.0,
+                sell_price: 1240.0,
+                updated_at: "2025-01-15T12:30:00.000-03:00".to_string(),
+            },
+        ]
+    }
 
     #[test]
     fn parse_filters_and_maps_only_oficial_and_blue() {
@@ -184,10 +225,35 @@ mod tests {
     }
 
     #[test]
+    fn build_quote_from_rates_maps_oficial_and_blue() {
+        let quote = build_quote_from_rates(&sample_rates()).unwrap();
+
+        assert_eq!(quote.official_buy, 1000.0);
+        assert_eq!(quote.official_sell, 1040.0);
+        assert_eq!(quote.blue_buy, 1200.0);
+        assert_eq!(quote.blue_sell, 1240.0);
+    }
+
+    #[test]
+    fn build_quote_from_rates_errors_when_oficial_missing() {
+        let rates = vec![DollarRate {
+            dollar_type: "blue".to_string(),
+            buy_price: 1200.0,
+            sell_price: 1240.0,
+            updated_at: "2025-01-15T12:30:00.000-03:00".to_string(),
+        }];
+
+        assert!(matches!(
+            build_quote_from_rates(&rates).unwrap_err(),
+            AppError::DollarFetchError(_)
+        ));
+    }
+
+    #[test]
     fn fetch_from_api_fails_with_connection_error() {
         let client = DollarHttpClient::with_base(UNREACHABLE_URL);
         let service = DollarService::with_repository_and_client(
-            Arc::new(MockDollarRateRepository::new()),
+            Arc::new(MockDollarQuoteRepository::new()),
             Arc::new(client),
         );
 
@@ -197,8 +263,8 @@ mod tests {
 
     #[test]
     fn fetch_and_persist_propagates_fetch_error_without_persisting() {
-        let mut repo = MockDollarRateRepository::new();
-        repo.expect_upsert().never();
+        let mut repo = MockDollarQuoteRepository::new();
+        repo.expect_save().never();
         let service = DollarService::with_repository(Arc::new(repo), UNREACHABLE_URL);
 
         let result = tauri::async_runtime::block_on(service.fetch_and_persist());
@@ -206,37 +272,50 @@ mod tests {
     }
 
     #[test]
-    fn get_latest_delegates_to_repository() {
-        let mut repo = MockDollarRateRepository::new();
-        let rates = vec![DollarRate {
-            dollar_type: "oficial".to_string(),
-            buy_price: 1000.0,
-            sell_price: 1040.0,
-            updated_at: "2025-01-15T12:30:00.000-03:00".to_string(),
-        }];
-        repo.expect_find_all().return_once(move || Ok(rates));
+    fn get_history_delegates_to_repository() {
+        let mut repo = MockDollarQuoteRepository::new();
+        let quotes = vec![DollarQuote::new(1000.0, 1040.0, 1200.0, 1240.0)];
+        repo.expect_find_all().return_once(move || Ok(quotes));
         let service = DollarService::with_repository_and_client(
             Arc::new(repo),
             Arc::new(DollarHttpClient::new()),
         );
 
-        let result = service.get_latest().unwrap();
+        let result = service.get_history().unwrap();
 
         assert_eq!(result.len(), 1);
-        assert_eq!(result[0].dollar_type, "oficial");
+        assert_eq!(result[0].official_buy, 1000.0);
     }
 
     #[test]
-    fn get_by_type_delegates_to_repository() {
-        let mut repo = MockDollarRateRepository::new();
-        repo.expect_find_by_type()
-            .with(eq("blue"))
-            .return_once(|_| Ok(None));
+    fn get_latest_returns_first_quote_of_history() {
+        let mut repo = MockDollarQuoteRepository::new();
+        let quotes = vec![
+            DollarQuote::new(400.0, 440.0, 600.0, 640.0),
+            DollarQuote::new(300.0, 340.0, 500.0, 540.0),
+        ];
+        repo.expect_find_all().return_once(move || Ok(quotes));
         let service = DollarService::with_repository_and_client(
             Arc::new(repo),
             Arc::new(DollarHttpClient::new()),
         );
 
-        assert!(service.get_by_type("blue").unwrap().is_none());
+        let latest = service.get_latest().unwrap().unwrap();
+
+        assert_eq!(latest.official_buy, 400.0);
+    }
+
+    #[test]
+    fn delete_delegates_to_repository() {
+        let mut repo = MockDollarQuoteRepository::new();
+        repo.expect_delete_by_id()
+            .with(eq(42))
+            .return_once(|_| Ok(()));
+        let service = DollarService::with_repository_and_client(
+            Arc::new(repo),
+            Arc::new(DollarHttpClient::new()),
+        );
+
+        service.delete(42).unwrap();
     }
 }

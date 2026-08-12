@@ -60,7 +60,7 @@ pub fn reset_test_db() -> Result<(), rusqlite::Error> {
          DROP TABLE IF EXISTS users;
          DROP TABLE IF EXISTS permissions;
          DROP TABLE IF EXISTS tipos_venta;
-         DROP TABLE IF EXISTS dollar_rates;",
+         DROP TABLE IF EXISTS dollar_quotes;",
     )?;
     apply_schema(&conn)?;
     Ok(())
@@ -288,12 +288,18 @@ fn apply_schema(conn: &Connection) -> Result<(), rusqlite::Error> {
 
          CREATE INDEX IF NOT EXISTS idx_cierre_tipos_id_cierre ON cierre_tipos(id_cierre);
 
-         CREATE TABLE IF NOT EXISTS dollar_rates (
-             dollar_type TEXT PRIMARY KEY,
-             buy_price REAL NOT NULL,
-             sell_price REAL NOT NULL,
-             updated_at TEXT NOT NULL
+         DROP TABLE IF EXISTS dollar_rates;
+
+         CREATE TABLE IF NOT EXISTS dollar_quotes (
+             id INTEGER PRIMARY KEY AUTOINCREMENT,
+             official_buy REAL NOT NULL,
+             official_sell REAL NOT NULL,
+             blue_buy REAL NOT NULL,
+             blue_sell REAL NOT NULL,
+             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL
          );
+
+         CREATE INDEX IF NOT EXISTS idx_dollar_quotes_timestamp ON dollar_quotes(timestamp, id);
          ",
     )?;
 

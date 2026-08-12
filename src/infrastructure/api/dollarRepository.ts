@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { DollarRate } from "../../domain/entities";
+import type { DollarQuote } from "../../domain/entities";
 
 export class DollarApiRepository {
   private getCurrentUserId(): number {
@@ -11,22 +11,22 @@ export class DollarApiRepository {
     return 0;
   }
 
-  async getLatest(): Promise<DollarRate[]> {
-    return await invoke<DollarRate[]>("get_latest_dollar_rates", {
+  async getQuotes(): Promise<DollarQuote[]> {
+    return await invoke<DollarQuote[]>("get_dollar_quotes", {
       userId: this.getCurrentUserId(),
     });
   }
 
-  async fetchManual(): Promise<DollarRate[]> {
-    return await invoke<DollarRate[]>("fetch_dollar_rates_manual", {
+  async fetchManual(): Promise<DollarQuote[]> {
+    return await invoke<DollarQuote[]>("fetch_dollar_rates_manual", {
       userId: this.getCurrentUserId(),
     });
   }
 
-  async updatePollingInterval(seconds: number): Promise<number> {
-    return await invoke<number>("update_polling_interval", {
+  async deleteQuote(id: number): Promise<DollarQuote[]> {
+    return await invoke<DollarQuote[]>("delete_dollar_quote", {
       userId: this.getCurrentUserId(),
-      seconds,
+      id,
     });
   }
 }

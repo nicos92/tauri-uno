@@ -150,6 +150,9 @@ pub enum AppError {
     #[error("No se pudo obtener la cotización del dólar: {0}")]
     DollarFetchError(String),
 
+    #[error("Cotización del dólar not found")]
+    DollarQuoteNotFound,
+
     #[error("Internal error: {0}")]
     Internal(String),
 }
@@ -229,6 +232,7 @@ impl AppError {
             AppError::DiaCerrado => "dia_cerrado",
             AppError::DiaCerradoAnulacion => "dia_cerrado_anulacion",
             AppError::DollarFetchError(_) => "dollar_fetch_error",
+            AppError::DollarQuoteNotFound => "dollar_quote_not_found",
             AppError::Internal(_) => "internal_error",
         }
     }
@@ -354,6 +358,9 @@ impl AppError {
                 "No se pudo obtener la cotización del dólar. Intente nuevamente más tarde."
                     .to_string()
             }
+            AppError::DollarQuoteNotFound => {
+                "La cotización del dólar no existe.".to_string()
+            }
             AppError::Internal(_) => {
                 "Ocurrió un error inesperado. Intente nuevamente.".to_string()
             }
@@ -399,6 +406,10 @@ mod tests {
         assert_eq!(
             AppError::DollarFetchError("x".to_string()).code(),
             "dollar_fetch_error"
+        );
+        assert_eq!(
+            AppError::DollarQuoteNotFound.code(),
+            "dollar_quote_not_found"
         );
         assert_eq!(AppError::Internal("x".to_string()).code(), "internal_error");
     }

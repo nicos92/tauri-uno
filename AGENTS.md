@@ -318,6 +318,22 @@ const result = await invoke<UserResponse>("create_user", {
 - `costo`: REAL
 - `ganancia`: REAL
 
+### Cotizaciones del dólar (historial circular)
+
+- `id`: INTEGER PRIMARY KEY AUTOINCREMENT
+- `official_buy`: REAL NOT NULL
+- `official_sell`: REAL NOT NULL
+- `blue_buy`: REAL NOT NULL
+- `blue_sell`: REAL NOT NULL
+- `timestamp`: DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL
+
+Reglas:
+- El sistema conserva como máximo **4 filas** (`MAX_QUOTES` en `infrastructure/repositories/dollar_quote_repository.rs`).
+- `save` es atómico (transacción): si `COUNT(*) >= 4` elimina la fila más antigua (`ORDER BY timestamp ASC, id ASC LIMIT 1`) y luego inserta la nueva.
+- `find_all` devuelve hasta 4 filas ordenadas `timestamp DESC, id DESC`.
+- `delete_by_id` deja temporalmente N-1 filas hasta la próxima ingesta de la API.
+- El `timestamp` lo genera SQLite (`CURRENT_TIMESTAMP`, UTC); no se inserta explícitamente.
+
 ---
 
 ## 8. API Commands (Tauri)
@@ -360,9 +376,9 @@ const result = await invoke<UserResponse>("create_user", {
 | `update_stock` | Actualizar stock |
 | `delete_stock` | Eliminar stock |
 | `get_precio_venta` | Calcular precio de venta |
-| `get_latest_dollar_rates` | Obtener últimas cotizaciones de dólar (oficial y blue) |
-| `fetch_dollar_rates_manual` | Forzar actualización de cotizaciones contra la API |
-| `update_polling_interval` | Cambiar el intervalo (segundos) de polling automático del dólar |
+| `get_dollar_quotes` | Obtener historial de cotizaciones del dólar (máx 4, más reciente primero) |
+| `fetch_dollar_rates_manual` | Forzar actualización manual contra la API (guarda una fila nueva con rotación) |
+| `delete_dollar_quote` | Eliminar una cotización por `id` del historial |
 
 ---
 
@@ -374,7 +390,7 @@ const result = await invoke<UserResponse>("create_user", {
 4. **En Rust, siempre manejar `Result` con `?` o match**
 5. **No hardcodear secrets** - usar variables de entorno
 6. **DB global** - `infrastructure::database::DB` es un `Lazy<Mutex<Connection>>` (rusqlite no es `Sync`); todos los repos lo bloquean. El esquema se crea en el primer arranque en el directorio de datos de `ProjectDirs` (`app.db`), sin migraciones. Se siembran 42 permisos y el usuario `admin` / `admin123` con todos los permisos. En builds de test apunta a `:memory:` y `BCRYPT_COST` baja a 4 (ver Tests en §3)
-7. **Sincronizar permisos en 3 lugares** (strings en español snake_case, ej. `ver_usuarios`): Rust `PermissionCode::as_str()` (`domain/entities/permission_code.rs`), TS `PERMISSIONS` (`src/domain/entities/permissions.ts`) y la lista seed (`infrastructure/database/mod.rs`). Agregar también el helper correspondiente en `usePermissions.ts` (frontend). El test `all_covers_seeded_permissions` verifica que `PermissionCode::all()` (42) esté sincronizado con la lista seed de Rust (no cubre TS). El permiso nuevo `ver_dolar` permite acceder a la pantalla de cotización del dólar; el backend arranca un polling en segundo plano que emite eventos `dollar-rates-updated` / `dollar-rates-fetch-error` (`tauri::Emitter`), escuchados en `DolarPage.vue` con `@tauri-apps/api/event`
+7. **Sincronizar permisos en 3 lugares** (strings en español snake_case, ej. `ver_usuarios`): Rust `PermissionCode::as_str()` (`domain/entities/permission_code.rs`), TS `PERMISSIONS` (`src/domain/entities/permissions.ts`) y la lista seed (`infrastructure/database/mod.rs`). Agregar también el helper correspondiente en `usePermissions.ts` (frontend). El test `all_covers_seeded_permissions` verifica que `PermissionCode::all()` (42) esté sincronizado con la lista seed de Rust (no cubre TS). El permiso nuevo `ver_dolar` permite acceder a la pantalla de cotización del dólar; la actualización es **solo manual** (botón "Actualizar ahora" → `fetch_dollar_rates_manual`). No hay polling automático ni eventos de dólar.
 8. **No olvidar `user_id` en los comandos** - Todo comando recibe `user_id: i64` como primer argumento. Los de usuarios/permisos usan `AppState` + `UserService::has_permission`; los de dominio (articulo/categoria/...) duplican un `check_permission` propio que consulta la DB directo. Respetar el patrón al agregar comandos
 9. **Registrar comandos y estados en `lib.rs`** - `.manage(...)` + `tauri::generate_handler!` en `src-tauri/src/lib.rs`
 10. **Auth en frontend** - Usuario y permisos se persisten en `localStorage` (`currentUser`, `userPermissions`). Los repos leen `getCurrentUserId()` y lo pasan como `userId` a cada `invoke`. El guard del router llama `authStore.loadFromStorage()`

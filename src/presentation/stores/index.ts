@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import type { User, Permission, UserPermission, ChangePasswordRequest } from "../../domain/entities";
 import { toErrorMessage } from "../../infrastructure/api/errorHandler";
 import { UserApiRepository } from "../../infrastructure/api";
@@ -1054,23 +1054,27 @@ export const useHomeStore = defineStore("home", () => {
 });
 
 import { DollarApiRepository } from "../../infrastructure/api/dollarRepository";
-import type { DollarRate } from "../../domain/entities";
+import type { DollarQuote } from "../../domain/entities";
 
 const dollarRepository = new DollarApiRepository();
 
 export const useDolarStore = defineStore("dolar", () => {
-  const rates = ref<DollarRate[]>([]);
+  const quotes = ref<DollarQuote[]>([]);
   const loading = ref(false);
   const updating = ref(false);
   const error = ref<string | null>(null);
   const lastUpdated = ref<string | null>(null);
 
-  async function fetchRates() {
+  const latest = computed<DollarQuote | null>(() => quotes.value[0] ?? null);
+
+  async function fetchQuotes() {
     loading.value = true;
     error.value = null;
     try {
-      rates.value = await dollarRepository.getLatest();
-      lastUpdated.value = new Date().toISOString();
+      quotes.value = await dollarRepository.getQuotes();
+      if (quotes.value.length > 0) {
+        lastUpdated.value = new Date().toISOString();
+      }
     } catch (e) {
       error.value = toErrorMessage(e);
     } finally {
@@ -1082,7 +1086,7 @@ export const useDolarStore = defineStore("dolar", () => {
     updating.value = true;
     error.value = null;
     try {
-      rates.value = await dollarRepository.fetchManual();
+      quotes.value = await dollarRepository.fetchManual();
       lastUpdated.value = new Date().toISOString();
       return true;
     } catch (e) {
@@ -1093,30 +1097,30 @@ export const useDolarStore = defineStore("dolar", () => {
     }
   }
 
-  async function setPollingInterval(seconds: number): Promise<boolean> {
+  async function deleteQuote(id: number): Promise<boolean> {
+    updating.value = true;
+    error.value = null;
     try {
-      await dollarRepository.updatePollingInterval(seconds);
+      quotes.value = await dollarRepository.deleteQuote(id);
+      lastUpdated.value = new Date().toISOString();
       return true;
     } catch (e) {
       error.value = toErrorMessage(e);
       return false;
+    } finally {
+      updating.value = false;
     }
   }
 
-  function applyRates(updated: DollarRate[]) {
-    rates.value = updated;
-    lastUpdated.value = new Date().toISOString();
-  }
-
   return {
-    rates,
+    quotes,
+    latest,
     loading,
     updating,
     error,
     lastUpdated,
-    fetchRates,
+    fetchQuotes,
     fetchManual,
-    setPollingInterval,
-    applyRates,
+    deleteQuote,
   };
 });
