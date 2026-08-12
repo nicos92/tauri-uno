@@ -329,6 +329,15 @@ export interface CrearCierreRequest {
   fecha: string;
 }
 
+export type DollarType = "oficial" | "blue";
+
+export interface DollarRate {
+  dollar_type: DollarType;
+  buy_price: number;
+  sell_price: number;
+  updated_at: string;
+}
+
 export interface StockBajoItem {
   id_stock: number;
   id_articulo: number;

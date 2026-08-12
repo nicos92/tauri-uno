@@ -13,6 +13,7 @@ pub mod audit_log_commands;
 pub mod categoria_commands;
 pub mod cierre_commands;
 pub mod cliente_commands;
+pub mod dollar_commands;
 pub mod home_commands;
 pub mod permissions;
 pub mod proveedor_commands;
@@ -34,6 +35,10 @@ pub use cierre_commands::{
 pub use cliente_commands::{
     actualizar_cliente, crear_cliente, eliminar_cliente, get_all_clientes,
     get_cliente_by_id, get_cliente_defecto, ClienteAppState,
+};
+pub use dollar_commands::{
+    fetch_dollar_rates_manual, get_latest_dollar_rates, update_polling_interval,
+    DollarAppState, DEFAULT_POLLING_INTERVAL_SECONDS,
 };
 pub use home_commands::{get_home_stats, HomeStatsAppState};
 pub use proveedor_commands::{

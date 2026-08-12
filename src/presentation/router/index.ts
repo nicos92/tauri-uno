@@ -98,6 +98,12 @@ const routes = [
         meta: { permission: PERMISSIONS.VIEW_CIERRES },
       },
       {
+        path: "dolar",
+        name: "dolar",
+        component: () => import("../pages/DolarPage.vue"),
+        meta: { permission: PERMISSIONS.VIEW_DOLAR },
+      },
+      {
         path: "settings",
         name: "settings",
         component: () => import("../pages/SettingsPage.vue"),

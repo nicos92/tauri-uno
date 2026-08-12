@@ -85,6 +85,12 @@ const menuItems = computed(() => {
             permission: "ver_cierres",
         },
         {
+            name: "dolar",
+            label: "Dólar",
+            icon: "dollar",
+            permission: "ver_dolar",
+        },
+        {
             name: "settings",
             label: "Configuración",
             icon: "settigns",

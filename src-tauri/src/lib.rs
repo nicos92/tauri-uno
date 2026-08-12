@@ -3,24 +3,31 @@ pub mod application;
 pub mod domain;
 pub mod infrastructure;
 
+use tauri::Manager;
+
 use api::commands::{
     actualizar_cliente, add_permission_to_user, anular_venta, change_password, crear_cierre,
     crear_cliente, create_articulo, create_categoria,
     create_permission, create_proveedor, create_stock, create_sub_categoria, create_tipo_venta,
     create_user, create_venta, delete_articulo, delete_categoria, delete_proveedor, delete_stock,
     delete_sub_categoria, delete_tipo_venta, delete_user, eliminar_cliente, ensure_db_ready,
-    get_all_articulos, get_all_categorias, get_all_cierres, get_all_clientes, get_all_permissions,
+    fetch_dollar_rates_manual, get_all_articulos, get_all_categorias, get_all_cierres,
+    get_all_clientes, get_all_permissions,
     get_all_proveedores, get_all_stock,
     get_all_sub_categorias, get_all_tipos_venta, get_all_users, get_all_ventas,
-    get_audit_logs, get_cliente_by_id, get_cliente_defecto, get_home_stats, get_precio_venta,
+    get_audit_logs, get_cliente_by_id, get_cliente_defecto, get_home_stats, get_latest_dollar_rates,
+    get_precio_venta,
     get_proveedor_by_id, get_stock_by_articulo,
     get_stock_by_id, get_sub_categorias_by_categoria, get_user_permissions, get_venta_by_id,
     get_ventas_por_cliente, is_dia_cerrado, login, reabrir_cierre, remove_permission_from_user, update_articulo, update_categoria, update_proveedor,
-    update_stock, update_sub_categoria, update_tipo_venta, update_user, AppState,
+    update_polling_interval, update_stock, update_sub_categoria, update_tipo_venta, update_user,
+    AppState,
     ArticuloAppState, AuditLogAppState, CategoriaAppState, CierreAppState, ClienteAppState,
+    DollarAppState,
     HomeStatsAppState,
     ProveedorAppState,
     StockAppState, SubCategoriaAppState, TipoVentaAppState, VentaAppState,
+    DEFAULT_POLLING_INTERVAL_SECONDS,
 };
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -39,6 +46,12 @@ pub fn run() {
         .manage(TipoVentaAppState::new())
         .manage(CierreAppState::new())
         .manage(ClienteAppState::new())
+        .manage(DollarAppState::new())
+        .setup(|app| {
+            let state = app.state::<DollarAppState>();
+            state.start_polling(app.handle().clone(), DEFAULT_POLLING_INTERVAL_SECONDS)?;
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             ensure_db_ready,
             get_home_stats,
@@ -97,7 +110,10 @@ pub fn run() {
             get_cliente_defecto,
             crear_cliente,
             actualizar_cliente,
-            eliminar_cliente
+            eliminar_cliente,
+            get_latest_dollar_rates,
+            fetch_dollar_rates_manual,
+            update_polling_interval
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

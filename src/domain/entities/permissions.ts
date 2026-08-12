@@ -44,6 +44,7 @@ export const PERMISSIONS = {
   VIEW_CIERRES: "ver_cierres",
   CREATE_CIERRE: "crear_cierre",
   REABRIR_CIERRE: "reabrir_cierre",
+  VIEW_DOLAR: "ver_dolar",
 } as const;
 
 export type PermissionKey = keyof typeof PERMISSIONS;

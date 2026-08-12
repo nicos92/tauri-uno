@@ -360,6 +360,9 @@ const result = await invoke<UserResponse>("create_user", {
 | `update_stock` | Actualizar stock |
 | `delete_stock` | Eliminar stock |
 | `get_precio_venta` | Calcular precio de venta |
+| `get_latest_dollar_rates` | Obtener últimas cotizaciones de dólar (oficial y blue) |
+| `fetch_dollar_rates_manual` | Forzar actualización de cotizaciones contra la API |
+| `update_polling_interval` | Cambiar el intervalo (segundos) de polling automático del dólar |
 
 ---
 
@@ -370,8 +373,8 @@ const result = await invoke<UserResponse>("create_user", {
 3. **No olvidar el `.value`** al acceder a refs de Vue
 4. **En Rust, siempre manejar `Result` con `?` o match**
 5. **No hardcodear secrets** - usar variables de entorno
-6. **DB global** - `infrastructure::database::DB` es un `Lazy<Mutex<Connection>>` (rusqlite no es `Sync`); todos los repos lo bloquean. El esquema se crea en el primer arranque en el directorio de datos de `ProjectDirs` (`app.db`), sin migraciones. Se siembran 41 permisos y el usuario `admin` / `admin123` con todos los permisos. En builds de test apunta a `:memory:` y `BCRYPT_COST` baja a 4 (ver Tests en §3)
-7. **Sincronizar permisos en 3 lugares** (strings en español snake_case, ej. `ver_usuarios`): Rust `PermissionCode::as_str()` (`domain/entities/permission_code.rs`), TS `PERMISSIONS` (`src/domain/entities/permissions.ts`) y la lista seed (`infrastructure/database/mod.rs`). Agregar también el helper correspondiente en `usePermissions.ts` (frontend). El test `all_covers_seeded_permissions` verifica que `PermissionCode::all()` (41) esté sincronizado con la lista seed de Rust (no cubre TS)
+6. **DB global** - `infrastructure::database::DB` es un `Lazy<Mutex<Connection>>` (rusqlite no es `Sync`); todos los repos lo bloquean. El esquema se crea en el primer arranque en el directorio de datos de `ProjectDirs` (`app.db`), sin migraciones. Se siembran 42 permisos y el usuario `admin` / `admin123` con todos los permisos. En builds de test apunta a `:memory:` y `BCRYPT_COST` baja a 4 (ver Tests en §3)
+7. **Sincronizar permisos en 3 lugares** (strings en español snake_case, ej. `ver_usuarios`): Rust `PermissionCode::as_str()` (`domain/entities/permission_code.rs`), TS `PERMISSIONS` (`src/domain/entities/permissions.ts`) y la lista seed (`infrastructure/database/mod.rs`). Agregar también el helper correspondiente en `usePermissions.ts` (frontend). El test `all_covers_seeded_permissions` verifica que `PermissionCode::all()` (42) esté sincronizado con la lista seed de Rust (no cubre TS). El permiso nuevo `ver_dolar` permite acceder a la pantalla de cotización del dólar; el backend arranca un polling en segundo plano que emite eventos `dollar-rates-updated` / `dollar-rates-fetch-error` (`tauri::Emitter`), escuchados en `DolarPage.vue` con `@tauri-apps/api/event`
 8. **No olvidar `user_id` en los comandos** - Todo comando recibe `user_id: i64` como primer argumento. Los de usuarios/permisos usan `AppState` + `UserService::has_permission`; los de dominio (articulo/categoria/...) duplican un `check_permission` propio que consulta la DB directo. Respetar el patrón al agregar comandos
 9. **Registrar comandos y estados en `lib.rs`** - `.manage(...)` + `tauri::generate_handler!` en `src-tauri/src/lib.rs`
 10. **Auth en frontend** - Usuario y permisos se persisten en `localStorage` (`currentUser`, `userPermissions`). Los repos leen `getCurrentUserId()` y lo pasan como `userId` a cada `invoke`. El guard del router llama `authStore.loadFromStorage()`

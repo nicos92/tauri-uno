@@ -191,6 +191,10 @@ export function usePermissions() {
     return can(PERMISSIONS.REABRIR_CIERRE);
   }
 
+  function canViewDolar(): boolean {
+    return can(PERMISSIONS.VIEW_DOLAR);
+  }
+
   return {
     allPermissions,
     can,
@@ -239,5 +243,6 @@ export function usePermissions() {
     canViewCierres,
     canCreateCierre,
     canReabrirCierre,
+    canViewDolar,
   };
 }

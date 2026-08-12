@@ -147,6 +147,9 @@ pub enum AppError {
     #[error("Día cerrado, no se puede anular la venta")]
     DiaCerradoAnulacion,
 
+    #[error("No se pudo obtener la cotización del dólar: {0}")]
+    DollarFetchError(String),
+
     #[error("Internal error: {0}")]
     Internal(String),
 }
@@ -225,6 +228,7 @@ impl AppError {
             AppError::CierreFechaFutura => "cierre_fecha_futura",
             AppError::DiaCerrado => "dia_cerrado",
             AppError::DiaCerradoAnulacion => "dia_cerrado_anulacion",
+            AppError::DollarFetchError(_) => "dollar_fetch_error",
             AppError::Internal(_) => "internal_error",
         }
     }
@@ -346,6 +350,10 @@ impl AppError {
             AppError::DiaCerradoAnulacion => {
                 "El día está cerrado, no se puede anular la venta.".to_string()
             }
+            AppError::DollarFetchError(_) => {
+                "No se pudo obtener la cotización del dólar. Intente nuevamente más tarde."
+                    .to_string()
+            }
             AppError::Internal(_) => {
                 "Ocurrió un error inesperado. Intente nuevamente.".to_string()
             }
@@ -387,6 +395,10 @@ mod tests {
         assert_eq!(
             AppError::NoSePuedeEliminarClienteDefecto.code(),
             "no_se_puede_eliminar_cliente_defecto"
+        );
+        assert_eq!(
+            AppError::DollarFetchError("x".to_string()).code(),
+            "dollar_fetch_error"
         );
         assert_eq!(AppError::Internal("x".to_string()).code(), "internal_error");
     }

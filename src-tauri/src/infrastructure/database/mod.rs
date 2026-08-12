@@ -59,7 +59,8 @@ pub fn reset_test_db() -> Result<(), rusqlite::Error> {
          DROP TABLE IF EXISTS user_permissions;
          DROP TABLE IF EXISTS users;
          DROP TABLE IF EXISTS permissions;
-         DROP TABLE IF EXISTS tipos_venta;",
+         DROP TABLE IF EXISTS tipos_venta;
+         DROP TABLE IF EXISTS dollar_rates;",
     )?;
     apply_schema(&conn)?;
     Ok(())
@@ -123,6 +124,8 @@ const PERMISSIONS: &[&str] = &[
     "ver_cierres",
     "crear_cierre",
     "reabrir_cierre",
+    // Dólar
+    "ver_dolar",
 ];
 
 pub fn init_database() -> Result<Connection, rusqlite::Error> {
@@ -283,8 +286,15 @@ fn apply_schema(conn: &Connection) -> Result<(), rusqlite::Error> {
             FOREIGN KEY (id_tipo_venta) REFERENCES tipos_venta(id)
         );
 
-        CREATE INDEX IF NOT EXISTS idx_cierre_tipos_id_cierre ON cierre_tipos(id_cierre);
-        ",
+         CREATE INDEX IF NOT EXISTS idx_cierre_tipos_id_cierre ON cierre_tipos(id_cierre);
+
+         CREATE TABLE IF NOT EXISTS dollar_rates (
+             dollar_type TEXT PRIMARY KEY,
+             buy_price REAL NOT NULL,
+             sell_price REAL NOT NULL,
+             updated_at TEXT NOT NULL
+         );
+         ",
     )?;
 
     ensure_column(conn, "ventas", "descuento", "REAL NOT NULL DEFAULT 0")?;

@@ -1052,3 +1052,71 @@ export const useHomeStore = defineStore("home", () => {
     fetchStats,
   };
 });
+
+import { DollarApiRepository } from "../../infrastructure/api/dollarRepository";
+import type { DollarRate } from "../../domain/entities";
+
+const dollarRepository = new DollarApiRepository();
+
+export const useDolarStore = defineStore("dolar", () => {
+  const rates = ref<DollarRate[]>([]);
+  const loading = ref(false);
+  const updating = ref(false);
+  const error = ref<string | null>(null);
+  const lastUpdated = ref<string | null>(null);
+
+  async function fetchRates() {
+    loading.value = true;
+    error.value = null;
+    try {
+      rates.value = await dollarRepository.getLatest();
+      lastUpdated.value = new Date().toISOString();
+    } catch (e) {
+      error.value = toErrorMessage(e);
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function fetchManual(): Promise<boolean> {
+    updating.value = true;
+    error.value = null;
+    try {
+      rates.value = await dollarRepository.fetchManual();
+      lastUpdated.value = new Date().toISOString();
+      return true;
+    } catch (e) {
+      error.value = toErrorMessage(e);
+      return false;
+    } finally {
+      updating.value = false;
+    }
+  }
+
+  async function setPollingInterval(seconds: number): Promise<boolean> {
+    try {
+      await dollarRepository.updatePollingInterval(seconds);
+      return true;
+    } catch (e) {
+      error.value = toErrorMessage(e);
+      return false;
+    }
+  }
+
+  function applyRates(updated: DollarRate[]) {
+    rates.value = updated;
+    lastUpdated.value = new Date().toISOString();
+  }
+
+  return {
+    rates,
+    loading,
+    updating,
+    error,
+    lastUpdated,
+    fetchRates,
+    fetchManual,
+    setPollingInterval,
+    applyRates,
+  };
+});

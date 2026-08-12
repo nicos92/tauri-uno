@@ -36,6 +36,7 @@ pub enum AuditScreen {
     Permisos,
     Auditoria,
     Cierres,
+    Dolar,
 }
 
 impl AuditScreen {
@@ -53,6 +54,7 @@ impl AuditScreen {
             AuditScreen::Permisos => "Permisos",
             AuditScreen::Auditoria => "Auditoria",
             AuditScreen::Cierres => "Cierres del día",
+            AuditScreen::Dolar => "Dólar",
         }
     }
 }

@@ -48,6 +48,7 @@ pub enum PermissionCode {
     ViewCierres,
     CreateCierre,
     ReopenCierre,
+    ViewDolar,
 }
 
 impl PermissionCode {
@@ -98,6 +99,7 @@ impl PermissionCode {
             PermissionCode::ViewCierres => "ver_cierres",
             PermissionCode::CreateCierre => "crear_cierre",
             PermissionCode::ReopenCierre => "reabrir_cierre",
+            PermissionCode::ViewDolar => "ver_dolar",
         }
     }
 
@@ -148,6 +150,7 @@ impl PermissionCode {
             PermissionCode::ViewCierres,
             PermissionCode::CreateCierre,
             PermissionCode::ReopenCierre,
+            PermissionCode::ViewDolar,
         ]
     }
 }
@@ -227,6 +230,7 @@ mod tests {
             "ver_cierres",
             "crear_cierre",
             "reabrir_cierre",
+            "ver_dolar",
         ];
 
         let mut actual: Vec<String> = PermissionCode::all()
