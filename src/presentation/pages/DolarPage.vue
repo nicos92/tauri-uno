@@ -128,42 +128,44 @@ onMounted(async () => {
                 No hay cotizaciones registradas.
             </div>
 
-            <table
-                v-if="dolarStore.quotes.length > 0"
-                class="data-table"
-            >
-                <thead>
-                    <tr>
-                        <th>Fecha</th>
-                        <th>Oficial Compra</th>
-                        <th>Oficial Venta</th>
-                        <th>Blue Compra</th>
-                        <th>Blue Venta</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr
-                        v-for="quote in dolarStore.quotes"
-                        :key="quote.id"
-                    >
-                        <td>{{ formatTimestamp(quote.timestamp) }}</td>
-                        <td>{{ formatMoney(quote.official_buy) }}</td>
-                        <td>{{ formatMoney(quote.official_sell) }}</td>
-                        <td>{{ formatMoney(quote.blue_buy) }}</td>
-                        <td>{{ formatMoney(quote.blue_sell) }}</td>
-                        <td>
-                            <button
-                                class="btn-delete"
-                                :disabled="dolarStore.updating"
-                                @click="handleDelete(quote)"
-                            >
-                                Eliminar
-                            </button>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+            <div class="table-wrapper">
+                <table
+                    v-if="dolarStore.quotes.length > 0"
+                    class="data-table"
+                >
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Oficial Compra</th>
+                            <th>Oficial Venta</th>
+                            <th>Blue Compra</th>
+                            <th>Blue Venta</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr
+                            v-for="quote in dolarStore.quotes"
+                            :key="quote.id"
+                        >
+                            <td>{{ formatTimestamp(quote.timestamp) }}</td>
+                            <td>{{ formatMoney(quote.official_buy) }}</td>
+                            <td>{{ formatMoney(quote.official_sell) }}</td>
+                            <td>{{ formatMoney(quote.blue_buy) }}</td>
+                            <td>{{ formatMoney(quote.blue_sell) }}</td>
+                            <td>
+                                <button
+                                    class="btn-delete"
+                                    :disabled="dolarStore.updating"
+                                    @click="handleDelete(quote)"
+                                >
+                                    Eliminar
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </template>
@@ -304,36 +306,26 @@ onMounted(async () => {
     font-size: 1.1rem;
 }
 
+.table-wrapper {
+    overflow-x: auto;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
 .data-table {
     width: 100%;
-    border-collapse: collapse;
     background: var(--color-surface);
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .data-table th,
 .data-table td {
-    padding: 0.75rem 1rem;
-    text-align: right;
-    border-bottom: 1px solid var(--color-border);
-    font-size: 0.92rem;
-}
-
-.data-table th {
-    background: var(--color-surface-alt);
-    font-weight: 600;
-    color: var(--color-text-muted);
-}
-
-.data-table th:first-child,
-.data-table td:first-child {
+    padding: 1rem;
     text-align: left;
 }
 
-.data-table tbody tr:last-child td {
-    border-bottom: none;
+.data-table th {
+    background: var(--color-surface-2);
+    font-weight: 600;
 }
 
 .error-banner {
