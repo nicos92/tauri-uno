@@ -328,6 +328,7 @@ const result = await invoke<UserResponse>("create_user", {
 - `timestamp`: DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL
 
 Reglas:
+
 - El sistema conserva como máximo **4 filas** (`MAX_QUOTES` en `infrastructure/repositories/dollar_quote_repository.rs`).
 - `save` es atómico (transacción): si `COUNT(*) >= 4` elimina la fila más antigua (`ORDER BY timestamp ASC, id ASC LIMIT 1`) y luego inserta la nueva.
 - `find_all` devuelve hasta 4 filas ordenadas `timestamp DESC, id DESC`.
