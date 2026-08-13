@@ -1124,3 +1124,41 @@ export const useDolarStore = defineStore("dolar", () => {
     deleteQuote,
   };
 });
+
+import { PresupuestoApiRepository } from "../../infrastructure/api/presupuestoRepository";
+import type {
+  CreatePresupuestoRequest,
+  PresupuestoWithDetalle,
+} from "../../domain/entities";
+
+const presupuestoRepository = new PresupuestoApiRepository();
+
+export const usePresupuestosStore = defineStore("presupuestos", () => {
+  const presupuestos = ref<PresupuestoWithDetalle[]>([]);
+  const loading = ref(false);
+  const error = ref<string | null>(null);
+
+  async function crearPresupuesto(
+    request: CreatePresupuestoRequest,
+  ): Promise<PresupuestoWithDetalle | null> {
+    loading.value = true;
+    error.value = null;
+    try {
+      const presupuesto = await presupuestoRepository.crearPresupuesto(request);
+      presupuestos.value.unshift(presupuesto);
+      return presupuesto;
+    } catch (e) {
+      error.value = toErrorMessage(e);
+      return null;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  return {
+    presupuestos,
+    loading,
+    error,
+    crearPresupuesto,
+  };
+});

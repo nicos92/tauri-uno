@@ -5,7 +5,7 @@ use crate::domain::repositories::DollarQuoteRepository;
 use crate::infrastructure::database::DB;
 use crate::infrastructure::error::AppError;
 
-pub const MAX_QUOTES: usize = 7;
+pub const MAX_QUOTES: usize = 4;
 
 pub struct SqliteDollarQuoteRepository;
 

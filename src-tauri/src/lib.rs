@@ -5,16 +5,17 @@ pub mod infrastructure;
 
 use api::commands::{
     actualizar_cliente, add_permission_to_user, anular_venta, change_password, crear_cierre,
-    crear_cliente, create_articulo, create_categoria,
+    crear_cliente, crear_presupuesto, create_articulo, create_categoria,
     create_permission, create_proveedor, create_stock, create_sub_categoria, create_tipo_venta,
     create_user, create_venta, delete_articulo, delete_categoria, delete_proveedor, delete_stock,
     delete_sub_categoria, delete_tipo_venta, delete_user, delete_dollar_quote, eliminar_cliente, ensure_db_ready,
     fetch_dollar_rates_manual, get_all_articulos, get_all_categorias, get_all_cierres,
     get_all_clientes, get_all_permissions,
-    get_all_proveedores, get_all_stock,
+    get_all_presupuestos, get_all_proveedores, get_all_stock,
     get_all_sub_categorias, get_all_tipos_venta, get_all_users, get_all_ventas,
     get_audit_logs, get_cliente_by_id, get_cliente_defecto, get_dollar_quotes, get_home_stats,
     get_precio_venta,
+    get_presupuesto_by_id,
     get_proveedor_by_id, get_stock_by_articulo,
     get_stock_by_id, get_sub_categorias_by_categoria, get_user_permissions, get_venta_by_id,
     get_ventas_por_cliente, is_dia_cerrado, login, reabrir_cierre, remove_permission_from_user, update_articulo, update_categoria, update_proveedor,
@@ -23,6 +24,7 @@ use api::commands::{
     ArticuloAppState, AuditLogAppState, CategoriaAppState, CierreAppState, ClienteAppState,
     DollarAppState,
     HomeStatsAppState,
+    PresupuestoAppState,
     ProveedorAppState,
     StockAppState, SubCategoriaAppState, TipoVentaAppState, VentaAppState,
 };
@@ -40,6 +42,7 @@ pub fn run() {
         .manage(ArticuloAppState::new())
         .manage(StockAppState::new())
         .manage(VentaAppState::new())
+        .manage(PresupuestoAppState::new())
         .manage(TipoVentaAppState::new())
         .manage(CierreAppState::new())
         .manage(ClienteAppState::new())
@@ -105,7 +108,10 @@ pub fn run() {
             eliminar_cliente,
             get_dollar_quotes,
             fetch_dollar_rates_manual,
-            delete_dollar_quote
+            delete_dollar_quote,
+            crear_presupuesto,
+            get_all_presupuestos,
+            get_presupuesto_by_id
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

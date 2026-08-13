@@ -7,6 +7,7 @@ import {
   useArticulosStore,
   useTiposVentaStore,
   useClientesStore,
+  usePresupuestosStore,
 } from "../stores";
 import { usePermissions } from "../composables/usePermissions";
 import { useToasts } from "../composables/useToasts";
@@ -14,6 +15,7 @@ import { formatMoney } from "../utils/format";
 import type {
   Cliente,
   CreateClienteRequest,
+  CreatePresupuestoRequest,
   CreateVentaRequest,
 } from "../../domain/entities";
 
@@ -23,6 +25,7 @@ const stockStore = useStockStore();
 const articulosStore = useArticulosStore();
 const tiposVentaStore = useTiposVentaStore();
 const clientesStore = useClientesStore();
+const presupuestosStore = usePresupuestosStore();
 const {
   canVenderSinStock,
   canGenerarPresupuesto,
@@ -55,6 +58,7 @@ const observacion = ref("");
 const descuento = ref<number>(0);
 const cart = ref<CartItem[]>([]);
 const tipoVentaId = ref<number | null>(null);
+const fechaVencimiento = ref("");
 
 const clienteSeleccionado = ref<Cliente | null>(null);
 const clienteDefecto = ref<Cliente | null>(null);
@@ -159,6 +163,13 @@ const carritoValido = computed(
     cart.value.length > 0 &&
     descuentoValido.value &&
     tipoVentaId.value !== null &&
+    cart.value.every((i) => i.cantidad > 0 && i.precio >= 0),
+);
+
+const presupuestoValido = computed(
+  () =>
+    cart.value.length > 0 &&
+    descuentoValido.value &&
     cart.value.every((i) => i.cantidad > 0 && i.precio >= 0),
 );
 
@@ -326,6 +337,31 @@ async function handleCreate() {
   }
 }
 
+async function handleGuardarPresupuesto() {
+  if (!carritoValido.value) return;
+  const request: CreatePresupuestoRequest = {
+    items: cart.value.map((item) => ({
+      id_articulo: item.id_articulo,
+      cantidad: item.cantidad,
+      precio_unitario: item.precio,
+    })),
+    descuento: descuento.value || 0,
+    observacion: observacion.value.trim() || undefined,
+    fecha_vencimiento: fechaVencimiento.value.trim() || undefined,
+    cliente_id: clienteSeleccionado.value?.id,
+  };
+  const presupuesto = await presupuestosStore.crearPresupuesto(request);
+  if (presupuesto) {
+    toastSuccess(`Presupuesto N° ${presupuesto.id} guardado.`);
+    fechaVencimiento.value = "";
+    focusSearch();
+  } else {
+    toastError(
+      presupuestosStore.error || "No se pudo guardar el presupuesto.",
+    );
+  }
+}
+
 function cancelar() {
   router.push({ name: "ventas" });
 }
@@ -376,6 +412,14 @@ function generarPdf() {
                     </option>
                 </select>
             </div>
+            <div class="form-group obs-group">
+                <label>Vencimiento presupuesto</label>
+                <input
+                    v-model="fechaVencimiento"
+                    type="date"
+                    placeholder="Opcional"
+                />
+            </div>
            
             <div class="acciones">
                 <button
@@ -386,6 +430,15 @@ function generarPdf() {
                     :disabled="cart.length === 0"
                 >
                     PDF
+                </button>
+                <button
+                    v-if="canGenerarPresupuesto()"
+                    type="button"
+                    @click="handleGuardarPresupuesto"
+                    class="btn-presupuesto"
+                    :disabled="!presupuestoValido"
+                >
+                    Guardar Presupuesto
                 </button>
                 <button
                     type="button"
@@ -940,6 +993,24 @@ function generarPdf() {
 .btn-tertiary:disabled {
     opacity: 0.6;
     border:none;
+    cursor: not-allowed;
+}
+
+.btn-presupuesto {
+    background: #2D195D;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.btn-presupuesto:hover:not(:disabled) {
+    background: #3F2281;
+}
+
+.btn-presupuesto:disabled {
+    opacity: 0.6;
     cursor: not-allowed;
 }
 

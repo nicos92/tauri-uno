@@ -10,6 +10,7 @@ pub mod sub_categoria_repository;
 pub mod tipo_venta_repository;
 pub mod user_repository;
 pub mod venta_repository;
+pub mod presupuesto_repository;
 
 pub use articulo_repository::SqliteArticuloRepository;
 pub use audit_log_repository::SqliteAuditLogRepository;
@@ -18,6 +19,7 @@ pub use cierre_repository::SqliteCierreRepository;
 pub use cliente_repository::SqliteClienteRepository;
 pub use dollar_quote_repository::SqliteDollarQuoteRepository;
 pub use proveedor_repository::SqliteProveedorRepository;
+pub use presupuesto_repository::SqlitePresupuestoRepository;
 pub use stock_repository::SqliteStockRepository;
 pub use sub_categoria_repository::SqliteSubCategoriaRepository;
 pub use tipo_venta_repository::SqliteTipoVentaRepository;

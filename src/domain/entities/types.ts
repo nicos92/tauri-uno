@@ -296,6 +296,75 @@ export interface VentaPage {
   offset: number;
 }
 
+export type PresupuestoEstado =
+  | "pendiente"
+  | "aprobado"
+  | "vencido"
+  | "convertido";
+
+export interface Presupuesto {
+  id: number;
+  user_id: number;
+  fecha: string;
+  total: number;
+  descuento: number;
+  estado: PresupuestoEstado;
+  fecha_vencimiento: string | null;
+  observacion: string | null;
+  cliente_id: number | null;
+  created_at: string;
+}
+
+export interface PresupuestoDetalleConArticulo {
+  id: number;
+  id_articulo: number;
+  cod_articulo: string;
+  articulo: string;
+  cantidad: number;
+  costo_unitario: number;
+  precio_unitario: number;
+  subtotal: number;
+}
+
+export interface PresupuestoWithDetalle {
+  id: number;
+  user_id: number;
+  username: string;
+  fecha: string;
+  subtotal: number;
+  descuento: number;
+  total: number;
+  estado: PresupuestoEstado;
+  fecha_vencimiento: string | null;
+  observacion: string | null;
+  cliente_id: number | null;
+  cliente_nombre: string | null;
+  cliente_apellido: string | null;
+  created_at: string;
+  items: PresupuestoDetalleConArticulo[];
+}
+
+export interface CreatePresupuestoDetalleRequest {
+  id_articulo: number;
+  cantidad: number;
+  precio_unitario?: number;
+}
+
+export interface CreatePresupuestoRequest {
+  items: CreatePresupuestoDetalleRequest[];
+  descuento?: number;
+  observacion?: string;
+  fecha_vencimiento?: string;
+  cliente_id?: number;
+}
+
+export interface PresupuestoPage {
+  items: PresupuestoWithDetalle[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
 export interface Cierre {
   id: number;
   fecha: string;

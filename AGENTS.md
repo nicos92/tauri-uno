@@ -21,10 +21,10 @@ Este documento proporciona instrucciones y convenciones para agentes de código 
 ``` bash
 src-tauri/src/
 ├── domain/           # Entidades y traits de repositorio
-│   ├── entities/     # User, Permission, PermissionCode, Proveedor, Categoria, SubCategoria, Articulo, Stock
-│   └── repositories/# UserRepository, ArticuloRepository, CategoriaRepository, ProveedorRepository, StockRepository, SubCategoriaRepository
+│   ├── entities/     # User, Permission, PermissionCode, Proveedor, Categoria, SubCategoria, Articulo, Stock, Cliente, Venta, Presupuesto
+│   └── repositories/# UserRepository, ArticuloRepository, CategoriaRepository, ProveedorRepository, StockRepository, SubCategoriaRepository, ClienteRepository, VentaRepository, PresupuestoRepository
 ├── application/     # Casos de uso/Servicios
-│   └── services/    # UserService, ArticuloService, CategoriaService, ProveedorService, StockService, SubCategoriaService
+│   └── services/    # UserService, ArticuloService, CategoriaService, ProveedorService, StockService, SubCategoriaService, ClienteService, VentaService, PresupuestoService
 ├── infrastructure/  # Implementaciones concretas
 │   ├── database/    # Conexión SQLite
 │   ├── repositories/# SqliteUserRepository, SqliteArticuloRepository, ...
@@ -38,16 +38,16 @@ src-tauri/src/
 ``` bash
 src/
 ├── domain/           # Tipos e interfaces
-│   ├── entities/    # User, Permission, Proveedor, Categoria, SubCategoria, Articulo, Stock, PERMISSIONS
+│   ├── entities/    # User, Permission, Proveedor, Categoria, SubCategoria, Articulo, Stock, Cliente, Venta, Presupuesto, PERMISSIONS
 │   └── interfaces/  # IUserRepository
 ├── application/     # Casos de uso
 │   └── usecases/   # Login, CreateUser, GetAllUsers, UpdateUser, DeleteUser, ManagePermissions
 ├── infrastructure/ # Implementaciones
-│   └── api/        # UserApiRepository, ArticuloApiRepository, CategoriaApiRepository, ProveedorApiRepository, StockApiRepository, SubCategoriaApiRepository
+│   └── api/        # UserApiRepository, ArticuloApiRepository, CategoriaApiRepository, ProveedorApiRepository, StockApiRepository, SubCategoriaApiRepository, ClienteApiRepository, VentaApiRepository, PresupuestoApiRepository
 └── presentation/   # Capa UI
     ├── layouts/    # MainLayout con sidebar
-    ├── pages/      # Login, Home, Users, Proveedores, Categorias, SubCategorias, Articulos, Stock, Permissions, Settings
-    ├── stores/     # Pinia stores (auth, users, permissions, proveedores, categorias, subCategorias, articulos, stock, theme)
+    ├── pages/      # Login, Home, Users, Proveedores, Categorias, SubCategorias, Articulos, Stock, Permissions, Settings, Ventas, NuevaVenta, Clientes, Cierres, Dolar, Auditoria
+    ├── stores/     # Pinia stores (auth, users, permissions, proveedores, categorias, subCategorias, articulos, stock, theme, clientes, ventas, presupuestos, dolar, cierres)
     └── router/     # Vue Router config
 ```
 
@@ -318,6 +318,33 @@ const result = await invoke<UserResponse>("create_user", {
 - `costo`: REAL
 - `ganancia`: REAL
 
+### Presupuestos
+
+- `id`: INTEGER PRIMARY KEY AUTOINCREMENT
+- `user_id`: INTEGER FK → users(id)
+- `fecha`: TEXT (ISO 8601)
+- `total`: REAL
+- `descuento`: REAL (0..=100)
+- `estado`: TEXT CHECK (`pendiente` | `aprobado` | `vencido` | `convertido`), default `pendiente`
+- `fecha_vencimiento`: TEXT (opcional, input de fecha en frontend; vacío → NULL)
+- `observacion`: TEXT (opcional)
+- `cliente_id`: INTEGER FK → clientes(id) (opcional/NULLable)
+- `created_at`: TEXT (ISO 8601)
+
+### detalle_presupuestos
+
+- `id`: INTEGER PRIMARY KEY AUTOINCREMENT
+- `id_presupuesto`: INTEGER FK → presupuestos(id) ON DELETE CASCADE
+- `id_articulo`: INTEGER FK → articulos(id)
+- `cantidad`, `costo_unitario`, `precio_unitario`, `subtotal`: REAL
+
+Notas:
+
+- Un presupuesto **no decrementa stock** (a diferencia de una venta).
+- `cliente_id` y `fecha_vencimiento` son opcionales (`NULL`); a diferencia de `ventas`, que exige cliente.
+- `precio_unitario`: si el carrito trae precio, se usa ese; si no, se calcula `costo * (1 + ganancia/100)` leyendo la tabla `stock`.
+- Índices: `idx_detalle_presupuestos_id_presupuesto`, `idx_presupuestos_estado`.
+
 ### Cotizaciones del dólar (historial circular)
 
 - `id`: INTEGER PRIMARY KEY AUTOINCREMENT
@@ -377,6 +404,9 @@ Reglas:
 | `update_stock` | Actualizar stock |
 | `delete_stock` | Eliminar stock |
 | `get_precio_venta` | Calcular precio de venta |
+| `crear_presupuesto` | Crear presupuesto (no decrementa stock; estado `pendiente`; `fecha_vencimiento`/`cliente_id` opcionales) |
+| `get_all_presupuestos` | Listar presupuestos paginados con detalle |
+| `get_presupuesto_by_id` | Obtener presupuesto con detalle por id |
 | `get_dollar_quotes` | Obtener historial de cotizaciones del dólar (máx 4, más reciente primero) |
 | `fetch_dollar_rates_manual` | Forzar actualización manual contra la API (guarda una fila nueva con rotación) |
 | `delete_dollar_quote` | Eliminar una cotización por `id` del historial |
@@ -395,7 +425,7 @@ Reglas:
 8. **No olvidar `user_id` en los comandos** - Todo comando recibe `user_id: i64` como primer argumento. Los de usuarios/permisos usan `AppState` + `UserService::has_permission`; los de dominio (articulo/categoria/...) duplican un `check_permission` propio que consulta la DB directo. Respetar el patrón al agregar comandos
 9. **Registrar comandos y estados en `lib.rs`** - `.manage(...)` + `tauri::generate_handler!` en `src-tauri/src/lib.rs`
 10. **Auth en frontend** - Usuario y permisos se persisten en `localStorage` (`currentUser`, `userPermissions`). Los repos leen `getCurrentUserId()` y lo pasan como `userId` a cada `invoke`. El guard del router llama `authStore.loadFromStorage()`
-11. **Repos no uniformes** - Solo `UserApiRepository` implementa `IUserRepository` y pasa por usecases; Articulo/Categoria/Proveedor/Stock/SubCategoria son clases directas invocadas desde los stores. `infrastructure/api/index.ts` solo re-exporta `userRepository` (los demás se importan por ruta completa)
+11. **Repos no uniformes** - Solo `UserApiRepository` implementa `IUserRepository` y pasa por usecases; Articulo/Categoria/Proveedor/Stock/SubCategoria/Cliente/Venta/Presupuesto son clases directas invocadas desde los stores. `infrastructure/api/index.ts` solo re-exporta `userRepository` (los demás se importan por ruta completa)
 12. **Archivos Rust en snake_case** - El nombre de archivo debe coincidir exactamente con el módulo declarado en `mod.rs` (ej. `categoria_repository.rs` para `pub mod categoria_repository;`). Un desajuste de mayúsculas compila en Windows/macOS por filesystem case-insensitive, pero rompe rust-analyzer y falla en Linux. Al renombrar solo mayúsculas usar `git mv` en dos pasos (nombre temporal → destino) porque `core.ignorecase=true`
 13. **Código generado** - `src-tauri/gen/**` (proyecto Android) no se edita a mano
 

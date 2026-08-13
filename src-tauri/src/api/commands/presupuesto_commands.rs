@@ -1,0 +1,122 @@
+use std::sync::Mutex;
+use tauri::State;
+
+use crate::api::commands::permissions::check_permission;
+use crate::application::services::{log_audit, PresupuestoService};
+use crate::domain::entities::{
+    AuditAction, AuditScreen, PermissionCode, PresupuestoDetalle, PresupuestoWithDetalle,
+};
+use crate::domain::repositories::Page;
+use crate::infrastructure::error::AppError;
+
+pub struct PresupuestoAppState {
+    pub presupuesto_service: Mutex<PresupuestoService>,
+}
+
+impl Default for PresupuestoAppState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl PresupuestoAppState {
+    pub fn new() -> Self {
+        Self {
+            presupuesto_service: Mutex::new(PresupuestoService::new()),
+        }
+    }
+}
+
+#[derive(serde::Deserialize)]
+pub struct CreatePresupuestoDetalleRequest {
+    pub id_articulo: i64,
+    pub cantidad: f64,
+    pub precio_unitario: Option<f64>,
+}
+
+#[derive(serde::Deserialize)]
+pub struct CreatePresupuestoRequest {
+    pub items: Vec<CreatePresupuestoDetalleRequest>,
+    pub descuento: Option<f64>,
+    pub observacion: Option<String>,
+    pub fecha_vencimiento: Option<String>,
+    pub cliente_id: Option<i64>,
+}
+
+#[derive(serde::Deserialize)]
+pub struct GetPresupuestosRequest {
+    pub limit: Option<i64>,
+    pub offset: Option<i64>,
+}
+
+#[tauri::command(async)]
+pub fn crear_presupuesto(
+    user_id: i64,
+    request: CreatePresupuestoRequest,
+    state: State<PresupuestoAppState>,
+) -> Result<PresupuestoWithDetalle, AppError> {
+    let service = state
+        .presupuesto_service
+        .lock()
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+    check_permission(user_id, PermissionCode::GenerarPresupuesto)?;
+
+    let detalles: Vec<PresupuestoDetalle> = request
+        .items
+        .into_iter()
+        .map(|item| {
+            PresupuestoDetalle::new(
+                item.id_articulo,
+                item.cantidad,
+                0.0,
+                item.precio_unitario.unwrap_or(0.0),
+            )
+        })
+        .collect();
+
+    let presupuesto = service.create(
+        user_id,
+        detalles,
+        request.descuento.unwrap_or(0.0),
+        request.observacion,
+        request.fecha_vencimiento,
+        request.cliente_id,
+    )?;
+    log_audit(
+        user_id,
+        AuditScreen::Presupuestos,
+        AuditAction::Create,
+        Some(format!("Presupuesto (id {})", presupuesto.id)),
+    )?;
+    Ok(presupuesto)
+}
+
+#[tauri::command(async)]
+pub fn get_all_presupuestos(
+    user_id: i64,
+    request: Option<GetPresupuestosRequest>,
+    state: State<PresupuestoAppState>,
+) -> Result<Page<PresupuestoWithDetalle>, AppError> {
+    let service = state
+        .presupuesto_service
+        .lock()
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+    check_permission(user_id, PermissionCode::GenerarPresupuesto)?;
+    let limit = request.as_ref().and_then(|r| r.limit).unwrap_or(50);
+    let offset = request.as_ref().and_then(|r| r.offset).unwrap_or(0);
+    service.get_page(limit, offset)
+}
+
+#[tauri::command(async)]
+pub fn get_presupuesto_by_id(
+    user_id: i64,
+    id: i64,
+    state: State<PresupuestoAppState>,
+) -> Result<PresupuestoWithDetalle, AppError> {
+    let service = state
+        .presupuesto_service
+        .lock()
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+    check_permission(user_id, PermissionCode::GenerarPresupuesto)?;
+    service.get_by_id(id)
+}

@@ -45,6 +45,8 @@ pub fn reset_test_db() -> Result<(), rusqlite::Error> {
     let conn = DB.lock().expect("test database lock");
     conn.execute_batch(
         "PRAGMA foreign_keys = OFF;
+         DROP TABLE IF EXISTS detalle_presupuestos;
+         DROP TABLE IF EXISTS presupuestos;
          DROP TABLE IF EXISTS cierre_tipos;
          DROP TABLE IF EXISTS cierres;
          DROP TABLE IF EXISTS venta_detalle;
@@ -263,7 +265,37 @@ fn apply_schema(conn: &Connection) -> Result<(), rusqlite::Error> {
             FOREIGN KEY (id_articulo) REFERENCES articulos(id)
         );
 
-        CREATE INDEX IF NOT EXISTS idx_venta_detalle_id_venta ON venta_detalle(id_venta);
+         CREATE INDEX IF NOT EXISTS idx_venta_detalle_id_venta ON venta_detalle(id_venta);
+
+         CREATE TABLE IF NOT EXISTS presupuestos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            fecha TEXT NOT NULL,
+            total REAL NOT NULL,
+            descuento REAL NOT NULL DEFAULT 0,
+            estado TEXT NOT NULL DEFAULT 'pendiente'
+                CHECK (estado IN ('pendiente','aprobado','vencido','convertido')),
+            fecha_vencimiento TEXT,
+            observacion TEXT,
+            cliente_id INTEGER REFERENCES clientes(id),
+            created_at TEXT NOT NULL,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS detalle_presupuestos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_presupuesto INTEGER NOT NULL,
+            id_articulo INTEGER NOT NULL,
+            cantidad REAL NOT NULL,
+            costo_unitario REAL NOT NULL,
+            precio_unitario REAL NOT NULL,
+            subtotal REAL NOT NULL,
+            FOREIGN KEY (id_presupuesto) REFERENCES presupuestos(id) ON DELETE CASCADE,
+            FOREIGN KEY (id_articulo) REFERENCES articulos(id)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_detalle_presupuestos_id_presupuesto ON detalle_presupuestos(id_presupuesto);
+        CREATE INDEX IF NOT EXISTS idx_presupuestos_estado ON presupuestos(estado);
 
         CREATE TABLE IF NOT EXISTS cierres (
             id INTEGER PRIMARY KEY AUTOINCREMENT,

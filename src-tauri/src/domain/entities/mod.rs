@@ -8,6 +8,7 @@ pub mod dollar_rate;
 pub mod home;
 pub mod permission;
 pub mod permission_code;
+pub mod presupuesto;
 pub mod proveedor;
 pub mod stock;
 pub mod sub_categoria;
@@ -25,6 +26,10 @@ pub use dollar_rate::DollarRate;
 pub use home::{CategoriaConSub, HomeStats, StockBajoItem, SubCategoriaInfo};
 pub use permission::{Permission, UserPermission};
 pub use permission_code::PermissionCode;
+pub use presupuesto::{
+    Presupuesto, PresupuestoDetalle, PresupuestoDetalleConArticulo, PresupuestoEstado,
+    PresupuestoWithDetalle,
+};
 pub use proveedor::Proveedor;
 pub use stock::Stock;
 pub use sub_categoria::SubCategoria;

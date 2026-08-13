@@ -105,6 +105,9 @@ pub enum AppError {
     #[error("Venta already anulada")]
     VentaAlreadyAnulada,
 
+    #[error("Presupuesto not found")]
+    PresupuestoNotFound,
+
     #[error("Insufficient stock")]
     InsufficientStock,
 
@@ -217,6 +220,7 @@ impl AppError {
             AppError::EmptyPassword => "empty_password",
             AppError::VentaNotFound => "venta_not_found",
             AppError::VentaAlreadyAnulada => "venta_already_anulada",
+            AppError::PresupuestoNotFound => "presupuesto_not_found",
             AppError::InsufficientStock => "insufficient_stock",
             AppError::ArticuloWithoutStock => "articulo_without_stock",
             AppError::DescuentoInvalido => "descuento_invalido",
@@ -314,6 +318,7 @@ impl AppError {
             }
             AppError::VentaNotFound => "La venta no existe.".to_string(),
             AppError::VentaAlreadyAnulada => "La venta ya fue anulada.".to_string(),
+            AppError::PresupuestoNotFound => "El presupuesto no existe.".to_string(),
             AppError::InsufficientStock => {
                 "Stock insuficiente para uno de los artículos.".to_string()
             }
