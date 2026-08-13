@@ -80,6 +80,12 @@ const routes = [
         meta: { permission: PERMISSIONS.VIEW_TIPOS_VENTA },
       },
       {
+        path: "presupuestos",
+        name: "presupuestos",
+        component: () => import("../pages/PresupuestosPage.vue"),
+        meta: { permission: PERMISSIONS.GENERAR_PRESUPUESTO },
+      },
+      {
         path: "permissions",
         name: "permissions",
         component: () => import("../pages/PermissionsPage.vue"),

@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
 use crate::domain::entities::{
-    Presupuesto, PresupuestoDetalle, PresupuestoWithDetalle,
+    Presupuesto, PresupuestoDetalle, PresupuestoEstado, PresupuestoWithDetalle,
 };
-use crate::domain::repositories::{ClienteRepository, Page, PresupuestoRepository};
+use crate::domain::repositories::{ClienteRepository, Page, PresupuestoFilter, PresupuestoRepository};
 use crate::infrastructure::error::AppError;
 use crate::infrastructure::repositories::{
     SqliteClienteRepository, SqlitePresupuestoRepository,
@@ -87,8 +87,17 @@ impl PresupuestoService {
             .ok_or(AppError::PresupuestoNotFound)
     }
 
-    pub fn get_page(&self, limit: i64, offset: i64) -> Result<Page<PresupuestoWithDetalle>, AppError> {
-        self.repository.find_page(limit, offset)
+    pub fn get_page(
+        &self,
+        filter: &PresupuestoFilter,
+        limit: i64,
+        offset: i64,
+    ) -> Result<Page<PresupuestoWithDetalle>, AppError> {
+        self.repository.find_page(filter, limit, offset)
+    }
+
+    pub fn cambiar_estado(&self, id: i64, estado: PresupuestoEstado) -> Result<(), AppError> {
+        self.repository.update_estado(id, estado)
     }
 }
 
@@ -250,5 +259,69 @@ mod tests {
         );
         let err = service.get_by_id(99).unwrap_err();
         assert!(matches!(err, AppError::PresupuestoNotFound));
+    }
+
+    #[test]
+    fn get_page_delegates_filter_and_pagination() {
+        let mut presupuesto_repo = MockPresupuestoRepository::new();
+        presupuesto_repo
+            .expect_find_page()
+            .with(eq(PresupuestoFilter::default()), eq(25), eq(0))
+            .return_once(|_, _, _| {
+                Ok(crate::domain::repositories::Page {
+                    items: vec![presupuesto_result(1, 0.0, None)],
+                    total: 1,
+                    limit: 25,
+                    offset: 0,
+                })
+            });
+
+        let cliente_repo = MockClienteRepository::new();
+        let service = PresupuestoService::with_repositories(
+            Arc::new(presupuesto_repo),
+            Arc::new(cliente_repo),
+        );
+        let page = service
+            .get_page(&PresupuestoFilter::default(), 25, 0)
+            .unwrap();
+        assert_eq!(page.total, 1);
+        assert_eq!(page.items.len(), 1);
+    }
+
+    #[test]
+    fn cambiar_estado_delegates_to_repository() {
+        let mut presupuesto_repo = MockPresupuestoRepository::new();
+        presupuesto_repo
+            .expect_update_estado()
+            .with(eq(7), eq(PresupuestoEstado::Anulado))
+            .return_once(|_, _| Ok(()));
+
+        let cliente_repo = MockClienteRepository::new();
+        let service = PresupuestoService::with_repositories(
+            Arc::new(presupuesto_repo),
+            Arc::new(cliente_repo),
+        );
+        service
+            .cambiar_estado(7, PresupuestoEstado::Anulado)
+            .unwrap();
+    }
+
+    #[test]
+    fn cambiar_estado_propagates_repository_error() {
+        let mut presupuesto_repo = MockPresupuestoRepository::new();
+        presupuesto_repo
+            .expect_update_estado()
+            .with(eq(9), eq(PresupuestoEstado::Anulado))
+            .return_once(|_, _| Err(AppError::PresupuestoEstadoInvalido));
+
+        let cliente_repo = MockClienteRepository::new();
+        let service = PresupuestoService::with_repositories(
+            Arc::new(presupuesto_repo),
+            Arc::new(cliente_repo),
+        );
+        let err = service
+            .cambiar_estado(9, PresupuestoEstado::Anulado)
+            .unwrap_err();
+        assert!(matches!(err, AppError::PresupuestoEstadoInvalido));
     }
 }

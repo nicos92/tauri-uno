@@ -1,6 +1,8 @@
 import { invoke } from "@tauri-apps/api/core";
 import type {
+  CambiarEstadoPresupuestoRequest,
   CreatePresupuestoRequest,
+  PresupuestoEstado,
   PresupuestoPage,
   PresupuestoWithDetalle,
 } from "../../domain/entities";
@@ -34,10 +36,32 @@ export class PresupuestoApiRepository {
   async getAllPresupuestos(filters: {
     limit: number;
     offset: number;
+    estado?: PresupuestoEstado;
+    fecha_desde?: string;
+    fecha_hasta?: string;
+    query?: string;
   }): Promise<PresupuestoPage> {
     return await invoke<PresupuestoPage>("get_all_presupuestos", {
       userId: this.getCurrentUserId(),
-      request: { limit: filters.limit, offset: filters.offset },
+      request: {
+        limit: filters.limit,
+        offset: filters.offset,
+        estado: filters.estado,
+        fecha_desde: filters.fecha_desde,
+        fecha_hasta: filters.fecha_hasta,
+        query: filters.query,
+      },
+    });
+  }
+
+  async cambiarEstadoPresupuesto(
+    id: number,
+    estado: PresupuestoEstado,
+  ): Promise<void> {
+    const request: CambiarEstadoPresupuestoRequest = { id, estado };
+    await invoke<void>("cambiar_estado_presupuesto", {
+      userId: this.getCurrentUserId(),
+      request,
     });
   }
 }

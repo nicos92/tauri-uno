@@ -46,7 +46,7 @@ src/
 │   └── api/        # UserApiRepository, ArticuloApiRepository, CategoriaApiRepository, ProveedorApiRepository, StockApiRepository, SubCategoriaApiRepository, ClienteApiRepository, VentaApiRepository, PresupuestoApiRepository
 └── presentation/   # Capa UI
     ├── layouts/    # MainLayout con sidebar
-    ├── pages/      # Login, Home, Users, Proveedores, Categorias, SubCategorias, Articulos, Stock, Permissions, Settings, Ventas, NuevaVenta, Clientes, Cierres, Dolar, Auditoria
+    ├── pages/      # Login, Home, Users, Proveedores, Categorias, SubCategorias, Articulos, Stock, Permissions, Settings, Ventas, NuevaVenta, Presupuestos, Clientes, Cierres, Dolar, Auditoria
     ├── stores/     # Pinia stores (auth, users, permissions, proveedores, categorias, subCategorias, articulos, stock, theme, clientes, ventas, presupuestos, dolar, cierres)
     └── router/     # Vue Router config
 ```
@@ -325,7 +325,7 @@ const result = await invoke<UserResponse>("create_user", {
 - `fecha`: TEXT (ISO 8601)
 - `total`: REAL
 - `descuento`: REAL (0..=100)
-- `estado`: TEXT CHECK (`pendiente` | `aprobado` | `vencido` | `convertido`), default `pendiente`
+- `estado`: TEXT CHECK (`pendiente` | `aprobado` | `vencido` | `convertido` | `anulado`), default `pendiente`
 - `fecha_vencimiento`: TEXT (opcional, input de fecha en frontend; vacío → NULL)
 - `observacion`: TEXT (opcional)
 - `cliente_id`: INTEGER FK → clientes(id) (opcional/NULLable)
@@ -344,6 +344,9 @@ Notas:
 - `cliente_id` y `fecha_vencimiento` son opcionales (`NULL`); a diferencia de `ventas`, que exige cliente.
 - `precio_unitario`: si el carrito trae precio, se usa ese; si no, se calcula `costo * (1 + ganancia/100)` leyendo la tabla `stock`.
 - Índices: `idx_detalle_presupuestos_id_presupuesto`, `idx_presupuestos_estado`.
+- `estado` incluye `'anulado'` (soft-delete). El CHECK con `anulado` se aplica en bases existentes vía la migración idempotente `migrate_presupuestos_estado()` (en `infrastructure/database/mod.rs`, ejecutada al final de `apply_schema`): reconstruye la tabla conservando `detalle_presupuestos`; es no-op si el SQL ya contiene `anulado`.
+- Estados terminales: `convertido` y `anulado` son inmutables; `update_estado` los rechaza con `AppError::PresupuestoEstadoInvalido`.
+- `get_all_presupuestos` acepta filtros server-side (`estado`, `fecha_desde`, `fecha_hasta`, `query` por id/cliente/usuario/artículo) vía `PresupuestoFilter`. La conversión a venta es frontend: carga los ítems en el carrito de Nueva Venta (`?presupuesto_id=N`) y tras una venta exitosa marca el presupuesto como `convertido`.
 
 ### Cotizaciones del dólar (historial circular)
 
@@ -405,8 +408,9 @@ Reglas:
 | `delete_stock` | Eliminar stock |
 | `get_precio_venta` | Calcular precio de venta |
 | `crear_presupuesto` | Crear presupuesto (no decrementa stock; estado `pendiente`; `fecha_vencimiento`/`cliente_id` opcionales) |
-| `get_all_presupuestos` | Listar presupuestos paginados con detalle |
+| `get_all_presupuestos` | Listar presupuestos paginados con detalle (filtros `estado`, `fecha_desde`, `fecha_hasta`, `query`) |
 | `get_presupuesto_by_id` | Obtener presupuesto con detalle por id |
+| `cambiar_estado_presupuesto` | Cambiar estado del presupuesto (permiso `generar_presupuesto`; rechaza estados terminales `convertido`/`anulado`) |
 | `get_dollar_quotes` | Obtener historial de cotizaciones del dólar (máx 4, más reciente primero) |
 | `fetch_dollar_rates_manual` | Forzar actualización manual contra la API (guarda una fila nueva con rotación) |
 | `delete_dollar_quote` | Eliminar una cotización por `id` del historial |

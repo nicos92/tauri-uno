@@ -1,9 +1,10 @@
 use rusqlite::params;
 
 use crate::domain::entities::{
-    Presupuesto, PresupuestoDetalle, PresupuestoDetalleConArticulo, PresupuestoWithDetalle,
+    Presupuesto, PresupuestoDetalle, PresupuestoDetalleConArticulo, PresupuestoEstado,
+    PresupuestoWithDetalle,
 };
-use crate::domain::repositories::{Page, PresupuestoRepository};
+use crate::domain::repositories::{Page, PresupuestoFilter, PresupuestoRepository};
 use crate::infrastructure::database::DB;
 use crate::infrastructure::error::AppError;
 
@@ -119,26 +120,50 @@ impl PresupuestoRepository for SqlitePresupuestoRepository {
         Ok(presupuesto)
     }
 
-    fn find_page(&self, limit: i64, offset: i64) -> Result<Page<PresupuestoWithDetalle>, AppError> {
+    fn find_page(
+        &self,
+        filter: &PresupuestoFilter,
+        limit: i64,
+        offset: i64,
+    ) -> Result<Page<PresupuestoWithDetalle>, AppError> {
         let conn = DB.lock().map_err(|e| AppError::Internal(e.to_string()))?;
 
         let limit = limit.max(1);
         let offset = offset.max(0);
 
-        let total: i64 = conn.query_row("SELECT COUNT(*) FROM presupuestos", [], |row| {
-            row.get(0)
-        })?;
+        let (where_clause, mut params) = build_filter_where(filter);
 
-        let mut stmt = conn.prepare(
+        let count_sql = format!(
+            "SELECT COUNT(*) FROM presupuestos p
+             LEFT JOIN clientes c ON c.id = p.cliente_id
+             LEFT JOIN users u ON u.id = p.user_id
+             {}",
+            where_clause
+        );
+        let count_params: Vec<&dyn rusqlite::ToSql> =
+            params.iter().map(|p| p.as_ref()).collect();
+        let total: i64 =
+            conn.query_row(&count_sql, rusqlite::params_from_iter(count_params), |row| {
+                row.get(0)
+            })?;
+
+        let sql = format!(
             "SELECT p.id, p.user_id, COALESCE(u.username, ''), p.fecha, p.total, p.descuento, p.estado, p.fecha_vencimiento, p.observacion, p.created_at, p.cliente_id, COALESCE(c.nombre, ''), COALESCE(c.apellido, '')
              FROM presupuestos p
              LEFT JOIN users u ON u.id = p.user_id
              LEFT JOIN clientes c ON c.id = p.cliente_id
+             {}
              ORDER BY p.id DESC
-             LIMIT ?1 OFFSET ?2",
-        )?;
+             LIMIT ? OFFSET ?",
+            where_clause
+        );
 
-        let mut rows = stmt.query(params![limit, offset])?;
+        params.push(Box::new(limit));
+        params.push(Box::new(offset));
+        let list_params: Vec<&dyn rusqlite::ToSql> = params.iter().map(|p| p.as_ref()).collect();
+
+        let mut stmt = conn.prepare(&sql)?;
+        let mut rows = stmt.query(rusqlite::params_from_iter(list_params))?;
         let mut presupuestos = Vec::new();
         let mut ids: Vec<i64> = Vec::new();
 
@@ -166,6 +191,84 @@ impl PresupuestoRepository for SqlitePresupuestoRepository {
             offset,
         })
     }
+
+    fn update_estado(&self, id: i64, estado: PresupuestoEstado) -> Result<(), AppError> {
+        let conn = DB.lock().map_err(|e| AppError::Internal(e.to_string()))?;
+
+        let current: String = conn
+            .query_row(
+                "SELECT estado FROM presupuestos WHERE id = ?1",
+                params![id],
+                |row| row.get(0),
+            )
+            .map_err(|e| match e {
+                rusqlite::Error::QueryReturnedNoRows => AppError::PresupuestoNotFound,
+                other => other.into(),
+            })?;
+
+        if current == "convertido" || current == "anulado" {
+            return Err(AppError::PresupuestoEstadoInvalido);
+        }
+
+        conn.execute(
+            "UPDATE presupuestos SET estado = ?1 WHERE id = ?2",
+            params![estado.as_str(), id],
+        )?;
+        Ok(())
+    }
+}
+
+fn build_filter_where(filter: &PresupuestoFilter) -> (String, Vec<Box<dyn rusqlite::ToSql>>) {
+    let mut conditions: Vec<String> = Vec::new();
+    let mut params: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
+
+    if let Some(estado) = filter.estado {
+        conditions.push("p.estado = ?".to_string());
+        params.push(Box::new(estado.as_str().to_string()));
+    }
+
+    if let Some(fecha_desde) = &filter.fecha_desde {
+        if !fecha_desde.is_empty() {
+            conditions.push("p.fecha >= ?".to_string());
+            params.push(Box::new(fecha_desde.clone()));
+        }
+    }
+
+    if let Some(fecha_hasta) = &filter.fecha_hasta {
+        if !fecha_hasta.is_empty() {
+            conditions.push("p.fecha <= ?".to_string());
+            params.push(Box::new(fecha_hasta.clone()));
+        }
+    }
+
+    if let Some(query) = &filter.query {
+        if !query.trim().is_empty() {
+            let like = format!("%{}%", query.trim());
+            conditions.push(
+                "(CAST(p.id AS TEXT) LIKE ?
+                 OR c.nombre LIKE ?
+                 OR c.apellido LIKE ?
+                 OR u.username LIKE ?
+                 OR EXISTS (
+                     SELECT 1 FROM detalle_presupuestos d
+                     INNER JOIN articulos a ON a.id = d.id_articulo
+                     WHERE d.id_presupuesto = p.id
+                       AND (a.articulo LIKE ? OR a.cod_articulo LIKE ?)
+                 ))".to_string(),
+            );
+            for _ in 0..6 {
+                params.push(Box::new(like.clone()));
+            }
+        }
+    }
+
+    let where_clause = if conditions.is_empty() {
+        String::new()
+    } else {
+        format!(" WHERE {}", conditions.join(" AND "))
+    };
+
+    (where_clause, params)
 }
 
 impl SqlitePresupuestoRepository {
@@ -467,7 +570,7 @@ mod tests {
         let p2 = presupuesto_con_detalle();
 
         let page = SqlitePresupuestoRepository::new()
-            .find_page(50, 0)
+            .find_page(&PresupuestoFilter::default(), 50, 0)
             .unwrap();
         assert_eq!(page.total, 2);
         assert_eq!(page.items.len(), 2);
@@ -476,5 +579,153 @@ mod tests {
         for p in &page.items {
             assert_eq!(p.items.len(), 1);
         }
+    }
+
+    #[test]
+    fn find_page_filters_by_estado() {
+        let _guard = fresh_db();
+        presupuesto_con_detalle();
+        let p2 = presupuesto_con_detalle();
+        SqlitePresupuestoRepository::new()
+            .update_estado(p2.id, PresupuestoEstado::Aprobado)
+            .unwrap();
+
+        let filter = PresupuestoFilter {
+            estado: Some(PresupuestoEstado::Pendiente),
+            ..PresupuestoFilter::default()
+        };
+        let page = SqlitePresupuestoRepository::new()
+            .find_page(&filter, 50, 0)
+            .unwrap();
+        assert_eq!(page.total, 1);
+        assert!(page.items.iter().all(|p| p.estado == "pendiente"));
+
+        let filter = PresupuestoFilter {
+            estado: Some(PresupuestoEstado::Aprobado),
+            ..PresupuestoFilter::default()
+        };
+        let page = SqlitePresupuestoRepository::new()
+            .find_page(&filter, 50, 0)
+            .unwrap();
+        assert_eq!(page.total, 1);
+        assert!(page.items.iter().all(|p| p.estado == "aprobado"));
+    }
+
+    #[test]
+    fn find_page_filters_by_date_range() {
+        let _guard = fresh_db();
+        let p1 = presupuesto_con_detalle();
+        let p2 = presupuesto_con_detalle();
+        {
+            let conn = DB.lock().unwrap();
+            conn.execute(
+                "UPDATE presupuestos SET fecha = '2026-01-01T00:00:00Z' WHERE id = ?1",
+                params![p1.id],
+            )
+            .unwrap();
+            conn.execute(
+                "UPDATE presupuestos SET fecha = '2026-03-15T00:00:00Z' WHERE id = ?1",
+                params![p2.id],
+            )
+            .unwrap();
+        }
+
+        let filter = PresupuestoFilter {
+            fecha_desde: Some("2026-02-01T00:00:00Z".to_string()),
+            fecha_hasta: Some("2026-12-31T00:00:00Z".to_string()),
+            ..PresupuestoFilter::default()
+        };
+        let page = SqlitePresupuestoRepository::new()
+            .find_page(&filter, 50, 0)
+            .unwrap();
+        assert_eq!(page.total, 1);
+        assert_eq!(page.items[0].id, p2.id);
+    }
+
+    #[test]
+    fn find_page_filters_by_query_on_articulo() {
+        let _guard = fresh_db();
+        let (id_articulo, _, _, _) = first_articulo_with_stock();
+        let articulo_nombre: String = {
+            let conn = DB.lock().unwrap();
+            conn.query_row(
+                "SELECT articulo FROM articulos WHERE id = ?1",
+                params![id_articulo],
+                |row| row.get(0),
+            )
+            .unwrap()
+        };
+
+        let presupuesto = Presupuesto::new(
+            admin_user_id(),
+            "2026-01-01T00:00:00Z".to_string(),
+            0.0,
+            None,
+            None,
+            None,
+        );
+        let detalle = PresupuestoDetalle::new(id_articulo, 1.0, 0.0, 100.0);
+        SqlitePresupuestoRepository::new()
+            .create(&presupuesto, &[detalle])
+            .unwrap();
+
+        let filter = PresupuestoFilter {
+            query: Some(articulo_nombre),
+            ..PresupuestoFilter::default()
+        };
+        let page = SqlitePresupuestoRepository::new()
+            .find_page(&filter, 50, 0)
+            .unwrap();
+        assert_eq!(page.total, 1);
+    }
+
+    #[test]
+    fn update_estado_allows_from_non_terminal_states() {
+        let _guard = fresh_db();
+        let p = presupuesto_con_detalle();
+        let repo = SqlitePresupuestoRepository::new();
+
+        repo.update_estado(p.id, PresupuestoEstado::Aprobado).unwrap();
+        repo.update_estado(p.id, PresupuestoEstado::Anulado).unwrap();
+
+        let estado: String = DB
+            .lock()
+            .unwrap()
+            .query_row(
+                "SELECT estado FROM presupuestos WHERE id = ?1",
+                params![p.id],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(estado, "anulado");
+    }
+
+    #[test]
+    fn update_estado_rejects_terminal_states() {
+        let _guard = fresh_db();
+        let p = presupuesto_con_detalle();
+        let repo = SqlitePresupuestoRepository::new();
+
+        repo.update_estado(p.id, PresupuestoEstado::Convertido).unwrap();
+        let err = repo
+            .update_estado(p.id, PresupuestoEstado::Anulado)
+            .unwrap_err();
+        assert!(matches!(err, AppError::PresupuestoEstadoInvalido));
+
+        let p2 = presupuesto_con_detalle();
+        repo.update_estado(p2.id, PresupuestoEstado::Anulado).unwrap();
+        let err = repo
+            .update_estado(p2.id, PresupuestoEstado::Pendiente)
+            .unwrap_err();
+        assert!(matches!(err, AppError::PresupuestoEstadoInvalido));
+    }
+
+    #[test]
+    fn update_estado_rejects_missing_presupuesto() {
+        let _guard = fresh_db();
+        let err = SqlitePresupuestoRepository::new()
+            .update_estado(999999, PresupuestoEstado::Anulado)
+            .unwrap_err();
+        assert!(matches!(err, AppError::PresupuestoNotFound));
     }
 }

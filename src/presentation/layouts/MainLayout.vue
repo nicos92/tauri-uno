@@ -67,6 +67,12 @@ const menuItems = computed(() => {
             permission: "ver_tipos_venta",
         },
         {
+            name: "presupuestos",
+            label: "Presupuestos",
+            icon: "card",
+            permission: "generar_presupuesto",
+        },
+        {
             name: "permissions",
             label: "Permisos",
             icon: "lock",

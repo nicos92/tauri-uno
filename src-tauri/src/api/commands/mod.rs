@@ -42,7 +42,8 @@ pub use dollar_commands::{
 };
 pub use home_commands::{get_home_stats, HomeStatsAppState};
 pub use presupuesto_commands::{
-    crear_presupuesto, get_all_presupuestos, get_presupuesto_by_id, PresupuestoAppState,
+    cambiar_estado_presupuesto, crear_presupuesto, get_all_presupuestos, get_presupuesto_by_id,
+    PresupuestoAppState,
 };
 pub use proveedor_commands::{
     create_proveedor, delete_proveedor, get_all_proveedores, get_proveedor_by_id, update_proveedor,

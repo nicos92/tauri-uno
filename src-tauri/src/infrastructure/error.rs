@@ -108,6 +108,9 @@ pub enum AppError {
     #[error("Presupuesto not found")]
     PresupuestoNotFound,
 
+    #[error("Presupuesto estado inválido")]
+    PresupuestoEstadoInvalido,
+
     #[error("Insufficient stock")]
     InsufficientStock,
 
@@ -221,6 +224,7 @@ impl AppError {
             AppError::VentaNotFound => "venta_not_found",
             AppError::VentaAlreadyAnulada => "venta_already_anulada",
             AppError::PresupuestoNotFound => "presupuesto_not_found",
+            AppError::PresupuestoEstadoInvalido => "presupuesto_estado_invalido",
             AppError::InsufficientStock => "insufficient_stock",
             AppError::ArticuloWithoutStock => "articulo_without_stock",
             AppError::DescuentoInvalido => "descuento_invalido",
@@ -319,6 +323,10 @@ impl AppError {
             AppError::VentaNotFound => "La venta no existe.".to_string(),
             AppError::VentaAlreadyAnulada => "La venta ya fue anulada.".to_string(),
             AppError::PresupuestoNotFound => "El presupuesto no existe.".to_string(),
+            AppError::PresupuestoEstadoInvalido => {
+                "El presupuesto no está en un estado que permita esa operación."
+                    .to_string()
+            }
             AppError::InsufficientStock => {
                 "Stock insuficiente para uno de los artículos.".to_string()
             }
@@ -416,6 +424,10 @@ mod tests {
             AppError::DollarQuoteNotFound.code(),
             "dollar_quote_not_found"
         );
+        assert_eq!(
+            AppError::PresupuestoEstadoInvalido.code(),
+            "presupuesto_estado_invalido"
+        );
         assert_eq!(AppError::Internal("x".to_string()).code(), "internal_error");
     }
 
@@ -425,6 +437,10 @@ mod tests {
         assert_eq!(
             AppError::DescuentoInvalido.user_message(),
             "El descuento debe estar entre 0 y 100."
+        );
+        assert_eq!(
+            AppError::PresupuestoEstadoInvalido.user_message(),
+            "El presupuesto no está en un estado que permita esa operación."
         );
         assert!(AppError::Database("boom".to_string())
             .user_message()

@@ -7,6 +7,7 @@ pub enum PresupuestoEstado {
     Aprobado,
     Vencido,
     Convertido,
+    Anulado,
 }
 
 impl PresupuestoEstado {
@@ -16,6 +17,7 @@ impl PresupuestoEstado {
             PresupuestoEstado::Aprobado => "aprobado",
             PresupuestoEstado::Vencido => "vencido",
             PresupuestoEstado::Convertido => "convertido",
+            PresupuestoEstado::Anulado => "anulado",
         }
     }
 }

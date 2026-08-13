@@ -4,9 +4,10 @@ use tauri::State;
 use crate::api::commands::permissions::check_permission;
 use crate::application::services::{log_audit, PresupuestoService};
 use crate::domain::entities::{
-    AuditAction, AuditScreen, PermissionCode, PresupuestoDetalle, PresupuestoWithDetalle,
+    AuditAction, AuditScreen, PermissionCode, PresupuestoDetalle, PresupuestoEstado,
+    PresupuestoWithDetalle,
 };
-use crate::domain::repositories::Page;
+use crate::domain::repositories::{Page, PresupuestoFilter};
 use crate::infrastructure::error::AppError;
 
 pub struct PresupuestoAppState {
@@ -47,6 +48,16 @@ pub struct CreatePresupuestoRequest {
 pub struct GetPresupuestosRequest {
     pub limit: Option<i64>,
     pub offset: Option<i64>,
+    pub estado: Option<PresupuestoEstado>,
+    pub fecha_desde: Option<String>,
+    pub fecha_hasta: Option<String>,
+    pub query: Option<String>,
+}
+
+#[derive(serde::Deserialize)]
+pub struct CambiarEstadoPresupuestoRequest {
+    pub id: i64,
+    pub estado: PresupuestoEstado,
 }
 
 #[tauri::command(async)]
@@ -104,7 +115,38 @@ pub fn get_all_presupuestos(
     check_permission(user_id, PermissionCode::GenerarPresupuesto)?;
     let limit = request.as_ref().and_then(|r| r.limit).unwrap_or(50);
     let offset = request.as_ref().and_then(|r| r.offset).unwrap_or(0);
-    service.get_page(limit, offset)
+    let filter = PresupuestoFilter {
+        estado: request.as_ref().and_then(|r| r.estado),
+        fecha_desde: request.as_ref().and_then(|r| r.fecha_desde.clone()),
+        fecha_hasta: request.as_ref().and_then(|r| r.fecha_hasta.clone()),
+        query: request.as_ref().and_then(|r| r.query.clone()),
+    };
+    service.get_page(&filter, limit, offset)
+}
+
+#[tauri::command(async)]
+pub fn cambiar_estado_presupuesto(
+    user_id: i64,
+    request: CambiarEstadoPresupuestoRequest,
+    state: State<PresupuestoAppState>,
+) -> Result<(), AppError> {
+    let service = state
+        .presupuesto_service
+        .lock()
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+    check_permission(user_id, PermissionCode::GenerarPresupuesto)?;
+    service.cambiar_estado(request.id, request.estado)?;
+    log_audit(
+        user_id,
+        AuditScreen::Presupuestos,
+        AuditAction::Update,
+        Some(format!(
+            "Presupuesto (id {}) -> estado {}",
+            request.id,
+            request.estado.as_str()
+        )),
+    )?;
+    Ok(())
 }
 
 #[tauri::command(async)]

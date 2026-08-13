@@ -300,7 +300,8 @@ export type PresupuestoEstado =
   | "pendiente"
   | "aprobado"
   | "vencido"
-  | "convertido";
+  | "convertido"
+  | "anulado";
 
 export interface Presupuesto {
   id: number;
@@ -363,6 +364,27 @@ export interface PresupuestoPage {
   total: number;
   limit: number;
   offset: number;
+}
+
+export interface PresupuestoFilter {
+  estado?: PresupuestoEstado;
+  fecha_desde?: string;
+  fecha_hasta?: string;
+  query?: string;
+}
+
+export interface GetPresupuestosRequest {
+  limit: number;
+  offset: number;
+  estado?: PresupuestoEstado;
+  fecha_desde?: string;
+  fecha_hasta?: string;
+  query?: string;
+}
+
+export interface CambiarEstadoPresupuestoRequest {
+  id: number;
+  estado: PresupuestoEstado;
 }
 
 export interface Cierre {

@@ -274,7 +274,7 @@ fn apply_schema(conn: &Connection) -> Result<(), rusqlite::Error> {
             total REAL NOT NULL,
             descuento REAL NOT NULL DEFAULT 0,
             estado TEXT NOT NULL DEFAULT 'pendiente'
-                CHECK (estado IN ('pendiente','aprobado','vencido','convertido')),
+                CHECK (estado IN ('pendiente','aprobado','vencido','convertido','anulado')),
             fecha_vencimiento TEXT,
             observacion TEXT,
             cliente_id INTEGER REFERENCES clientes(id),
@@ -374,6 +374,59 @@ fn apply_schema(conn: &Connection) -> Result<(), rusqlite::Error> {
     seed_demo_data(conn)?;
 
     purge_old_audit_logs(conn)?;
+
+    migrate_presupuestos_estado(conn)?;
+
+    Ok(())
+}
+
+fn migrate_presupuestos_estado(conn: &Connection) -> Result<(), rusqlite::Error> {
+    let table_sql: Option<String> = conn.query_row(
+        "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'presupuestos'",
+        [],
+        |row| row.get(0),
+    )?;
+
+    let table_sql = match table_sql {
+        Some(sql) if sql.contains("anulado") => return Ok(()),
+        Some(sql) => sql,
+        None => return Ok(()),
+    };
+
+    if !table_sql.to_lowercase().contains("check") {
+        return Ok(());
+    }
+
+    conn.execute_batch(
+        "PRAGMA foreign_keys = OFF;
+         DROP TABLE IF EXISTS presupuestos_new;
+
+         CREATE TABLE presupuestos_new (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            fecha TEXT NOT NULL,
+            total REAL NOT NULL,
+            descuento REAL NOT NULL DEFAULT 0,
+            estado TEXT NOT NULL DEFAULT 'pendiente'
+                CHECK (estado IN ('pendiente','aprobado','vencido','convertido','anulado')),
+            fecha_vencimiento TEXT,
+            observacion TEXT,
+            cliente_id INTEGER REFERENCES clientes(id),
+            created_at TEXT NOT NULL,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+         );
+
+         INSERT INTO presupuestos_new (id, user_id, fecha, total, descuento, estado, fecha_vencimiento, observacion, cliente_id, created_at)
+            SELECT id, user_id, fecha, total, descuento, estado, fecha_vencimiento, observacion, cliente_id, created_at FROM presupuestos;
+
+         DROP TABLE presupuestos;
+         ALTER TABLE presupuestos_new RENAME TO presupuestos;
+
+         CREATE INDEX IF NOT EXISTS idx_detalle_presupuestos_id_presupuesto ON detalle_presupuestos(id_presupuesto);
+         CREATE INDEX IF NOT EXISTS idx_presupuestos_estado ON presupuestos(estado);
+
+         PRAGMA foreign_keys = ON;",
+    )?;
 
     Ok(())
 }
@@ -987,4 +1040,122 @@ fn seed_demo_data(conn: &Connection) -> Result<(), rusqlite::Error> {
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn migrate_presupuestos_estado_adds_anulado_and_preserves_data() {
+        let _guard = crate::infrastructure::database::TEST_LOCK.lock().unwrap();
+        crate::infrastructure::database::reset_test_db().unwrap();
+        let conn = DB.lock().unwrap();
+
+        conn.execute_batch(
+            "PRAGMA foreign_keys = OFF;
+             DROP TABLE IF EXISTS detalle_presupuestos;
+             DROP TABLE IF EXISTS presupuestos;
+
+             CREATE TABLE presupuestos (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                fecha TEXT NOT NULL,
+                total REAL NOT NULL,
+                descuento REAL NOT NULL DEFAULT 0,
+                estado TEXT NOT NULL DEFAULT 'pendiente'
+                    CHECK (estado IN ('pendiente','aprobado','vencido','convertido')),
+                fecha_vencimiento TEXT,
+                observacion TEXT,
+                cliente_id INTEGER REFERENCES clientes(id),
+                created_at TEXT NOT NULL,
+                FOREIGN KEY (user_id) REFERENCES users(id)
+             );
+
+             CREATE TABLE detalle_presupuestos (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id_presupuesto INTEGER NOT NULL,
+                id_articulo INTEGER NOT NULL,
+                cantidad REAL NOT NULL,
+                costo_unitario REAL NOT NULL,
+                precio_unitario REAL NOT NULL,
+                subtotal REAL NOT NULL,
+                FOREIGN KEY (id_presupuesto) REFERENCES presupuestos(id) ON DELETE CASCADE,
+                FOREIGN KEY (id_articulo) REFERENCES articulos(id)
+             );
+
+             PRAGMA foreign_keys = ON;",
+        )
+        .unwrap();
+
+        conn.execute(
+            "INSERT INTO presupuestos (user_id, fecha, total, descuento, estado, created_at)
+             VALUES (1, '2026-01-01T00:00:00Z', 100.0, 0.0, 'pendiente', '2026-01-01T00:00:00Z')",
+            [],
+        )
+        .unwrap();
+        let presupuesto_id = conn.last_insert_rowid();
+        conn.execute(
+            "INSERT INTO detalle_presupuestos (id_presupuesto, id_articulo, cantidad, costo_unitario, precio_unitario, subtotal)
+             VALUES (?1, (SELECT id FROM articulos LIMIT 1), 1, 0, 100, 100)",
+            rusqlite::params![presupuesto_id],
+        )
+        .unwrap();
+
+        migrate_presupuestos_estado(&conn).unwrap();
+
+        let table_sql: String = conn
+            .query_row(
+                "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'presupuestos'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert!(table_sql.contains("anulado"));
+
+        let estado: String = conn
+            .query_row(
+                "SELECT estado FROM presupuestos WHERE id = ?1",
+                rusqlite::params![presupuesto_id],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(estado, "pendiente");
+
+        let detalle_count: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM detalle_presupuestos WHERE id_presupuesto = ?1",
+                rusqlite::params![presupuesto_id],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(detalle_count, 1);
+
+        let check_count: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM presupuestos p
+                 INNER JOIN detalle_presupuestos d ON d.id_presupuesto = p.id
+                 WHERE p.id = ?1",
+                rusqlite::params![presupuesto_id],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(check_count, 1);
+    }
+
+    #[test]
+    fn migrate_presupuestos_estado_is_idempotent() {
+        let _guard = crate::infrastructure::database::TEST_LOCK.lock().unwrap();
+        crate::infrastructure::database::reset_test_db().unwrap();
+        let conn = DB.lock().unwrap();
+
+        let count_before: i64 = conn
+            .query_row("SELECT COUNT(*) FROM presupuestos", [], |row| row.get(0))
+            .unwrap();
+        migrate_presupuestos_estado(&conn).unwrap();
+        let count_after: i64 = conn
+            .query_row("SELECT COUNT(*) FROM presupuestos", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(count_before, count_after);
+    }
 }

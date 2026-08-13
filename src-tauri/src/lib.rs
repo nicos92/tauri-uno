@@ -4,7 +4,8 @@ pub mod domain;
 pub mod infrastructure;
 
 use api::commands::{
-    actualizar_cliente, add_permission_to_user, anular_venta, change_password, crear_cierre,
+    actualizar_cliente, add_permission_to_user, anular_venta, cambiar_estado_presupuesto,
+    change_password, crear_cierre,
     crear_cliente, crear_presupuesto, create_articulo, create_categoria,
     create_permission, create_proveedor, create_stock, create_sub_categoria, create_tipo_venta,
     create_user, create_venta, delete_articulo, delete_categoria, delete_proveedor, delete_stock,
@@ -111,7 +112,8 @@ pub fn run() {
             delete_dollar_quote,
             crear_presupuesto,
             get_all_presupuestos,
-            get_presupuesto_by_id
+            get_presupuesto_by_id,
+            cambiar_estado_presupuesto
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

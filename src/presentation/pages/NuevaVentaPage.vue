@@ -59,6 +59,8 @@ const descuento = ref<number>(0);
 const cart = ref<CartItem[]>([]);
 const tipoVentaId = ref<number | null>(null);
 const fechaVencimiento = ref("");
+const presupuestoOrigen = ref<number | null>(null);
+const precargandoPresupuesto = ref(false);
 
 const clienteSeleccionado = ref<Cliente | null>(null);
 const clienteDefecto = ref<Cliente | null>(null);
@@ -188,8 +190,70 @@ onMounted(async () => {
     clienteDefecto.value = clienteDef;
     clienteSeleccionado.value = clienteDef;
   }
+  const presupuestoId = router.currentRoute.value.query.presupuesto_id;
+  if (presupuestoId) {
+    await cargarPresupuesto(Number(presupuestoId));
+  }
   focusSearch();
 });
+
+function quitarPresupuesto() {
+  presupuestoOrigen.value = null;
+  router.replace({ name: "nueva-venta" });
+}
+
+async function cargarPresupuesto(id: number) {
+  precargandoPresupuesto.value = true;
+  try {
+    const presupuesto = await presupuestosStore.getPresupuestoById(id);
+    if (!presupuesto) {
+      toastError("No se pudo cargar el presupuesto.");
+      return;
+    }
+    if (
+      presupuesto.estado === "convertido" ||
+      presupuesto.estado === "anulado"
+    ) {
+      toastError(
+        "El presupuesto no se puede convertir porque su estado no lo permite.",
+      );
+      router.replace({ name: "nueva-venta" });
+      return;
+    }
+    cart.value = [];
+    descuento.value = presupuesto.descuento || 0;
+    observacion.value = presupuesto.observacion || "";
+    fechaVencimiento.value = presupuesto.fecha_vencimiento || "";
+    if (presupuesto.cliente_id) {
+      const cliente = clientesStore.clientes.find(
+        (c) => c.id === presupuesto.cliente_id,
+      );
+      clienteSeleccionado.value = cliente ?? clienteDefecto.value;
+    } else {
+      clienteSeleccionado.value = clienteDefecto.value;
+    }
+    for (const item of presupuesto.items) {
+      const stock = articulosVendibles.value.find(
+        (s) => s.id_articulo === item.id_articulo,
+      );
+      cart.value.push({
+        id_articulo: item.id_articulo,
+        cod_articulo: item.cod_articulo,
+        articulo: item.articulo,
+        stockDisponible: stock?.stockDisponible ?? 0,
+        cantidad: item.cantidad,
+        precio: item.precio_unitario,
+        subtotal: item.subtotal,
+      });
+    }
+    presupuestoOrigen.value = id;
+    toastSuccess(`Presupuesto N° ${id} cargado.`);
+  } catch {
+    toastError("No se pudo cargar el presupuesto.");
+  } finally {
+    precargandoPresupuesto.value = false;
+  }
+}
 
 function focusSearch() {
   nextTick(() => {
@@ -330,6 +394,24 @@ async function handleCreate() {
   const venta = await ventasStore.createVenta(request);
   if (venta) {
     toastSuccess(`Venta N° ${venta.id} registrada.`);
+    if (presupuestoOrigen.value) {
+      const presupuestoId = presupuestoOrigen.value;
+      const convertido = await presupuestosStore.cambiarEstado(
+        presupuestoId,
+        "convertido",
+      );
+      if (convertido) {
+        toastSuccess(
+          `Presupuesto N° ${presupuestoId} marcado como convertido.`,
+        );
+      } else {
+        toastError(
+          "La venta se registró, pero no se pudo marcar el presupuesto como convertido.",
+        );
+      }
+      presupuestoOrigen.value = null;
+      router.replace({ name: "nueva-venta" });
+    }
     resetForm();
     focusSearch();
   } else {
@@ -389,6 +471,20 @@ function generarPdf() {
 
         <div v-if="ventasStore.diaCerrado" class="dia-cerrado-banner">
             Día cerrado, no se pueden ingresar más ventas.
+        </div>
+
+        <div v-if="presupuestoOrigen" class="presupuesto-banner">
+            <span>
+                Presupuesto N° {{ presupuestoOrigen }} cargado
+                <template v-if="precargandoPresupuesto"> (cargando...)</template>
+            </span>
+            <button
+                type="button"
+                class="btn-secondary"
+                @click="quitarPresupuesto"
+            >
+                Quitar
+            </button>
         </div>
 
         <div class="venta-section header-section">
@@ -791,6 +887,25 @@ function generarPdf() {
     border-radius: 6px;
     margin-bottom: 1rem;
     font-weight: 600;
+}
+
+.presupuesto-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    color: #2D195D;
+    background: rgba(45, 25, 93, 0.08);
+    border: 1px solid rgba(45, 25, 93, 0.3);
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.presupuesto-banner .btn-secondary {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.85rem;
 }
 
 .venta-section {
