@@ -3,8 +3,10 @@ import { ref } from "vue";
 import type { Categoria, CreateCategoriaRequest, UpdateCategoriaRequest } from "../../domain/entities";
 import { toErrorMessage } from "../../infrastructure/api/errorHandler";
 import { categoriaRepository } from "../../infrastructure/di";
+import { CategoriaUseCase } from "../../application/usecases";
 
 export const useCategoriasStore = defineStore("categorias", () => {
+  const categoriaUseCase = new CategoriaUseCase(categoriaRepository);
   const categorias = ref<Categoria[]>([]);
   const loading = ref(false);
   const error = ref<string | null>(null);
@@ -13,7 +15,7 @@ export const useCategoriasStore = defineStore("categorias", () => {
     loading.value = true;
     error.value = null;
     try {
-      categorias.value = await categoriaRepository.getAllCategorias();
+      categorias.value = await categoriaUseCase.getAllCategorias();
     } catch (e) {
       error.value = toErrorMessage(e);
     } finally {
@@ -24,7 +26,7 @@ export const useCategoriasStore = defineStore("categorias", () => {
   async function createCategoria(request: CreateCategoriaRequest): Promise<boolean> {
     error.value = null;
     try {
-      const newCategoria = await categoriaRepository.createCategoria(request);
+      const newCategoria = await categoriaUseCase.createCategoria(request);
       categorias.value.push(newCategoria);
       return true;
     } catch (e) {
@@ -36,7 +38,7 @@ export const useCategoriasStore = defineStore("categorias", () => {
   async function updateCategoria(request: UpdateCategoriaRequest): Promise<boolean> {
     error.value = null;
     try {
-      const updated = await categoriaRepository.updateCategoria(request);
+      const updated = await categoriaUseCase.updateCategoria(request);
       const index = categorias.value.findIndex((c) => c.id === request.id);
       if (index !== -1) {
         categorias.value[index] = updated;
@@ -51,7 +53,7 @@ export const useCategoriasStore = defineStore("categorias", () => {
   async function deleteCategoria(id: number): Promise<boolean> {
     error.value = null;
     try {
-      await categoriaRepository.deleteCategoria(id);
+      await categoriaUseCase.deleteCategoria(id);
       categorias.value = categorias.value.filter((c) => c.id !== id);
       return true;
     } catch (e) {

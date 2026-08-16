@@ -3,8 +3,10 @@ import { ref } from "vue";
 import type { Articulo, CreateArticuloRequest, UpdateArticuloRequest } from "../../domain/entities";
 import { toErrorMessage } from "../../infrastructure/api/errorHandler";
 import { articuloRepository } from "../../infrastructure/di";
+import { ArticuloUseCase } from "../../application/usecases";
 
 export const useArticulosStore = defineStore("articulos", () => {
+  const articuloUseCase = new ArticuloUseCase(articuloRepository);
   const articulos = ref<Articulo[]>([]);
   const loading = ref(false);
   const error = ref<string | null>(null);
@@ -13,7 +15,7 @@ export const useArticulosStore = defineStore("articulos", () => {
     loading.value = true;
     error.value = null;
     try {
-      articulos.value = await articuloRepository.getAllArticulos();
+      articulos.value = await articuloUseCase.getAllArticulos();
     } catch (e) {
       error.value = toErrorMessage(e);
     } finally {
@@ -24,7 +26,7 @@ export const useArticulosStore = defineStore("articulos", () => {
   async function createArticulo(request: CreateArticuloRequest): Promise<boolean> {
     error.value = null;
     try {
-      const newArticulo = await articuloRepository.createArticulo(request);
+      const newArticulo = await articuloUseCase.createArticulo(request);
       articulos.value.push(newArticulo);
       return true;
     } catch (e) {
@@ -36,7 +38,7 @@ export const useArticulosStore = defineStore("articulos", () => {
   async function updateArticulo(request: UpdateArticuloRequest): Promise<boolean> {
     error.value = null;
     try {
-      const updated = await articuloRepository.updateArticulo(request);
+      const updated = await articuloUseCase.updateArticulo(request);
       const index = articulos.value.findIndex((a) => a.id === request.id);
       if (index !== -1) {
         articulos.value[index] = updated;
@@ -51,7 +53,7 @@ export const useArticulosStore = defineStore("articulos", () => {
   async function deleteArticulo(id: number): Promise<boolean> {
     error.value = null;
     try {
-      await articuloRepository.deleteArticulo(id);
+      await articuloUseCase.deleteArticulo(id);
       articulos.value = articulos.value.filter((a) => a.id !== id);
       return true;
     } catch (e) {

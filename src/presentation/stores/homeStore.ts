@@ -3,8 +3,10 @@ import { ref } from "vue";
 import type { HomeStats } from "../../domain/entities";
 import { toErrorMessage } from "../../infrastructure/api/errorHandler";
 import { homeRepository } from "../../infrastructure/di";
+import { HomeUseCase } from "../../application/usecases";
 
 export const useHomeStore = defineStore("home", () => {
+  const homeUseCase = new HomeUseCase(homeRepository);
   const stats = ref<HomeStats | null>(null);
   const loading = ref(false);
   const error = ref<string | null>(null);
@@ -13,7 +15,7 @@ export const useHomeStore = defineStore("home", () => {
     loading.value = true;
     error.value = null;
     try {
-      stats.value = await homeRepository.getHomeStats();
+      stats.value = await homeUseCase.getHomeStats();
     } catch (e) {
       error.value = toErrorMessage(e);
     } finally {

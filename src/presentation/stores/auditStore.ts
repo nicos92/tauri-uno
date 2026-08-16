@@ -3,8 +3,10 @@ import { ref } from "vue";
 import type { AuditLog, AuditLogFilters } from "../../domain/entities";
 import { toErrorMessage } from "../../infrastructure/api/errorHandler";
 import { auditRepository } from "../../infrastructure/di";
+import { AuditUseCase } from "../../application/usecases";
 
 export const useAuditStore = defineStore("audit", () => {
+  const auditUseCase = new AuditUseCase(auditRepository);
   const logs = ref<AuditLog[]>([]);
   const total = ref(0);
   const loading = ref(false);
@@ -14,7 +16,7 @@ export const useAuditStore = defineStore("audit", () => {
     loading.value = true;
     error.value = null;
     try {
-      const page = await auditRepository.getAuditLogs(filters);
+      const page = await auditUseCase.getAuditLogs(filters);
       logs.value = page.items;
       total.value = page.total;
     } catch (e) {

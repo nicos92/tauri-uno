@@ -3,8 +3,10 @@ import { ref } from "vue";
 import type { Stock, CreateStockRequest, UpdateStockRequest } from "../../domain/entities";
 import { toErrorMessage } from "../../infrastructure/api/errorHandler";
 import { stockRepository } from "../../infrastructure/di";
+import { StockUseCase } from "../../application/usecases";
 
 export const useStockStore = defineStore("stock", () => {
+  const stockUseCase = new StockUseCase(stockRepository);
   const stocks = ref<Stock[]>([]);
   const loading = ref(false);
   const error = ref<string | null>(null);
@@ -13,7 +15,7 @@ export const useStockStore = defineStore("stock", () => {
     loading.value = true;
     error.value = null;
     try {
-      stocks.value = await stockRepository.getAllStock();
+      stocks.value = await stockUseCase.getAllStock();
     } catch (e) {
       error.value = toErrorMessage(e);
     } finally {
@@ -23,7 +25,7 @@ export const useStockStore = defineStore("stock", () => {
 
   async function getStockByArticulo(idArticulo: number): Promise<Stock | null> {
     try {
-      return await stockRepository.getStockByArticulo(idArticulo);
+      return await stockUseCase.getStockByArticulo(idArticulo);
     } catch (e) {
       error.value = toErrorMessage(e);
       return null;
@@ -33,7 +35,7 @@ export const useStockStore = defineStore("stock", () => {
   async function createStock(request: CreateStockRequest): Promise<boolean> {
     error.value = null;
     try {
-      const newStock = await stockRepository.createStock(request);
+      const newStock = await stockUseCase.createStock(request);
       stocks.value.push(newStock);
       return true;
     } catch (e) {
@@ -45,7 +47,7 @@ export const useStockStore = defineStore("stock", () => {
   async function updateStock(request: UpdateStockRequest): Promise<boolean> {
     error.value = null;
     try {
-      const updated = await stockRepository.updateStock(request);
+      const updated = await stockUseCase.updateStock(request);
       const index = stocks.value.findIndex((s) => s.id === request.id);
       if (index !== -1) {
         stocks.value[index] = updated;
@@ -60,7 +62,7 @@ export const useStockStore = defineStore("stock", () => {
   async function deleteStock(id: number): Promise<boolean> {
     error.value = null;
     try {
-      await stockRepository.deleteStock(id);
+      await stockUseCase.deleteStock(id);
       stocks.value = stocks.value.filter((s) => s.id !== id);
       return true;
     } catch (e) {
@@ -71,7 +73,7 @@ export const useStockStore = defineStore("stock", () => {
 
   async function getPrecioVenta(id: number): Promise<number | null> {
     try {
-      return await stockRepository.getPrecioVenta(id);
+      return await stockUseCase.getPrecioVenta(id);
     } catch (e) {
       error.value = toErrorMessage(e);
       return null;

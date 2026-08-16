@@ -264,16 +264,15 @@ async function handleCreate() {
     id_tipo_venta: tipoVentaId.value || undefined,
     cliente_id: clienteSeleccionado.value?.id,
   };
-  const venta = await ventasStore.createVenta(request);
+  const venta = await ventasStore.convertirPresupuestoEnVenta(
+    request,
+    presupuestoOrigen.value ?? undefined,
+  );
   if (venta) {
-    toastSuccess(`Venta N° ${venta.id} registrada.`);
+    toastSuccess(`Venta N° ${venta.venta.id} registrada.`);
     if (presupuestoOrigen.value) {
       const presupuestoId = presupuestoOrigen.value;
-      const convertido = await presupuestosStore.cambiarEstado(
-        presupuestoId,
-        "convertido",
-      );
-      if (convertido) {
+      if (venta.presupuestoConvertido) {
         toastSuccess(
           `Presupuesto N° ${presupuestoId} marcado como convertido.`,
         );
@@ -284,7 +283,9 @@ async function handleCreate() {
       }
       presupuestoOrigen.value = null;
       router.replace({ name: "nueva-venta" });
+      await presupuestosStore.fetchPresupuestos();
     }
+    await stockStore.fetchStock();
     resetForm();
     focusSearch();
   } else {

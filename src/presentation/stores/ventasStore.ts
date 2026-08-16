@@ -2,8 +2,9 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 import type { CreateVentaRequest, VentaWithDetalle } from "../../domain/entities";
 import { toErrorMessage } from "../../infrastructure/api/errorHandler";
-import { ventaRepository } from "../../infrastructure/di";
-import { useStockStore } from "./stockStore";
+import { presupuestoRepository, ventaRepository } from "../../infrastructure/di";
+import { ConvertirPresupuestoEnVenta, VentaUseCase } from "../../application/usecases";
+import type { ConvertirPresupuestoEnVentaResult } from "../../application/usecases";
 
 export const useVentasStore = defineStore("ventas", () => {
   const ventas = ref<VentaWithDetalle[]>([]);
@@ -14,9 +15,15 @@ export const useVentasStore = defineStore("ventas", () => {
   const limit = ref(50);
   const offset = ref(0);
 
+  const ventaUseCase = new VentaUseCase(ventaRepository);
+  const convertirPresupuestoEnVenta = new ConvertirPresupuestoEnVenta(
+    ventaRepository,
+    presupuestoRepository,
+  );
+
   async function checkDiaCerrado() {
     try {
-      diaCerrado.value = await ventaRepository.isDiaCerrado();
+      diaCerrado.value = await ventaUseCase.isDiaCerrado();
     } catch {
       diaCerrado.value = false;
     }
@@ -26,7 +33,7 @@ export const useVentasStore = defineStore("ventas", () => {
     loading.value = true;
     error.value = null;
     try {
-      const page = await ventaRepository.getAllVentas({
+      const page = await ventaUseCase.getAllVentas({
         limit: filters?.limit ?? limit.value,
         offset: filters?.offset ?? offset.value,
       });
@@ -43,7 +50,7 @@ export const useVentasStore = defineStore("ventas", () => {
 
   async function getVentaById(id: number): Promise<VentaWithDetalle | null> {
     try {
-      return await ventaRepository.getVentaById(id);
+      return await ventaUseCase.getVentaById(id);
     } catch (e) {
       error.value = toErrorMessage(e);
       return null;
@@ -54,22 +61,25 @@ export const useVentasStore = defineStore("ventas", () => {
     clienteId: number,
   ): Promise<VentaWithDetalle[] | null> {
     try {
-      return await ventaRepository.getVentasPorCliente(clienteId);
+      return await ventaUseCase.getVentasPorCliente(clienteId);
     } catch (e) {
       error.value = toErrorMessage(e);
       return null;
     }
   }
 
-  async function createVenta(
+  async function convertirPresupuestoEnVentaFn(
     request: CreateVentaRequest,
-  ): Promise<VentaWithDetalle | null> {
+    presupuestoId?: number,
+  ): Promise<ConvertirPresupuestoEnVentaResult | null> {
     error.value = null;
     try {
-      const venta = await ventaRepository.createVenta(request);
+      const result = await convertirPresupuestoEnVenta.execute(
+        request,
+        presupuestoId,
+      );
       await fetchVentas({ limit: limit.value, offset: offset.value });
-      await useStockStore().fetchStock();
-      return venta;
+      return result;
     } catch (e) {
       error.value = toErrorMessage(e);
       return null;
@@ -79,9 +89,8 @@ export const useVentasStore = defineStore("ventas", () => {
   async function anularVenta(id: number): Promise<boolean> {
     error.value = null;
     try {
-      await ventaRepository.anularVenta(id);
+      await ventaUseCase.anularVenta(id);
       await fetchVentas({ limit: limit.value, offset: offset.value });
-      await useStockStore().fetchStock();
       return true;
     } catch (e) {
       error.value = toErrorMessage(e);
@@ -100,7 +109,7 @@ export const useVentasStore = defineStore("ventas", () => {
     fetchVentas,
     getVentaById,
     getVentasPorCliente,
-    createVenta,
+    convertirPresupuestoEnVenta: convertirPresupuestoEnVentaFn,
     anularVenta,
     checkDiaCerrado,
   };

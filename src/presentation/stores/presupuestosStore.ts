@@ -7,8 +7,10 @@ import type {
 } from "../../domain/entities";
 import { toErrorMessage } from "../../infrastructure/api/errorHandler";
 import { presupuestoRepository } from "../../infrastructure/di";
+import { PresupuestoUseCase } from "../../application/usecases";
 
 export const usePresupuestosStore = defineStore("presupuestos", () => {
+  const presupuestoUseCase = new PresupuestoUseCase(presupuestoRepository);
   const presupuestos = ref<PresupuestoWithDetalle[]>([]);
   const loading = ref(false);
   const error = ref<string | null>(null);
@@ -22,7 +24,7 @@ export const usePresupuestosStore = defineStore("presupuestos", () => {
     loading.value = true;
     error.value = null;
     try {
-      const presupuesto = await presupuestoRepository.crearPresupuesto(request);
+      const presupuesto = await presupuestoUseCase.crearPresupuesto(request);
       presupuestos.value.unshift(presupuesto);
       return presupuesto;
     } catch (e) {
@@ -44,7 +46,7 @@ export const usePresupuestosStore = defineStore("presupuestos", () => {
     loading.value = true;
     error.value = null;
     try {
-      const page = await presupuestoRepository.getAllPresupuestos({
+      const page = await presupuestoUseCase.getAllPresupuestos({
         limit: filters?.limit ?? limit.value,
         offset: filters?.offset ?? offset.value,
         estado: filters?.estado,
@@ -68,7 +70,7 @@ export const usePresupuestosStore = defineStore("presupuestos", () => {
   ): Promise<PresupuestoWithDetalle | null> {
     error.value = null;
     try {
-      return await presupuestoRepository.getPresupuestoById(id);
+      return await presupuestoUseCase.getPresupuestoById(id);
     } catch (e) {
       error.value = toErrorMessage(e);
       return null;
@@ -81,7 +83,7 @@ export const usePresupuestosStore = defineStore("presupuestos", () => {
   ): Promise<boolean> {
     error.value = null;
     try {
-      await presupuestoRepository.cambiarEstadoPresupuesto(id, estado);
+      await presupuestoUseCase.cambiarEstadoPresupuesto(id, estado);
       await fetchPresupuestos({ limit: limit.value, offset: offset.value });
       return true;
     } catch (e) {

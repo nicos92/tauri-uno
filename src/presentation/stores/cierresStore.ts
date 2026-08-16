@@ -3,8 +3,10 @@ import { ref } from "vue";
 import type { CierreWithTipos } from "../../domain/entities";
 import { toErrorMessage } from "../../infrastructure/api/errorHandler";
 import { cierreRepository } from "../../infrastructure/di";
+import { CierreUseCase } from "../../application/usecases";
 
 export const useCierresStore = defineStore("cierres", () => {
+  const cierreUseCase = new CierreUseCase(cierreRepository);
   const cierres = ref<CierreWithTipos[]>([]);
   const loading = ref(false);
   const error = ref<string | null>(null);
@@ -20,7 +22,7 @@ export const useCierresStore = defineStore("cierres", () => {
         limit.value = filters.limit;
         offset.value = filters.offset;
       }
-      const page = await cierreRepository.getAllCierres({
+      const page = await cierreUseCase.getAllCierres({
         limit: limit.value,
         offset: offset.value,
       });
@@ -36,7 +38,7 @@ export const useCierresStore = defineStore("cierres", () => {
   async function crearCierre(fecha: string): Promise<boolean> {
     error.value = null;
     try {
-      const cierre = await cierreRepository.crearCierre({ fecha });
+      const cierre = await cierreUseCase.crearCierre({ fecha });
       cierres.value.unshift(cierre);
       return true;
     } catch (e) {
@@ -48,7 +50,7 @@ export const useCierresStore = defineStore("cierres", () => {
   async function reabrirCierre(fecha: string): Promise<boolean> {
     error.value = null;
     try {
-      await cierreRepository.reabrirCierre(fecha);
+      await cierreUseCase.reabrirCierre(fecha);
       cierres.value = cierres.value.filter((c) => c.fecha !== fecha);
       return true;
     } catch (e) {

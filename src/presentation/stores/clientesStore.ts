@@ -7,8 +7,10 @@ import type {
 } from "../../domain/entities";
 import { toErrorMessage } from "../../infrastructure/api/errorHandler";
 import { clienteRepository } from "../../infrastructure/di";
+import { ClienteUseCase } from "../../application/usecases";
 
 export const useClientesStore = defineStore("clientes", () => {
+  const clienteUseCase = new ClienteUseCase(clienteRepository);
   const clientes = ref<Cliente[]>([]);
   const loading = ref(false);
   const error = ref<string | null>(null);
@@ -17,7 +19,7 @@ export const useClientesStore = defineStore("clientes", () => {
     loading.value = true;
     error.value = null;
     try {
-      clientes.value = await clienteRepository.getAllClientes();
+      clientes.value = await clienteUseCase.getAllClientes();
     } catch (e) {
       error.value = toErrorMessage(e);
     } finally {
@@ -28,7 +30,7 @@ export const useClientesStore = defineStore("clientes", () => {
   async function getClienteDefecto(): Promise<Cliente | null> {
     error.value = null;
     try {
-      return await clienteRepository.getClienteDefecto();
+      return await clienteUseCase.getClienteDefecto();
     } catch (e) {
       error.value = toErrorMessage(e);
       return null;
@@ -38,7 +40,7 @@ export const useClientesStore = defineStore("clientes", () => {
   async function crearCliente(request: CreateClienteRequest): Promise<Cliente | null> {
     error.value = null;
     try {
-      const nuevoCliente = await clienteRepository.crearCliente(request);
+      const nuevoCliente = await clienteUseCase.crearCliente(request);
       clientes.value.push(nuevoCliente);
       return nuevoCliente;
     } catch (e) {
@@ -52,7 +54,7 @@ export const useClientesStore = defineStore("clientes", () => {
   ): Promise<boolean> {
     error.value = null;
     try {
-      const updated = await clienteRepository.actualizarCliente(request);
+      const updated = await clienteUseCase.actualizarCliente(request);
       const index = clientes.value.findIndex((c) => c.id === request.id);
       if (index !== -1) {
         clientes.value[index] = updated;
@@ -67,7 +69,7 @@ export const useClientesStore = defineStore("clientes", () => {
   async function eliminarCliente(id: number): Promise<boolean> {
     error.value = null;
     try {
-      await clienteRepository.eliminarCliente(id);
+      await clienteUseCase.eliminarCliente(id);
       clientes.value = clientes.value.filter((c) => c.id !== id);
       return true;
     } catch (e) {

@@ -3,8 +3,10 @@ import { computed, ref } from "vue";
 import type { DollarQuote } from "../../domain/entities";
 import { toErrorMessage } from "../../infrastructure/api/errorHandler";
 import { dollarRepository } from "../../infrastructure/di";
+import { DollarUseCase } from "../../application/usecases";
 
 export const useDolarStore = defineStore("dolar", () => {
+  const dollarUseCase = new DollarUseCase(dollarRepository);
   const quotes = ref<DollarQuote[]>([]);
   const loading = ref(false);
   const updating = ref(false);
@@ -17,7 +19,7 @@ export const useDolarStore = defineStore("dolar", () => {
     loading.value = true;
     error.value = null;
     try {
-      quotes.value = await dollarRepository.getQuotes();
+      quotes.value = await dollarUseCase.getQuotes();
       if (quotes.value.length > 0) {
         lastUpdated.value = new Date().toISOString();
       }
@@ -32,7 +34,7 @@ export const useDolarStore = defineStore("dolar", () => {
     updating.value = true;
     error.value = null;
     try {
-      quotes.value = await dollarRepository.fetchManual();
+      quotes.value = await dollarUseCase.fetchManual();
       lastUpdated.value = new Date().toISOString();
       return true;
     } catch (e) {
@@ -47,7 +49,7 @@ export const useDolarStore = defineStore("dolar", () => {
     updating.value = true;
     error.value = null;
     try {
-      quotes.value = await dollarRepository.deleteQuote(id);
+      quotes.value = await dollarUseCase.deleteQuote(id);
       lastUpdated.value = new Date().toISOString();
       return true;
     } catch (e) {

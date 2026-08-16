@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
-import { useVentasStore } from "../stores";
+import { useVentasStore, useStockStore } from "../stores";
 import { usePermissions } from "../composables/usePermissions";
 import { useToasts } from "../composables/useToasts";
 import { useConfirm } from "../composables/useConfirm";
@@ -78,6 +78,7 @@ async function handleAnular(id: number) {
     const success = await ventasStore.anularVenta(id);
     if (success) {
         toastSuccess("Venta anulada y stock restaurado.");
+        await useStockStore().fetchStock();
     } else {
         toastError(ventasStore.error || "No se pudo anular la venta.");
     }

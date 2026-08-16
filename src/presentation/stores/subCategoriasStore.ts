@@ -3,8 +3,10 @@ import { ref } from "vue";
 import type { SubCategoria, CreateSubCategoriaRequest, UpdateSubCategoriaRequest } from "../../domain/entities";
 import { toErrorMessage } from "../../infrastructure/api/errorHandler";
 import { subCategoriaRepository } from "../../infrastructure/di";
+import { SubCategoriaUseCase } from "../../application/usecases";
 
 export const useSubCategoriasStore = defineStore("subCategorias", () => {
+  const subCategoriaUseCase = new SubCategoriaUseCase(subCategoriaRepository);
   const subCategorias = ref<SubCategoria[]>([]);
   const loading = ref(false);
   const error = ref<string | null>(null);
@@ -13,7 +15,7 @@ export const useSubCategoriasStore = defineStore("subCategorias", () => {
     loading.value = true;
     error.value = null;
     try {
-      subCategorias.value = await subCategoriaRepository.getAllSubCategorias();
+      subCategorias.value = await subCategoriaUseCase.getAllSubCategorias();
     } catch (e) {
       error.value = toErrorMessage(e);
     } finally {
@@ -24,7 +26,7 @@ export const useSubCategoriasStore = defineStore("subCategorias", () => {
   async function createSubCategoria(request: CreateSubCategoriaRequest): Promise<boolean> {
     error.value = null;
     try {
-      const newSubCategoria = await subCategoriaRepository.createSubCategoria(request);
+      const newSubCategoria = await subCategoriaUseCase.createSubCategoria(request);
       subCategorias.value.push(newSubCategoria);
       return true;
     } catch (e) {
@@ -36,7 +38,7 @@ export const useSubCategoriasStore = defineStore("subCategorias", () => {
   async function updateSubCategoria(request: UpdateSubCategoriaRequest): Promise<boolean> {
     error.value = null;
     try {
-      const updated = await subCategoriaRepository.updateSubCategoria(request);
+      const updated = await subCategoriaUseCase.updateSubCategoria(request);
       const index = subCategorias.value.findIndex((s) => s.id === request.id);
       if (index !== -1) {
         subCategorias.value[index] = updated;
@@ -51,7 +53,7 @@ export const useSubCategoriasStore = defineStore("subCategorias", () => {
   async function deleteSubCategoria(id: number): Promise<boolean> {
     error.value = null;
     try {
-      await subCategoriaRepository.deleteSubCategoria(id);
+      await subCategoriaUseCase.deleteSubCategoria(id);
       subCategorias.value = subCategorias.value.filter((s) => s.id !== id);
       return true;
     } catch (e) {
