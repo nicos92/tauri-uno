@@ -242,7 +242,10 @@ const articulosBajoStock = computed(() => {
                 </p>
                 <div class="table-container">
                     <table
-                        v-if="articulosBajoStock.length > 0"
+                        v-if="
+                            !homeStore.loading &&
+                            articulosBajoStock.length > 0
+                        "
                         class="low-stock-table"
                     >
                         <thead>
@@ -268,7 +271,13 @@ const articulosBajoStock = computed(() => {
                             </tr>
                         </tbody>
                     </table>
-                    <div v-else class="empty-state">
+                    <div
+                        v-if="
+                            !homeStore.loading &&
+                            articulosBajoStock.length === 0
+                        "
+                        class="empty-state"
+                    >
                         No hay artículos con stock bajo
                     </div>
                 </div>
@@ -315,7 +324,10 @@ const articulosBajoStock = computed(() => {
                         </div>
                     </div>
                     <div
-                        v-if="categoriasConSubcategorias.length === 0"
+                        v-if="
+                            !homeStore.loading &&
+                            categoriasConSubcategorias.length === 0
+                        "
                         class="empty-state"
                     >
                         No hay categorías registradas

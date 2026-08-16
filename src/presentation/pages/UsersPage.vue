@@ -254,7 +254,10 @@ async function removePermission(permissionId: number) {
         </table>
         </div>
 
-        <div v-if="usersStore.users.length === 0" class="empty-state">
+        <div
+            v-if="!usersStore.loading && usersStore.users.length === 0"
+            class="empty-state"
+        >
             No hay usuarios registrados
         </div>
 

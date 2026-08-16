@@ -37,18 +37,22 @@ src-tauri/src/
 
 ``` bash
 src/
-├── domain/           # Tipos e interfaces
-│   ├── entities/    # User, Permission, Proveedor, Categoria, SubCategoria, Articulo, Stock, Cliente, Venta, Presupuesto, PERMISSIONS
-│   └── interfaces/  # IUserRepository
-├── application/     # Casos de uso
-│   └── usecases/   # Login, CreateUser, GetAllUsers, UpdateUser, DeleteUser, ManagePermissions
-├── infrastructure/ # Implementaciones
-│   └── api/        # UserApiRepository, ArticuloApiRepository, CategoriaApiRepository, ProveedorApiRepository, StockApiRepository, SubCategoriaApiRepository, ClienteApiRepository, VentaApiRepository, PresupuestoApiRepository
-└── presentation/   # Capa UI
-    ├── layouts/    # MainLayout con sidebar
-    ├── pages/      # Login, Home, Users, Proveedores, Categorias, SubCategorias, Articulos, Stock, Permissions, Settings, Ventas, NuevaVenta, Presupuestos, Clientes, Cierres, Dolar, Auditoria
-    ├── stores/     # Pinia stores (auth, users, permissions, proveedores, categorias, subCategorias, articulos, stock, theme, clientes, ventas, presupuestos, dolar, cierres)
-    └── router/     # Vue Router config
+├── domain/            # Tipos e interfaces
+│   ├── entities/      # User, Permission, Proveedor, Categoria, SubCategoria, Articulo, Stock, Cliente, Venta, Presupuesto, PERMISSIONS, businessRules
+│   └── interfaces/    # 14 contratos I*Repository (user, proveedor, categoria, subCategoria, articulo, stock, cliente, tipoVenta, venta, presupuesto, cierre, auditoria, home, dolar) + VentaQuery, CierreQuery, PresupuestoQuery
+├── application/       # Casos de uso
+│   └── usecases/      # Login, CreateUser, GetAllUsers, UpdateUser, DeleteUser, ChangePassword, ManagePermissions, ProveedorUseCase, CategoriaUseCase, SubCategoriaUseCase, ArticuloUseCase, StockUseCase, ClienteUseCase, TipoVentaUseCase, VentaUseCase, ConvertirPresupuestoEnVenta, PresupuestoUseCase, CierreUseCase, AuditUseCase, HomeUseCase, DollarUseCase
+├── infrastructure/    # Implementaciones
+│   ├── api/           # 14 repos (implementan los contratos I*Repository), errorHandler.ts
+│   ├── di.ts          # Registra y exporta las instancias de repos (única fuente; los stores la consumen)
+│   └── utils/         # currentUser.ts (getCurrentUserId)
+└── presentation/      # Capa UI
+    ├── layouts/       # MainLayout con sidebar
+    ├── pages/         # Login, Home, Users, Proveedores, Categorias, SubCategorias, Articulos, Stock, Permissions, Settings, Ventas, NuevaVenta, Presupuestos, Clientes, Cierres, Dolar, Auditoria
+    ├── stores/        # Pinia stores (auth, users, permissions, proveedores, categorias, subCategorias, articulos, stock, theme, clientes, ventas, presupuestos, dolar, cierres, auditoria, home, tiposVenta). Delegan en casos de uso; reciben el repo por constructor (di.ts)
+    ├── composables/   # usePermissions, usePagination, useCart, useConfirm, useToasts
+    ├── components/    # ui/ (Modal, DataTable, PaginationBar, ConfirmButton, PageHeader, SearchBar, EntityFormModal), venta/ (ArticuloSearch, CartTable, ClienteSelector, NuevoClienteModal, PresupuestoPrintArea, TotalsPanel), Toasts, TopBar, ConfirmDialog
+    └── router/        # Vue Router config
 ```
 
 ---
@@ -92,7 +96,7 @@ reset_test_db().unwrap();
 ```
 
 - Tests unitarios puros (sin DB) se escriben como módulos `#[cfg(test)] mod tests` en el mismo archivo: entidades, `AppError`, `PermissionCode`.
-- `PermissionCode::all()` tiene un test que verifica los 41 permisos contra la lista seed de `infrastructure/database/mod.rs`.
+- `PermissionCode::all()` tiene un test que verifica los 46 permisos contra la lista seed de `infrastructure/database/mod.rs`.
 
 ---
 
@@ -424,12 +428,12 @@ Reglas:
 3. **No olvidar el `.value`** al acceder a refs de Vue
 4. **En Rust, siempre manejar `Result` con `?` o match**
 5. **No hardcodear secrets** - usar variables de entorno
-6. **DB global** - `infrastructure::database::DB` es un `Lazy<Mutex<Connection>>` (rusqlite no es `Sync`); todos los repos lo bloquean. El esquema se crea en el primer arranque en el directorio de datos de `ProjectDirs` (`app.db`), sin migraciones. Se siembran 42 permisos y el usuario `admin` / `admin123` con todos los permisos. En builds de test apunta a `:memory:` y `BCRYPT_COST` baja a 4 (ver Tests en §3)
-7. **Sincronizar permisos en 3 lugares** (strings en español snake_case, ej. `ver_usuarios`): Rust `PermissionCode::as_str()` (`domain/entities/permission_code.rs`), TS `PERMISSIONS` (`src/domain/entities/permissions.ts`) y la lista seed (`infrastructure/database/mod.rs`). Agregar también el helper correspondiente en `usePermissions.ts` (frontend). El test `all_covers_seeded_permissions` verifica que `PermissionCode::all()` (42) esté sincronizado con la lista seed de Rust (no cubre TS). El permiso nuevo `ver_dolar` permite acceder a la pantalla de cotización del dólar; la actualización es **solo manual** (botón "Actualizar ahora" → `fetch_dollar_rates_manual`). No hay polling automático ni eventos de dólar.
+6. **DB global** - `infrastructure::database::DB` es un `Lazy<Mutex<Connection>>` (rusqlite no es `Sync`); todos los repos lo bloquean. El esquema se crea en el primer arranque en el directorio de datos de `ProjectDirs` (`app.db`), sin migraciones. Se siembran 46 permisos y el usuario `admin` / `admin123` con todos los permisos. En builds de test apunta a `:memory:` y `BCRYPT_COST` baja a 4 (ver Tests en §3)
+7. **Sincronizar permisos en 3 lugares** (strings en español snake_case, ej. `ver_usuarios`): Rust `PermissionCode::as_str()` (`domain/entities/permission_code.rs`), TS `PERMISSIONS` (`src/domain/entities/permissions.ts`) y la lista seed (`infrastructure/database/mod.rs`). Los helpers de `usePermissions.ts` se generan automáticamente desde las claves de `PERMISSIONS` (`can` + clave en PascalCase, ej. `VIEW_USERS` → `canViewUsers`); NO agregar helpers a mano. El test `all_covers_seeded_permissions` verifica que `PermissionCode::all()` (46) esté sincronizado con la lista seed de Rust (no cubre TS). El permiso nuevo `ver_dolar` permite acceder a la pantalla de cotización del dólar; la actualización es **solo manual** (botón "Actualizar ahora" → `fetch_dollar_rates_manual`). No hay polling automático ni eventos de dólar.
 8. **No olvidar `user_id` en los comandos** - Todo comando recibe `user_id: i64` como primer argumento. Los de usuarios/permisos usan `AppState` + `UserService::has_permission`; los de dominio (articulo/categoria/...) duplican un `check_permission` propio que consulta la DB directo. Respetar el patrón al agregar comandos
 9. **Registrar comandos y estados en `lib.rs`** - `.manage(...)` + `tauri::generate_handler!` en `src-tauri/src/lib.rs`
-10. **Auth en frontend** - Usuario y permisos se persisten en `localStorage` (`currentUser`, `userPermissions`). Los repos leen `getCurrentUserId()` y lo pasan como `userId` a cada `invoke`. El guard del router llama `authStore.loadFromStorage()`
-11. **Repos no uniformes** - Solo `UserApiRepository` implementa `IUserRepository` y pasa por usecases; Articulo/Categoria/Proveedor/Stock/SubCategoria/Cliente/Venta/Presupuesto son clases directas invocadas desde los stores. `infrastructure/api/index.ts` solo re-exporta `userRepository` (los demás se importan por ruta completa)
+10. **Auth en frontend** - Usuario y permisos se persisten en `sessionStorage` (`currentUser`, `userPermissions`). Los repos leen `getCurrentUserId()` (`infrastructure/utils/currentUser.ts`) y lo pasan como `userId` a cada `invoke`. El guard del router llama `authStore.loadFromStorage()`
+11. **Repos y capas** - Los 14 repos implementan su contrato `I*Repository` y se registran en `infrastructure/di.ts` (única fuente de instancias; NO instanciar repos fuera de ahí). Los stores delegan en casos de uso de `application/usecases` (patrón módulo usuarios: store → usecase → repo inyectado). `infrastructure/api/index.ts` re-exporta todos los repos y `di.ts` (comodín de importación). El flujo presupuesto→venta vive en `ConvertirPresupuestoEnVenta` (usecase); refresco de stock tras venta/anulación se orquesta desde las páginas
 12. **Archivos Rust en snake_case** - El nombre de archivo debe coincidir exactamente con el módulo declarado en `mod.rs` (ej. `categoria_repository.rs` para `pub mod categoria_repository;`). Un desajuste de mayúsculas compila en Windows/macOS por filesystem case-insensitive, pero rompe rust-analyzer y falla en Linux. Al renombrar solo mayúsculas usar `git mv` en dos pasos (nombre temporal → destino) porque `core.ignorecase=true`
 13. **Código generado** - `src-tauri/gen/**` (proyecto Android) no se edita a mano
 

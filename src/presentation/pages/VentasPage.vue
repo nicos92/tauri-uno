@@ -189,7 +189,10 @@ function clienteNombre(venta: VentaWithDetalle): string {
         </table>
         </div>
 
-        <div v-if="filteredVentas.length === 0" class="empty-state">
+        <div
+            v-if="!ventasStore.loading && filteredVentas.length === 0"
+            class="empty-state"
+        >
             No hay ventas que coincidan con la búsqueda
         </div>
 

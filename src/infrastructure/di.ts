@@ -16,7 +16,7 @@ import type {
 } from "../domain/interfaces";
 import { ArticuloApiRepository } from "./api/articuloRepository";
 import { AuditApiRepository } from "./api/auditRepository";
-import { CategoriaApiRepository } from "./api/CategoriaRepository";
+import { CategoriaApiRepository } from "./api/categoriaRepository";
 import { CierresApiRepository } from "./api/cierreRepository";
 import { ClienteApiRepository } from "./api/clienteRepository";
 import { DollarApiRepository } from "./api/dollarRepository";
