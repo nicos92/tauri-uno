@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, onMounted } from "vue";
 import { useCierresStore } from "../stores";
 import { usePermissions } from "../composables/usePermissions";
 import { useToasts } from "../composables/useToasts";
 import { useConfirm } from "../composables/useConfirm";
+import { usePagination } from "../composables/usePagination";
 import { formatMoney } from "../utils/format";
 import { todayLocal } from "../utils/date";
+import PaginationBar from "../components/PaginationBar.vue";
 import type { CierreWithTipos } from "../../domain/entities";
 
 const cierresStore = useCierresStore();
@@ -16,64 +18,27 @@ const { confirm } = useConfirm();
 const fecha = ref(todayLocal());
 const expanded = ref<Set<number>>(new Set());
 
-const PAGE_SIZE_OPTIONS = [5, 10, 15, 20, 25];
-
-const pageSize = ref(10);
-const offset = ref(0);
-
-const currentPage = computed(() => Math.floor(offset.value / pageSize.value) + 1);
-const totalPages = computed(() =>
-    Math.max(1, Math.ceil(cierresStore.total / pageSize.value))
-);
-
-const pages = computed<Array<number | "...">>(() => {
-    const total = totalPages.value;
-    const current = currentPage.value;
-    const window = 2;
-    const result: Array<number | "..."> = [];
-    for (let p = 1; p <= total; p++) {
-        if (
-            p === 1 ||
-            p === total ||
-            (p >= current - window && p <= current + window)
-        ) {
-            result.push(p);
-        } else if (result[result.length - 1] !== "...") {
-            result.push("...");
-        }
-    }
-    return result;
+const pagination = usePagination({
+    fetch: async (limit, offset) => {
+        await cierresStore.fetchCierres({ limit, offset });
+    },
+    getTotal: () => cierresStore.total,
 });
 
-async function fetchCierres() {
-    await cierresStore.fetchCierres({
-        limit: pageSize.value,
-        offset: offset.value,
-    });
-}
-
-async function handlePageSizeChange() {
-    offset.value = 0;
-    await fetchCierres();
-}
-
-function goToPage(page: number | "...") {
-    if (typeof page !== "number") return;
-    if (page === currentPage.value || page < 1 || page > totalPages.value) return;
-    offset.value = (page - 1) * pageSize.value;
-    fetchCierres();
-}
-
-async function nextPage() {
-    goToPage(currentPage.value + 1);
-}
-
-async function prevPage() {
-    goToPage(currentPage.value - 1);
-}
+const {
+    pageSize,
+    pageSizeOptions,
+    offset,
+    currentPage,
+    totalPages,
+    pages,
+    goToPage,
+    handlePageSizeChange,
+    refresh,
+} = pagination;
 
 onMounted(async () => {
-    await fetchCierres();
+    await refresh();
 });
 
 function toggleTipos(id: number) {
@@ -103,7 +68,7 @@ async function handleCerrarDia() {
     if (ok) {
         toastSuccess(`Cierre del día ${fecha.value} generado.`);
         offset.value = 0;
-        await fetchCierres();
+        await refresh();
     } else {
         toastError(cierresStore.error || "No se pudo generar el cierre.");
     }
@@ -122,7 +87,7 @@ async function handleReabrir(cierre: CierreWithTipos) {
     if (ok) {
         toastSuccess(`Día ${cierre.fecha} reabierto.`);
         offset.value = 0;
-        await fetchCierres();
+        await refresh();
     } else {
         toastError(cierresStore.error || "No se pudo reabrir el día.");
     }
@@ -156,7 +121,7 @@ async function handleReabrir(cierre: CierreWithTipos) {
                 @change="handlePageSizeChange"
                 title="Cierres por página"
             >
-                <option v-for="n in PAGE_SIZE_OPTIONS" :key="n" :value="n">
+                <option v-for="n in pageSizeOptions" :key="n" :value="n">
                     {{ n }} por página
                 </option>
             </select>
@@ -240,36 +205,16 @@ async function handleReabrir(cierre: CierreWithTipos) {
             No hay cierres registrados.
         </div>
 
-        <div v-if="!cierresStore.loading && cierresStore.total > 0" class="pagination">
-            <span class="pagination-info">
-                Mostrando {{ cierresStore.cierres.length }} de {{ cierresStore.total }} cierres
-            </span>
-            <div class="pagination-buttons">
-                <button
-                    @click="prevPage"
-                    :disabled="currentPage <= 1"
-                    class="btn-secondary"
-                >
-                    ‹ Anterior
-                </button>
-                <button
-                    v-for="p in pages"
-                    :key="p"
-                    :class="['page-btn', { active: p === currentPage }]"
-                    :disabled="p === '...'"
-                    @click="goToPage(p)"
-                >
-                    {{ p }}
-                </button>
-                <button
-                    @click="nextPage"
-                    :disabled="currentPage >= totalPages"
-                    class="btn-secondary"
-                >
-                    Siguiente ›
-                </button>
-            </div>
-        </div>
+        <PaginationBar
+            v-if="!cierresStore.loading && cierresStore.total > 0"
+            :current-page="currentPage"
+            :total-pages="totalPages"
+            :pages="pages"
+            :count="cierresStore.cierres.length"
+            :total="cierresStore.total"
+            label="cierres"
+            @go="goToPage"
+        />
     </div>
 </template>
 
@@ -424,57 +369,5 @@ select.filter-input {
     text-align: center;
     padding: 2rem;
     color: var(--color-text-muted);
-}
-
-.pagination {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.75rem;
-    margin-top: 1.5rem;
-}
-
-.pagination-info {
-    color: var(--color-text-muted);
-    font-size: 0.9rem;
-    white-space: nowrap;
-    text-align: center;
-}
-
-.pagination-buttons {
-    display: flex;
-    gap: 0.4rem;
-    align-items: center;
-    justify-content: center;
-    flex-wrap: wrap;
-}
-
-.pagination-buttons .btn-secondary {
-    padding: 0.5rem 1rem;
-}
-
-.page-btn {
-    min-width: 2.2rem;
-    height: 2.2rem;
-    padding: 0 0.5rem;
-    border: 1px solid var(--color-border);
-    border-radius: 6px;
-    background: var(--color-surface);
-    color: var(--color-text);
-    font-size: 0.9rem;
-    cursor: pointer;
-}
-
-.page-btn:disabled {
-    border: none;
-    background: none;
-    cursor: default;
-}
-
-.page-btn.active {
-    background: var(--color-primary);
-    border-color: var(--color-primary);
-    color: #fff;
-    font-weight: 600;
 }
 </style>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick, watch } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
 import {
   useVentasStore,
@@ -11,14 +11,20 @@ import {
 } from "../stores";
 import { usePermissions } from "../composables/usePermissions";
 import { useToasts } from "../composables/useToasts";
-import { formatMoney } from "../utils/format";
-import { clienteLabel } from "../utils/cliente";
+import { useCart } from "../composables/useCart";
+import type { CartItem, CartSourceItem } from "../composables/useCart";
 import type {
   Cliente,
   CreateClienteRequest,
   CreatePresupuestoRequest,
   CreateVentaRequest,
 } from "../../domain/entities";
+import ArticuloSearch from "../components/venta/ArticuloSearch.vue";
+import CartTable from "../components/venta/CartTable.vue";
+import ClienteSelector from "../components/venta/ClienteSelector.vue";
+import NuevoClienteModal from "../components/venta/NuevoClienteModal.vue";
+import PresupuestoPrintArea from "../components/venta/PresupuestoPrintArea.vue";
+import TotalsPanel from "../components/venta/TotalsPanel.vue";
 
 const router = useRouter();
 const ventasStore = useVentasStore();
@@ -35,29 +41,9 @@ const {
 } = usePermissions();
 const { error: toastError, success: toastSuccess } = useToasts();
 
-interface CartItem {
-  id_articulo: number;
-  cod_articulo: string;
-  articulo: string;
-  stockDisponible: number;
-  cantidad: number;
-  precio: number;
-  subtotal: number;
-}
+const articuloSearchRef = ref<InstanceType<typeof ArticuloSearch> | null>(null);
 
-interface StockArticulo {
-  id_articulo: number;
-  cod_articulo: string;
-  articulo: string;
-  stockDisponible: number;
-  precioVenta: number;
-}
-
-const searchQuery = ref("");
-const searchInput = ref<HTMLInputElement | null>(null);
 const observacion = ref("");
-const descuento = ref<number>(0);
-const cart = ref<CartItem[]>([]);
 const tipoVentaId = ref<number | null>(null);
 const fechaVencimiento = ref("");
 const presupuestoOrigen = ref<number | null>(null);
@@ -68,21 +54,6 @@ const clienteDefecto = ref<Cliente | null>(null);
 const clienteQuery = ref("");
 const mostrandoClientes = ref(false);
 const mostrarModalNuevoCliente = ref(false);
-
-const nuevoNombre = ref("");
-const nuevoApellido = ref("");
-const nuevoTelefono = ref("");
-const nuevoEmail = ref("");
-const nuevoDireccion = ref("");
-
-const nuevoClienteInvalido = computed(
-  () =>
-    !nuevoNombre.value.trim() &&
-    !nuevoApellido.value.trim() &&
-    !nuevoTelefono.value.trim() &&
-    !nuevoEmail.value.trim() &&
-    !nuevoDireccion.value.trim(),
-);
 
 const clientesFiltrados = computed<Cliente[]>(() => {
   const query = clienteQuery.value.trim().toLowerCase();
@@ -108,7 +79,7 @@ watch(
     { immediate: true },
 );
 
-const articulosVendibles = computed<StockArticulo[]>(() => {
+const articulosVendibles = computed<CartSourceItem[]>(() => {
   return stockStore.stocks.map((s) => {
     const articulo = articulosStore.articulos.find(
       (a) => a.id === s.id_articulo,
@@ -123,51 +94,33 @@ const articulosVendibles = computed<StockArticulo[]>(() => {
   });
 });
 
-const searchResults = computed<StockArticulo[]>(() => {
-  const query = searchQuery.value.trim().toLowerCase();
-  const inCart = new Set(cart.value.map((c) => c.id_articulo));
-  const base = articulosVendibles.value.filter((a) => !inCart.has(a.id_articulo));
-  if (!query) return [];
-  return base
-    .filter(
-      (a) =>
-        a.cod_articulo.toLowerCase().includes(query) ||
-        a.articulo.toLowerCase().includes(query),
-    )
-    .slice(0, 20);
+const cartLogic = useCart({
+  getVendibles: () => articulosVendibles.value,
+  canVenderSinStock,
+  getTipoVentaId: () => tipoVentaId.value,
+  focusInput: () => articuloSearchRef.value?.focus(),
 });
 
-const carritoSubtotal = computed(() =>
-  cart.value.reduce((acc, item) => acc + item.subtotal, 0),
-);
-
-const descuentoMonto = computed(() => {
-  const d = Number.isFinite(descuento.value) ? descuento.value : 0;
-  return (carritoSubtotal.value * d) / 100;
-});
-
-const carritoTotal = computed(() => carritoSubtotal.value - descuentoMonto.value);
-
-const descuentoValido = computed(
-  () =>
-    (descuento.value === null ||
-      (descuento.value >= 0 && descuento.value <= 100)),
-);
-
-const carritoValido = computed(
-  () =>
-    cart.value.length > 0 &&
-    descuentoValido.value &&
-    tipoVentaId.value !== null &&
-    cart.value.every((i) => i.cantidad > 0 && i.precio >= 0),
-);
-
-const presupuestoValido = computed(
-  () =>
-    cart.value.length > 0 &&
-    descuentoValido.value &&
-    cart.value.every((i) => i.cantidad > 0 && i.precio >= 0),
-);
+const {
+  cart,
+  searchQuery,
+  descuento,
+  searchResults,
+  carritoSubtotal,
+  descuentoMonto,
+  carritoTotal,
+  carritoValido,
+  presupuestoValido,
+  focusSearch,
+  addArticuloById,
+  onSearchEnter,
+  removeArticulo,
+  vaciarCarrito,
+  updateSubtotal,
+  stockWarning,
+  setItems,
+  resetCart,
+} = cartLogic;
 
 const fechaHoy = computed(() => new Date().toLocaleDateString());
 
@@ -214,7 +167,6 @@ async function cargarPresupuesto(id: number) {
       router.replace({ name: "nueva-venta" });
       return;
     }
-    cart.value = [];
     descuento.value = presupuesto.descuento || 0;
     observacion.value = presupuesto.observacion || "";
     fechaVencimiento.value = presupuesto.fecha_vencimiento || "";
@@ -226,11 +178,12 @@ async function cargarPresupuesto(id: number) {
     } else {
       clienteSeleccionado.value = clienteDefecto.value;
     }
+    const items: CartItem[] = [];
     for (const item of presupuesto.items) {
       const stock = articulosVendibles.value.find(
         (s) => s.id_articulo === item.id_articulo,
       );
-      cart.value.push({
+      items.push({
         id_articulo: item.id_articulo,
         cod_articulo: item.cod_articulo,
         articulo: item.articulo,
@@ -240,6 +193,7 @@ async function cargarPresupuesto(id: number) {
         subtotal: item.subtotal,
       });
     }
+    setItems(items);
     presupuestoOrigen.value = id;
     toastSuccess(`Presupuesto N° ${id} cargado.`);
   } catch {
@@ -249,76 +203,9 @@ async function cargarPresupuesto(id: number) {
   }
 }
 
-function focusSearch() {
-  nextTick(() => {
-    searchInput.value?.focus();
-  });
-}
-
-function addArticuloById(idArticulo: number) {
-  const articulo = articulosVendibles.value.find(
-    (a) => a.id_articulo === idArticulo,
-  );
-  if (!articulo) return;
-
-  const existing = cart.value.find((c) => c.id_articulo === idArticulo);
-  if (existing) {
-    existing.cantidad += 1;
-    existing.subtotal = existing.cantidad * existing.precio;
-  } else {
-    cart.value.push({
-      id_articulo: articulo.id_articulo,
-      cod_articulo: articulo.cod_articulo,
-      articulo: articulo.articulo,
-      stockDisponible: articulo.stockDisponible,
-      cantidad: 1,
-      precio: articulo.precioVenta,
-      subtotal: articulo.precioVenta,
-    });
-  }
-
-  searchQuery.value = "";
-  focusSearch();
-}
-
-function onSearchEnter() {
-  const query = searchQuery.value.trim().toLowerCase();
-  if (!query) return;
-  const exact = articulosVendibles.value.find(
-    (a) => a.cod_articulo.toLowerCase() === query,
-  );
-  if (exact) {
-    addArticuloById(exact.id_articulo);
-    return;
-  }
-  if (searchResults.value.length === 1) {
-    addArticuloById(searchResults.value[0].id_articulo);
-  }
-}
-
-function removeArticulo(idArticulo: number) {
-  cart.value = cart.value.filter((c) => c.id_articulo !== idArticulo);
-}
-
-function vaciarCarrito() {
-  cart.value = [];
-}
-
-function updateSubtotal(item: CartItem) {
-  item.subtotal = item.cantidad * item.precio;
-}
-
-function stockWarning(item: CartItem): boolean {
-  return (
-    item.cantidad > item.stockDisponible && !canVenderSinStock()
-  );
-}
-
 function resetForm() {
-  cart.value = [];
-  descuento.value = 0;
+  resetCart();
   observacion.value = "";
-  searchQuery.value = "";
   const efectivo = tiposVentaStore.tipos.find((t) => t.nombre === "Efectivo");
   tipoVentaId.value = efectivo
     ? efectivo.id
@@ -326,12 +213,6 @@ function resetForm() {
   clienteSeleccionado.value = clienteDefecto.value;
   clienteQuery.value = "";
   mostrandoClientes.value = false;
-}
-
-function onClienteBlur() {
-  setTimeout(() => {
-    mostrandoClientes.value = false;
-  }, 150);
 }
 
 function seleccionarCliente(cliente: Cliente) {
@@ -347,29 +228,26 @@ function quitarCliente() {
 }
 
 function abrirModalNuevoCliente() {
-  nuevoNombre.value = "";
-  nuevoApellido.value = "";
-  nuevoTelefono.value = "";
-  nuevoEmail.value = "";
-  nuevoDireccion.value = "";
   clientesStore.error = null;
   mostrarModalNuevoCliente.value = true;
 }
 
-async function crearClienteRapido() {
-  if (nuevoClienteInvalido.value) return;
-  const request: CreateClienteRequest = {
-    nombre: nuevoNombre.value.trim() || undefined,
-    apellido: nuevoApellido.value.trim() || undefined,
-    telefono: nuevoTelefono.value.trim() || undefined,
-    email: nuevoEmail.value.trim() || undefined,
-    direccion: nuevoDireccion.value.trim() || undefined,
-  };
+async function crearClienteRapido(request: CreateClienteRequest) {
   const nuevoCliente = await clientesStore.crearCliente(request);
   if (nuevoCliente) {
     seleccionarCliente(nuevoCliente);
     mostrarModalNuevoCliente.value = false;
   }
+}
+
+function onCantidadChange(item: CartItem, value: number) {
+  item.cantidad = value;
+  updateSubtotal(item);
+}
+
+function onPrecioChange(item: CartItem, value: number) {
+  item.precio = value;
+  updateSubtotal(item);
 }
 
 async function handleCreate() {
@@ -510,7 +388,7 @@ function generarPdf() {
                     placeholder="Opcional"
                 />
             </div>
-           
+
             <div class="acciones">
                 <button
                     v-if="canGenerarPresupuesto()"
@@ -549,86 +427,26 @@ function generarPdf() {
         </div>
 
         <div class="venta-section totals-section">
-             <div v-if="canViewClientes()" class="form-group obs-group cliente-group">
-                <label>Cliente</label>
-                <div class="cliente-selector">
-                    <input
-                        v-model="clienteQuery"
-                        type="text"
-                        placeholder="Buscar por nombre, apellido o teléfono..."
-                        @focus="mostrandoClientes = true"
-                        @input="mostrandoClientes = true"
-                        @blur="onClienteBlur"
-                    />
-                    <button
-                        v-if="canCreateCliente()"
-                        type="button"
-                        class="btn-nuevo-cliente"
-                        title="Crear nuevo cliente"
-                        @click="abrirModalNuevoCliente"
-                    >
-                        + Nuevo
-                    </button>
-                </div>
-                <div v-if="mostrandoClientes" class="cliente-dropdown">
-                    <button
-                        v-for="cliente in clientesFiltrados"
-                        :key="cliente.id"
-                        type="button"
-                        class="cliente-option"
-                        @mousedown.prevent="seleccionarCliente(cliente)"
-                    >
-                        <span class="cliente-nombre">
-                            {{ clienteLabel(cliente) }}
-                        </span>
-                        <span v-if="cliente.telefono" class="cliente-tel">
-                            {{ cliente.telefono }}
-                        </span>
-                    </button>
-                    <div v-if="clientesFiltrados.length === 0" class="cliente-empty">
-                        Sin coincidencias
-                    </div>
-                </div>
-                <div
-                    v-if="clienteSeleccionado && !mostrandoClientes"
-                    class="cliente-seleccionado"
-                >
-                    <span>{{ clienteLabel(clienteSeleccionado) }}</span>
-                    <button
-                        type="button"
-                        class="cliente-limpiar"
-                        title="Usar Consumidor Final"
-                        @click="quitarCliente"
-                    >
-                        ×
-                    </button>
-                </div>
-            </div>
-            <div class="total-box">
-                <span class="total-label">Subtotal</span>
-                <span class="total-value">{{ formatMoney(carritoSubtotal) }}</span>
-            </div>
-            <div class="total-box">
-                <span class="total-label">Descuento</span>
-                <div class="descuento-row">
-                    <input
-                        v-model.number="descuento"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        max="100"
-                        class="descuento-input"
-                    />
-                    <span>%</span>
-                    <span v-if="descuentoMonto > 0" class="descuento-monto">
-                        −{{ formatMoney(descuentoMonto) }}
-                    </span>
-                </div>
-            </div>
-            <div class="total-box total-final">
-                <span class="total-label">Total</span>
-                <span class="total-value">{{ formatMoney(carritoTotal) }}</span>
-            </div>
+            <ClienteSelector
+                v-if="canViewClientes()"
+                :clientes="clientesFiltrados"
+                :query="clienteQuery"
+                :show="mostrandoClientes"
+                :selected="clienteSeleccionado"
+                :can-create="canCreateCliente()"
+                @update:query="clienteQuery = $event"
+                @update:show="mostrandoClientes = $event"
+                @select="seleccionarCliente"
+                @clear="quitarCliente"
+                @create="abrirModalNuevoCliente"
+            />
+            <TotalsPanel
+                :subtotal="carritoSubtotal"
+                :descuento="descuento"
+                :descuento-monto="descuentoMonto"
+                :total="carritoTotal"
+                @update:descuento="descuento = $event"
+            />
         </div>
 
         <div class="venta-section search-section">
@@ -643,104 +461,21 @@ function generarPdf() {
                     Vaciar
                 </button>
             </div>
-            <div class="form-group">
-                <label>Buscar artículo por código o nombre</label>
-                <input
-                    ref="searchInput"
-                    v-model="searchQuery"
-                    type="text"
-                    placeholder="Escriba el código y presione Enter..."
-                    @keydown.enter.prevent="onSearchEnter"
-                />
-            </div>
-            <div v-if="searchResults.length > 0" class="search-results">
-                <button
-                    v-for="result in searchResults"
-                    :key="result.id_articulo"
-                    type="button"
-                    @click="addArticuloById(result.id_articulo)"
-                    class="search-result-item"
-                >
-                    <span class="result-code">{{ result.cod_articulo }}</span>
-                    <span class="result-name">{{ result.articulo }}</span>
-                    <span class="result-stock">
-                        Stock: {{ result.stockDisponible }}
-                    </span>
-                    <span class="result-precio">
-                        {{ formatMoney(result.precioVenta) }}
-                    </span>
-                </button>
-            </div>
-            <div
-                v-if="searchQuery.trim() && searchResults.length === 0"
-                class="empty-state small"
-            >
-                Sin coincidencias
-            </div>
-
-            
-
-            <table v-if="cart.length > 0" class="cart-table">
-                <thead>
-                    <tr>
-                        <th>Código</th>
-                        <th>Artículo</th>
-                        <th>Cantidad</th>
-                        <th>Precio</th>
-                        <th>Subtotal</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr
-                        v-for="item in cart"
-                        :key="item.id_articulo"
-                        :class="{ 'stock-warning-row': stockWarning(item) }"
-                    >
-                        <td>{{ item.cod_articulo }}</td>
-                        <td>
-                            {{ item.articulo }}
-                            <span
-                                v-if="stockWarning(item)"
-                                class="stock-warning"
-                            >
-                                ⚠ Stock insuficiente ({{ item.stockDisponible }})
-                            </span>
-                        </td>
-                        <td>
-                            <input
-                                v-model.number="item.cantidad"
-                                type="number"
-                                step="0.01"
-                                min="0.01"
-                                @input="updateSubtotal(item)"
-                                class="cart-input"
-                            />
-                        </td>
-                        <td>
-                            <input
-                                v-model.number="item.precio"
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                @input="updateSubtotal(item)"
-                                class="cart-input"
-                            />
-                        </td>
-                        <td>{{ formatMoney(item.subtotal) }}</td>
-                        <td>
-                            <button
-                                @click="removeArticulo(item.id_articulo)"
-                                class="btn-icon btn-danger"
-                                title="Quitar"
-                            >
-                                <img src="/svg/trash.svg" alt="Quitar" />
-                            </button>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-
+            <ArticuloSearch
+                ref="articuloSearchRef"
+                :query="searchQuery"
+                :results="searchResults"
+                @update:query="searchQuery = $event"
+                @select="addArticuloById"
+                @enter="onSearchEnter"
+            />
+            <CartTable
+                :items="cart"
+                :stock-warning="stockWarning"
+                @update-cantidad="onCantidadChange"
+                @update-precio="onPrecioChange"
+                @remove="removeArticulo"
+            />
             <div v-if="cart.length === 0" class="empty-state">
                 Agregue artículos a la venta
             </div>
@@ -750,106 +485,23 @@ function generarPdf() {
             {{ ventasStore.error }}
         </div>
 
-        <div
-            v-if="mostrarModalNuevoCliente"
-            class="modal-overlay"
-            @click.self="mostrarModalNuevoCliente = false"
-        >
-            <div class="modal-card">
-                <div class="modal-header">
-                    <h2>Nuevo cliente</h2>
-                    <button
-                        type="button"
-                        class="btn-icon"
-                        @click="mostrarModalNuevoCliente = false"
-                    >
-                        ×
-                    </button>
-                </div>
-                <form @submit.prevent="crearClienteRapido">
-                    <div class="form-group">
-                        <label>Nombre</label>
-                        <input v-model="nuevoNombre" type="text" placeholder="Nombre" />
-                    </div>
-                    <div class="form-group">
-                        <label>Apellido</label>
-                        <input v-model="nuevoApellido" type="text" placeholder="Apellido" />
-                    </div>
-                    <div class="form-group">
-                        <label>Teléfono</label>
-                        <input v-model="nuevoTelefono" type="text" placeholder="Teléfono" />
-                    </div>
-                    <div class="form-group">
-                        <label>Email</label>
-                        <input v-model="nuevoEmail" type="email" placeholder="Email" />
-                    </div>
-                    <div class="form-group">
-                        <label>Dirección</label>
-                        <input v-model="nuevoDireccion" type="text" placeholder="Dirección" />
-                    </div>
-                    <div v-if="clientesStore.error" class="error-text">
-                        {{ clientesStore.error }}
-                    </div>
-                    <div class="modal-actions">
-                        <button
-                            type="button"
-                            class="btn-secondary"
-                            @click="mostrarModalNuevoCliente = false"
-                        >
-                            Cancelar
-                        </button>
-                        <button
-                            type="submit"
-                            class="btn-primary"
-                            :disabled="nuevoClienteInvalido"
-                        >
-                            Crear y seleccionar
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
+        <NuevoClienteModal
+            v-model="mostrarModalNuevoCliente"
+            :error="clientesStore.error"
+            @submit="crearClienteRapido"
+        />
 
-    <Teleport to="body">
-        <div class="print-area" id="print-area">
-            <h1>Presupuesto</h1>
-            <p>Fecha: {{ fechaHoy }}</p>
-            <p v-if="clienteSeleccionado">
-                Cliente: {{ clienteLabel(clienteSeleccionado) }}
-            </p>
-            <div class="print-summary">
-                <p class="print-line">Subtotal: {{ formatMoney(carritoSubtotal) }}</p>
-                <p v-if="descuento > 0" class="print-line">
-                    Descuento ({{ descuento }}%): −{{ formatMoney(descuentoMonto) }}
-                </p>
-                <p class="print-total">Total: {{ formatMoney(carritoTotal) }}</p>
-                <p v-if="observacion" class="print-obs">
-                    Observación: {{ observacion }}
-                </p>
-            </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Código</th>
-                        <th>Artículo</th>
-                        <th>Cantidad</th>
-                        <th>Precio</th>
-                        <th>Subtotal</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-for="item in cart" :key="item.id_articulo">
-                        <td>{{ item.cod_articulo }}</td>
-                        <td>{{ item.articulo }}</td>
-                        <td>{{ item.cantidad }}</td>
-                        <td>{{ formatMoney(item.precio) }}</td>
-                        <td>{{ formatMoney(item.subtotal) }}</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </Teleport>
+        <PresupuestoPrintArea
+            :fecha="fechaHoy"
+            :cliente="clienteSeleccionado"
+            :items="cart"
+            :subtotal="carritoSubtotal"
+            :descuento="descuento"
+            :descuento-monto="descuentoMonto"
+            :total="carritoTotal"
+            :observacion="observacion"
+        />
+    </div>
 </template>
 
 <style scoped>
@@ -936,126 +588,34 @@ function generarPdf() {
     flex-wrap: wrap;
 }
 
-.total-box {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    padding: 1rem;
-    border-radius: 8px;
-    background: var(--color-surface-2);
-    min-width: 180px;
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
 }
 
-.total-final {
-    background: #2D195D;
-    color: white;
-}
-
-.total-label {
-    font-size: 0.85rem;
-    text-transform: uppercase;
-    opacity: 0.8;
-}
-
-.total-value {
-    font-size: 1.4rem;
-    font-weight: 700;
-}
-
-.descuento-row {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 1.1rem;
-    font-weight: 600;
-}
-
-.descuento-input {
-    width: 80px;
-    padding: 0.5rem;
+.form-group input {
+    width: 100%;
+    padding: 0.75rem;
     border: 1px solid var(--color-border);
     border-radius: 6px;
+    box-sizing: border-box;
     background: var(--color-surface);
     color: var(--color-text);
 }
 
-.descuento-monto {
-    color: var(--color-danger);
-    font-size: 0.9rem;
-}
-
-.search-section .form-group {
-    margin-bottom: 0.75rem;
-}
-
-.search-results {
-    border: 1px solid var(--color-border);
-    border-radius: 8px;
-    overflow: hidden;
-}
-
-.search-result-item {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
+.tipo-select {
     width: 100%;
-    padding: 0.75rem 1rem;
+    padding: 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    box-sizing: border-box;
     background: var(--color-surface);
-    border: none;
-    border-bottom: 1px solid var(--color-border);
-    cursor: pointer;
-    text-align: left;
     color: var(--color-text);
-}
-
-.search-result-item:last-child {
-    border-bottom: none;
-}
-
-.search-result-item:hover {
-    background: var(--color-surface-2);
-}
-
-.result-code {
-    font-weight: 600;
-    min-width: 110px;
-}
-
-.result-name {
-    flex: 1;
-}
-
-.result-stock {
-    color: var(--color-text-muted);
-    min-width: 90px;
-}
-
-.result-precio {
-    font-weight: 600;
-    min-width: 80px;
-    text-align: right;
-}
-
-.cart-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.5rem;
-}
-
-.cart-header h2 {
-    font-size: 1.4rem;
-    margin: 0;
-}
-
-.stock-warning-row td {
-    background: rgba(229, 62, 62, 0.06);
-}
-
-.stock-warning {
-    display: block;
-    color: var(--color-danger);
-    font-size: 0.8rem;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    padding-right: 2.5rem;
 }
 
 .btn-primary {
@@ -1101,7 +661,7 @@ function generarPdf() {
 
 .btn-tertiary:disabled {
     opacity: 0.6;
-    border:none;
+    border: none;
     cursor: not-allowed;
 }
 
@@ -1127,76 +687,16 @@ function generarPdf() {
     padding: 0.5rem 1rem;
 }
 
-.cart-table {
-    width: 100%;
-    border-radius: 12px;
-    overflow: hidden;
-}
-
-.cart-table th,
-.cart-table td {
-    padding: 1rem;
-    text-align: left;
-}
-
-.cart-table th {
-    background: var(--color-surface-2);
-    font-weight: 600;
-}
-
-.cart-input {
-    width: 90px;
-    padding: 0.5rem;
-    border: 1px solid var(--color-border);
-    border-radius: 6px;
-    background: var(--color-surface);
-    color: var(--color-text);
-}
-
-.btn-icon {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0.25rem;
-}
-
-.btn-icon img {
-    width: 18px;
-    height: 18px;
-}
-
-.btn-danger:hover {
-    opacity: 0.7;
-}
-
-.form-group label {
-    display: block;
+.cart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 0.5rem;
-    font-weight: 500;
 }
 
-.form-group input {
-    width: 100%;
-    padding: 0.75rem;
-    border: 1px solid var(--color-border);
-    border-radius: 6px;
-    box-sizing: border-box;
-    background: var(--color-surface);
-    color: var(--color-text);
-}
-
-.tipo-select {
-    width: 100%;
-    padding: 0.75rem;
-    border: 1px solid var(--color-border);
-    border-radius: 6px;
-    box-sizing: border-box;
-    background: var(--color-surface);
-    color: var(--color-text);
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>");
-    background-repeat: no-repeat;
-    background-position: right 0.75rem center;
-    padding-right: 2.5rem;
+.cart-header h2 {
+    font-size: 1.4rem;
+    margin: 0;
 }
 
 .error-banner {
@@ -1208,168 +708,10 @@ function generarPdf() {
     margin-bottom: 1rem;
 }
 
-.cliente-group {
-    position: relative;
-    min-width: 280px;
-}
-
-.cliente-selector {
-    display: flex;
-    gap: 0.5rem;
-}
-
-.cliente-selector input {
-    flex: 1;
-}
-
-.btn-nuevo-cliente {
-    background: var(--color-surface-2);
-    color: var(--color-text);
-    border: none;
-    padding: 0.75rem 1rem;
-    border-radius: 6px;
-    cursor: pointer;
-    white-space: nowrap;
-    font-weight: 500;
-}
-
-.btn-nuevo-cliente:hover {
-    background: var(--color-border);
-}
-
-.cliente-dropdown {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    z-index: 30;
-    max-height: 220px;
-    overflow-y: auto;
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: 6px;
-    margin-top: 0.25rem;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.cliente-option {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 0.5rem;
-    width: 100%;
-    text-align: left;
-    padding: 0.6rem 0.75rem;
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--color-text);
-}
-
-.cliente-option:hover {
-    background: var(--color-surface-2);
-}
-
-.cliente-nombre {
-    font-weight: 500;
-}
-
-.cliente-tel {
-    color: var(--color-text-muted);
-    font-size: 0.85rem;
-}
-
-.cliente-empty {
-    padding: 0.6rem 0.75rem;
-    color: var(--color-text-muted);
-    font-size: 0.9rem;
-}
-
-.cliente-seleccionado {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 0.5rem;
-    margin-top: 0.5rem;
-    padding: 0.5rem 0.75rem;
-    background: var(--color-surface-2);
-    border-radius: 6px;
-    font-weight: 500;
-}
-
-.cliente-limpiar {
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--color-text-muted);
-    font-size: 1.1rem;
-    line-height: 1;
-    padding: 0 0.25rem;
-}
-
-.cliente-limpiar:hover {
-    color: var(--color-danger);
-}
-
-.modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 100;
-    padding: 1rem;
-}
-
-.modal-card {
-    background: var(--color-surface);
-    border-radius: 12px;
-    padding: 1.5rem;
-    width: 100%;
-    max-width: 420px;
-    max-height: 90vh;
-    overflow-y: auto;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-}
-
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-}
-
-.modal-header h2 {
-    margin: 0;
-}
-
-.modal-header .btn-icon {
-    font-size: 1.25rem;
-    color: var(--color-text-muted);
-}
-
-.modal-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.5rem;
-    margin-top: 1rem;
-}
-
-.error-text {
-    color: var(--color-danger);
-    margin-top: 0.5rem;
-    font-size: 0.9rem;
-}
-
 .loading,
 .empty-state {
     text-align: center;
     padding: 2rem;
     color: var(--color-text-muted);
-}
-
-.empty-state.small {
-    padding: 1rem;
 }
 </style>

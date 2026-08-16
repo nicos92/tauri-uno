@@ -1,19 +1,16 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, onMounted } from "vue";
 import { useAuditStore } from "../stores";
+import { usePagination } from "../composables/usePagination";
+import PaginationBar from "../components/PaginationBar.vue";
 import type { AuditLogFilters } from "../../domain/entities";
 
 const auditStore = useAuditStore();
-
-const PAGE_SIZE_OPTIONS = [5, 10, 15, 20, 25];
-
-const pageSize = ref(10);
 
 const screen = ref("");
 const action = ref("");
 const from = ref("");
 const to = ref("");
-const offset = ref(0);
 
 const screens = [
     "Usuarios",
@@ -32,28 +29,10 @@ const screens = [
 
 const actions = ["nuevo", "modificar", "consultar", "eliminar"];
 
-const currentPage = computed(() => Math.floor(offset.value / pageSize.value) + 1);
-const totalPages = computed(() => Math.max(1, Math.ceil(auditStore.total / pageSize.value)));
-
-const pages = computed<Array<number | "...">>(() => {
-    const total = totalPages.value;
-    const current = currentPage.value;
-    const window = 2;
-    const result: Array<number | "..."> = [];
-    for (let p = 1; p <= total; p++) {
-        if (p === 1 || p === total || (p >= current - window && p <= current + window)) {
-            result.push(p);
-        } else if (result[result.length - 1] !== "...") {
-            result.push("...");
-        }
-    }
-    return result;
-});
-
-function buildFilters(): AuditLogFilters {
+function buildFilters(limit: number, offset: number): AuditLogFilters {
     const filters: AuditLogFilters = {
-        limit: pageSize.value,
-        offset: offset.value,
+        limit,
+        offset,
     };
     if (screen.value) filters.screen = screen.value;
     if (action.value) filters.action = action.value;
@@ -62,38 +41,34 @@ function buildFilters(): AuditLogFilters {
     return filters;
 }
 
-async function fetchLogs() {
-    await auditStore.fetchLogs(buildFilters());
-    if (auditStore.logs.length === 0 && offset.value > 0 && auditStore.total > 0) {
-        const lastPage = Math.max(1, Math.ceil(auditStore.total / pageSize.value));
-        offset.value = (lastPage - 1) * pageSize.value;
-        await auditStore.fetchLogs(buildFilters());
-    }
-}
+const pagination = usePagination({
+    fetch: async (limit, off) => {
+        await auditStore.fetchLogs(buildFilters(limit, off));
+        if (auditStore.logs.length === 0 && off > 0 && auditStore.total > 0) {
+            const lastPage = Math.max(1, Math.ceil(auditStore.total / limit));
+            const newOffset = (lastPage - 1) * limit;
+            offset.value = newOffset;
+            await auditStore.fetchLogs(buildFilters(limit, newOffset));
+        }
+    },
+    getTotal: () => auditStore.total,
+});
+
+const {
+    pageSize,
+    pageSizeOptions,
+    offset,
+    currentPage,
+    totalPages,
+    pages,
+    goToPage,
+    handlePageSizeChange,
+    refresh,
+} = pagination;
 
 async function handleSearch() {
     offset.value = 0;
-    await fetchLogs();
-}
-
-async function handlePageSizeChange() {
-    offset.value = 0;
-    await fetchLogs();
-}
-
-function goToPage(page: number | "...") {
-    if (typeof page !== "number") return;
-    if (page === currentPage.value || page < 1 || page > totalPages.value) return;
-    offset.value = (page - 1) * pageSize.value;
-    fetchLogs();
-}
-
-async function nextPage() {
-    goToPage(currentPage.value + 1);
-}
-
-async function prevPage() {
-    goToPage(currentPage.value - 1);
+    await refresh();
 }
 
 function resetFilters() {
@@ -111,7 +86,7 @@ function formatDate(iso: string): string {
 }
 
 onMounted(() => {
-    fetchLogs();
+    refresh();
 });
 </script>
 
@@ -145,7 +120,7 @@ onMounted(() => {
                 @change="handlePageSizeChange"
                 title="Registros por página"
             >
-                <option v-for="n in PAGE_SIZE_OPTIONS" :key="n" :value="n">
+                <option v-for="n in pageSizeOptions" :key="n" :value="n">
                     {{ n }} por página
                 </option>
             </select>
@@ -197,36 +172,16 @@ onMounted(() => {
             No hay registros de auditoría con los filtros seleccionados
         </div>
 
-        <div v-if="!auditStore.loading && auditStore.total > 0" class="pagination">
-            <span class="pagination-info">
-                Mostrando {{ auditStore.logs.length }} de {{ auditStore.total }} registros
-            </span>
-            <div class="pagination-buttons">
-                <button
-                    @click="prevPage"
-                    :disabled="currentPage <= 1"
-                    class="btn-secondary"
-                >
-                    ‹ Anterior
-                </button>
-                <button
-                    v-for="p in pages"
-                    :key="p"
-                    :class="['page-btn', { active: p === currentPage }]"
-                    :disabled="p === '...'"
-                    @click="goToPage(p)"
-                >
-                    {{ p }}
-                </button>
-                <button
-                    @click="nextPage"
-                    :disabled="currentPage >= totalPages"
-                    class="btn-secondary"
-                >
-                    Siguiente ›
-                </button>
-            </div>
-        </div>
+        <PaginationBar
+            v-if="!auditStore.loading && auditStore.total > 0"
+            :current-page="currentPage"
+            :total-pages="totalPages"
+            :pages="pages"
+            :count="auditStore.logs.length"
+            :total="auditStore.total"
+            label="registros"
+            @go="goToPage"
+        />
     </div>
 </template>
 
@@ -354,58 +309,6 @@ select.filter-input {
 .badge-eliminar {
     background: rgba(229, 62, 62, 0.15);
     color: #c53030;
-}
-
-.pagination {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.75rem;
-    margin-top: 1.5rem;
-}
-
-.pagination-info {
-    color: var(--color-text-muted);
-    font-size: 0.9rem;
-    white-space: nowrap;
-    text-align: center;
-}
-
-.pagination-buttons {
-    display: flex;
-    gap: 0.4rem;
-    align-items: center;
-    justify-content: center;
-    flex-wrap: wrap;
-}
-
-.pagination-buttons .btn-secondary {
-    padding: 0.5rem 1rem;
-}
-
-.page-btn {
-    min-width: 2.2rem;
-    height: 2.2rem;
-    padding: 0 0.5rem;
-    border: 1px solid var(--color-border);
-    border-radius: 6px;
-    background: var(--color-surface);
-    color: var(--color-text);
-    font-size: 0.9rem;
-    cursor: pointer;
-}
-
-.page-btn:disabled {
-    border: none;
-    background: none;
-    cursor: default;
-}
-
-.page-btn.active {
-    background: var(--color-primary);
-    border-color: var(--color-primary);
-    color: #fff;
-    font-weight: 600;
 }
 
 .error-banner {
