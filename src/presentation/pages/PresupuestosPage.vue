@@ -184,7 +184,7 @@ async function handleAnular(presupuesto: PresupuestoWithDetalle) {
         </div>
 
         <div class="table-wrapper">
-            <table v-if="!presupuestosStore.loading" class="presupuestos-table">
+            <table v-if="!presupuestosStore.loading" class="data-table">
                 <thead>
                     <tr>
                         <th>N°</th>
@@ -307,7 +307,7 @@ async function handleAnular(presupuesto: PresupuestoWithDetalle) {
                 <p v-if="selectedPresupuesto.observacion" class="detail-meta">
                     Observación: {{ selectedPresupuesto.observacion }}
                 </p>
-                <table class="cart-table">
+                <table class="data-table">
                     <thead>
                         <tr>
                             <th>Código</th>
@@ -433,26 +433,6 @@ async function handleAnular(presupuesto: PresupuestoWithDetalle) {
     overflow-x: auto;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.presupuestos-table,
-.cart-table {
-    width: 100%;
-    background: var(--color-surface);
-}
-
-.presupuestos-table th,
-.presupuestos-table td,
-.cart-table th,
-.cart-table td {
-    padding: 1rem;
-    text-align: left;
-}
-
-.presupuestos-table th,
-.cart-table th {
-    background: var(--color-surface-2);
-    font-weight: 600;
 }
 
 .status {

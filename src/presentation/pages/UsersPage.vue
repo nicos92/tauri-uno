@@ -184,7 +184,7 @@ async function removePermission(permissionId: number) {
         </div>
 
         <div class="table-wrapper">
-        <table v-if="!usersStore.loading" class="users-table">
+        <table v-if="!usersStore.loading" class="data-table">
             <thead>
                 <tr>
                     <th>Usuario</th>
@@ -504,22 +504,6 @@ async function removePermission(permissionId: number) {
     overflow-x: auto;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.users-table {
-    width: 100%;
-    background: var(--color-surface);
-}
-
-.users-table th,
-.users-table td {
-    padding: 1rem;
-    text-align: left;
-}
-
-.users-table th {
-    background: var(--color-surface-2);
-    font-weight: 600;
 }
 
 .status-active {

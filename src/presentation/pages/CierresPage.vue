@@ -134,7 +134,7 @@ async function handleReabrir(cierre: CierreWithTipos) {
         </div>
 
         <div class="table-wrapper">
-        <table v-if="!cierresStore.loading" class="cierres-table">
+        <table v-if="!cierresStore.loading" class="data-table">
             <thead>
                 <tr>
                     <th>Fecha</th>
@@ -317,21 +317,17 @@ select.filter-input {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.cierres-table,
 .tipos-table {
     width: 100%;
     background: var(--color-surface);
 }
 
-.cierres-table th,
-.cierres-table td,
 .tipos-table th,
 .tipos-table td {
     padding: 1rem;
     text-align: left;
 }
 
-.cierres-table th,
 .tipos-table th {
     background: var(--color-surface-2);
     font-weight: 600;

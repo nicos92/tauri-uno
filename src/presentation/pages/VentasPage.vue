@@ -129,7 +129,7 @@ function clienteNombre(venta: VentaWithDetalle): string {
         </div>
 
         <div class="table-wrapper">
-        <table v-if="!ventasStore.loading" class="ventas-table">
+        <table v-if="!ventasStore.loading" class="data-table">
             <thead>
                 <tr>
                     <th>N°</th>
@@ -240,7 +240,7 @@ function clienteNombre(venta: VentaWithDetalle): string {
                 <p v-if="selectedVenta.tipo_venta" class="detail-meta">
                     Tipo de venta: {{ selectedVenta.tipo_venta }}
                 </p>
-                <table class="cart-table">
+                <table class="data-table">
                     <thead>
                         <tr>
                             <th>Código</th>
@@ -410,26 +410,6 @@ function clienteNombre(venta: VentaWithDetalle): string {
     overflow-x: auto;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.ventas-table,
-.cart-table {
-    width: 100%;
-    background: var(--color-surface);
-}
-
-.ventas-table th,
-.ventas-table td,
-.cart-table th,
-.cart-table td {
-    padding: 1rem;
-    text-align: left;
-}
-
-.ventas-table th,
-.cart-table th {
-    background: var(--color-surface-2);
-    font-weight: 600;
 }
 
 .status-activa {

@@ -137,7 +137,7 @@ onMounted(() => {
         </div>
 
         <div class="table-wrapper">
-        <table v-if="!auditStore.loading" class="audit-table">
+        <table v-if="!auditStore.loading" class="data-table">
             <thead>
                 <tr>
                     <th>Fecha y Hora</th>
@@ -264,22 +264,6 @@ select.filter-input {
     overflow-x: auto;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.audit-table {
-    width: 100%;
-    background: var(--color-surface);
-}
-
-.audit-table th,
-.audit-table td {
-    padding: 0.9rem 1rem;
-    text-align: left;
-}
-
-.audit-table th {
-    background: var(--color-surface-2);
-    font-weight: 600;
 }
 
 .badge {

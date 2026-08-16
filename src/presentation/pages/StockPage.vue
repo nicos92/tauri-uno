@@ -3,7 +3,11 @@ import { ref, computed, onMounted } from "vue";
 import { useStockStore, useArticulosStore } from "../stores";
 import { usePermissions } from "../composables/usePermissions";
 import { useToasts } from "../composables/useToasts";
-import { useConfirm } from "../composables/useConfirm";
+import PageHeader from "../components/ui/PageHeader.vue";
+import SearchBar from "../components/ui/SearchBar.vue";
+import DataTable from "../components/ui/DataTable.vue";
+import EntityFormModal from "../components/ui/EntityFormModal.vue";
+import ConfirmButton from "../components/ui/ConfirmButton.vue";
 import type {
     Stock,
     CreateStockRequest,
@@ -13,7 +17,6 @@ import type {
 const stockStore = useStockStore();
 const articulosStore = useArticulosStore();
 const { canCreateStock, canUpdateStock, canDeleteStock } = usePermissions();
-const { confirm } = useConfirm();
 
 const showCreateModal = ref(false);
 const showEditModal = ref(false);
@@ -31,6 +34,10 @@ const editGanancia = ref(0);
 const preciosVenta = ref<Map<number, number>>(new Map());
 
 const searchQuery = ref("");
+
+const loading = computed(
+    () => stockStore.loading || articulosStore.loading,
+);
 
 const filteredStock = computed(() => {
     const query = searchQuery.value.toLowerCase().trim();
@@ -135,21 +142,18 @@ async function handleUpdate() {
 }
 
 async function handleDelete(id: number) {
-    if (await confirm({ message: "¿Está seguro de eliminar este stock?" })) {
-        const success = await stockStore.deleteStock(id);
-        if (!success) {
-            useToasts().error(
-                stockStore.error || "No se pudo eliminar el stock.",
-            );
-        }
+    const success = await stockStore.deleteStock(id);
+    if (!success) {
+        useToasts().error(
+            stockStore.error || "No se pudo eliminar el stock.",
+        );
     }
 }
 </script>
 
 <template>
     <div class="stock-page">
-        <div class="page-header">
-            <h1>Gestión de Stock</h1>
+        <PageHeader title="Gestión de Stock">
             <button
                 v-if="canCreateStock()"
                 @click="openCreateModal"
@@ -157,214 +161,146 @@ async function handleDelete(id: number) {
             >
                 Crear Stock
             </button>
-        </div>
+        </PageHeader>
 
-        <div class="search-bar">
-            <input
-                v-model="searchQuery"
-                type="text"
-                placeholder="Buscar por código o artículo..."
-                class="search-input"
-            />
-        </div>
-
-        <div
-            v-if="stockStore.loading || articulosStore.loading"
-            class="loading"
-        >
-            Cargando...
-        </div>
+        <SearchBar
+            v-model="searchQuery"
+            placeholder="Buscar por código o artículo..."
+        />
 
         <div v-if="stockStore.error" class="error-banner">
             {{ stockStore.error }}
         </div>
 
-        <div class="table-wrapper">
-        <table
-            v-if="!(stockStore.loading || articulosStore.loading)"
-            class="stock-table"
+        <DataTable
+            :columns="['Código', 'Artículo', 'Cantidad', 'Costo', 'Ganancia %', 'Precio Venta', 'Acciones']"
+            :loading="loading"
+            :count="filteredStock.length"
+            empty="No hay stock que coincida con la búsqueda"
         >
-            <thead>
-                <tr>
-                    <th>Código</th>
-                    <th>Artículo</th>
-                    <th>Cantidad</th>
-                    <th>Costo</th>
-                    <th>Ganancia %</th>
-                    <th>Precio Venta</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-for="stock in filteredStock" :key="stock.id">
-                    <td>{{ stock.codArticulo }}</td>
-                    <td>{{ stock.articuloNombre }}</td>
-                    <td>{{ stock.cantidad }}</td>
-                    <td>${{ stock.costo.toFixed(2) }}</td>
-                    <td>{{ stock.ganancia }}%</td>
-                    <td>${{ stock.precioVenta.toFixed(2) }}</td>
-                    <td class="actions">
-                        <button
-                            v-if="canUpdateStock()"
-                            @click="openEditModal(stock)"
-                            class="btn-icon"
-                            title="Editar"
-                        >
-                            <img src="/svg/edit.svg" alt="Editar" />
-                        </button>
-                        <button
-                            v-if="canDeleteStock()"
-                            @click="handleDelete(stock.id)"
-                            class="btn-icon btn-danger"
-                            title="Eliminar"
-                        >
-                            <img src="/svg/trash.svg" alt="Eliminar" />
-                        </button>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-        </div>
+            <tr v-for="stock in filteredStock" :key="stock.id">
+                <td>{{ stock.codArticulo }}</td>
+                <td>{{ stock.articuloNombre }}</td>
+                <td>{{ stock.cantidad }}</td>
+                <td>${{ stock.costo.toFixed(2) }}</td>
+                <td>{{ stock.ganancia }}%</td>
+                <td>${{ stock.precioVenta.toFixed(2) }}</td>
+                <td class="actions">
+                    <button
+                        v-if="canUpdateStock()"
+                        @click="openEditModal(stock)"
+                        class="btn-icon"
+                        title="Editar"
+                    >
+                        <img src="/svg/edit.svg" alt="Editar" />
+                    </button>
+                    <ConfirmButton
+                        v-if="canDeleteStock()"
+                        message="¿Está seguro de eliminar este stock?"
+                        @confirmed="handleDelete(stock.id)"
+                    />
+                </td>
+            </tr>
+        </DataTable>
 
-        <div v-if="filteredStock.length === 0" class="empty-state">
-            No hay stock que coincida con la búsqueda
-        </div>
-
-        <div
-            v-if="showCreateModal"
-            class="modal-overlay"
-            @click.self="showCreateModal = false"
+        <EntityFormModal
+            v-model="showCreateModal"
+            title="Crear Stock"
+            :error="stockStore.error"
+            submit-label="Crear"
+            :disable-submit="!newIdArticulo"
+            @submit="handleCreate"
         >
-            <div class="modal">
-                <h2>Crear Stock</h2>
-                <form @submit.prevent="handleCreate">
-                    <div class="form-group">
-                        <label>Artículo</label>
-                        <select v-model="newIdArticulo" required>
-                            <option :value="null" disabled>
-                                Seleccione un artículo
-                            </option>
-                            <option
-                                v-for="art in articulosDisponibles"
-                                :key="art.id"
-                                :value="art.id"
-                            >
-                                {{ art.cod_articulo }} - {{ art.articulo }}
-                            </option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Cantidad</label>
-                        <input
-                            v-model.number="newCantidad"
-                            type="number"
-                            step="0.01"
-                            required
-                        />
-                    </div>
-                    <div class="form-group">
-                        <label>Costo</label>
-                        <input
-                            v-model.number="newCosto"
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            required
-                        />
-                    </div>
-                    <div class="form-group">
-                        <label>Ganancia (%)</label>
-                        <input
-                            v-model.number="newGanancia"
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            required
-                        />
-                    </div>
-                    <div v-if="stockStore.error" class="error-message">
-                        {{ stockStore.error }}
-                    </div>
-                    <div class="modal-actions">
-                        <button
-                            type="button"
-                            @click="showCreateModal = false"
-                            class="btn-secondary"
-                        >
-                            Cancelar
-                        </button>
-                        <button
-                            type="submit"
-                            class="btn-primary"
-                            :disabled="!newIdArticulo"
-                        >
-                            Crear
-                        </button>
-                    </div>
-                </form>
+            <div class="form-group">
+                <label>Artículo</label>
+                <select v-model="newIdArticulo" required>
+                    <option :value="null" disabled>
+                        Seleccione un artículo
+                    </option>
+                    <option
+                        v-for="art in articulosDisponibles"
+                        :key="art.id"
+                        :value="art.id"
+                    >
+                        {{ art.cod_articulo }} - {{ art.articulo }}
+                    </option>
+                </select>
             </div>
-        </div>
-
-        <div
-            v-if="showEditModal"
-            class="modal-overlay"
-            @click.self="showEditModal = false"
-        >
-            <div class="modal">
-                <h2>Editar Stock</h2>
-                <form @submit.prevent="handleUpdate">
-                    <div class="form-group">
-                        <label>Cantidad</label>
-                        <input
-                            v-model.number="editCantidad"
-                            type="number"
-                            step="0.01"
-                            required
-                        />
-                    </div>
-                    <div class="form-group">
-                        <label>Costo</label>
-                        <input
-                            v-model.number="editCosto"
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            required
-                        />
-                    </div>
-                    <div class="form-group">
-                        <label>Ganancia (%)</label>
-                        <input
-                            v-model.number="editGanancia"
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            required
-                        />
-                    </div>
-                    <div class="preview-precio">
-                        Precio de Venta: ${{
-                            editPreviewPrecioVenta.toFixed(2)
-                        }}
-                    </div>
-                    <div v-if="stockStore.error" class="error-message">
-                        {{ stockStore.error }}
-                    </div>
-                    <div class="modal-actions">
-                        <button
-                            type="button"
-                            @click="showEditModal = false"
-                            class="btn-secondary"
-                        >
-                            Cancelar
-                        </button>
-                        <button type="submit" class="btn-primary">
-                            Guardar
-                        </button>
-                    </div>
-                </form>
+            <div class="form-group">
+                <label>Cantidad</label>
+                <input
+                    v-model.number="newCantidad"
+                    type="number"
+                    step="0.01"
+                    required
+                />
             </div>
-        </div>
+            <div class="form-group">
+                <label>Costo</label>
+                <input
+                    v-model.number="newCosto"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    required
+                />
+            </div>
+            <div class="form-group">
+                <label>Ganancia (%)</label>
+                <input
+                    v-model.number="newGanancia"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    required
+                />
+            </div>
+        </EntityFormModal>
+
+        <EntityFormModal
+            v-model="showEditModal"
+            title="Editar Stock"
+            :error="stockStore.error"
+            submit-label="Guardar"
+            @submit="handleUpdate"
+        >
+            <div class="form-group">
+                <label>Cantidad</label>
+                <input
+                    v-model.number="editCantidad"
+                    type="number"
+                    step="0.01"
+                    required
+                />
+            </div>
+            <div class="form-group">
+                <label>Costo</label>
+                <input
+                    v-model.number="editCosto"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    required
+                />
+            </div>
+            <div class="form-group">
+                <label>Ganancia (%)</label>
+                <input
+                    v-model.number="editGanancia"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    required
+                />
+            </div>
+            <template #extra>
+                <div class="preview-precio">
+                    Precio de Venta: ${{
+                        editPreviewPrecioVenta.toFixed(2)
+                    }}
+                </div>
+            </template>
+        </EntityFormModal>
     </div>
 </template>
 
@@ -372,171 +308,7 @@ async function handleDelete(id: number) {
 .stock-page {
     padding: 2rem;
     background: var(--color-bg);
-
     min-height: 100%;
-}
-
-.page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-}
-
-.page-header h1 {
-    margin: 0;
-}
-
-.search-bar {
-    margin-bottom: 1.5rem;
-}
-
-.search-input {
-    width: 100%;
-    padding: 0.75rem 1rem;
-    border: 1px solid var(--color-border);
-    border-radius: 6px;
-    font-size: 1rem;
-    box-sizing: border-box;
-    background: var(--color-surface);
-    color: var(--color-text);
-}
-
-.search-input:focus {
-    outline: none;
-    border-color: var(--color-primary);
-}
-
-.btn-primary {
-    background: var(--color-primary);
-    color: white;
-    border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 6px;
-    cursor: pointer;
-}
-
-.btn-primary:hover:not(:disabled) {
-    background: var(--color-secondary);
-}
-
-.btn-primary:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-.btn-secondary {
-    background: var(--color-surface-2);
-    color: var(--color-text);
-    border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 6px;
-    cursor: pointer;
-}
-
-.table-wrapper {
-    overflow-x: auto;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.stock-table {
-    width: 100%;
-    background: var(--color-surface);
-}
-
-.stock-table th,
-.stock-table td {
-    padding: 1rem;
-    text-align: left;
-}
-
-.stock-table th {
-    background: var(--color-surface-2);
-    font-weight: 600;
-}
-
-.actions {
-    display: flex;
-    gap: 0.5rem;
-}
-
-.btn-icon {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0.25rem;
-}
-
-.btn-icon img {
-    width: 18px;
-    height: 18px;
-}
-
-.btn-danger:hover {
-    opacity: 0.7;
-}
-
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-}
-
-.modal {
-    background: var(--color-surface);
-    padding: 2rem;
-    border-radius: 12px;
-    width: 100%;
-    max-width: 500px;
-    max-height: 90vh;
-    overflow-y: auto;
-}
-
-.modal h2 {
-    margin: 0 0 1.5rem;
-}
-
-.form-group {
-    margin-bottom: 1rem;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-}
-
-.form-group input,
-.form-group select {
-    width: 100%;
-    padding: 0.75rem;
-    border: 1px solid var(--color-border);
-    border-radius: 6px;
-    box-sizing: border-box;
-    background: var(--color-surface);
-    color: var(--color-text);
-}
-
-.form-group select {
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>");
-    background-repeat: no-repeat;
-    background-position: right 0.75rem center;
-    padding-right: 2.5rem;
-}
-
-.modal-actions {
-    display: flex;
-    gap: 1rem;
-    justify-content: flex-end;
-    margin-top: 1.5rem;
 }
 
 .preview-precio {
@@ -547,26 +319,5 @@ async function handleDelete(id: number) {
     font-weight: 500;
     color: var(--color-primary);
     margin-bottom: 1rem;
-}
-
-.error-message {
-    color: var(--color-danger);
-    margin-bottom: 1rem;
-}
-
-.error-banner {
-    color: var(--color-danger);
-    background: rgba(229, 62, 62, 0.1);
-    border: 1px solid rgba(229, 62, 62, 0.3);
-    padding: 0.75rem 1rem;
-    border-radius: 6px;
-    margin-bottom: 1rem;
-}
-
-.loading,
-.empty-state {
-    text-align: center;
-    padding: 2rem;
-    color: var(--color-text-muted);
 }
 </style>

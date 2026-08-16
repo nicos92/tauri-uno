@@ -8,7 +8,11 @@ import {
 } from "../stores";
 import { usePermissions } from "../composables/usePermissions";
 import { useToasts } from "../composables/useToasts";
-import { useConfirm } from "../composables/useConfirm";
+import PageHeader from "../components/ui/PageHeader.vue";
+import SearchBar from "../components/ui/SearchBar.vue";
+import DataTable from "../components/ui/DataTable.vue";
+import EntityFormModal from "../components/ui/EntityFormModal.vue";
+import ConfirmButton from "../components/ui/ConfirmButton.vue";
 import type {
     Articulo,
     CreateArticuloRequest,
@@ -21,7 +25,6 @@ const proveedoresStore = useProveedoresStore();
 const categoriasStore = useCategoriasStore();
 const { canCreateArticulo, canUpdateArticulo, canDeleteArticulo } =
     usePermissions();
-const { confirm } = useConfirm();
 
 const showCreateModal = ref(false);
 const showEditModal = ref(false);
@@ -38,6 +41,13 @@ const editIdSubCategoria = ref<number | null>(null);
 const editIdProveedor = ref<number | null>(null);
 
 const searchQuery = ref("");
+
+const loading = computed(
+    () =>
+        articulosStore.loading ||
+        subCategoriasStore.loading ||
+        proveedoresStore.loading,
+);
 
 const filteredArticulos = computed(() => {
     const query = searchQuery.value.toLowerCase().trim();
@@ -151,21 +161,18 @@ async function handleUpdate() {
 }
 
 async function handleDelete(id: number) {
-    if (await confirm({ message: "¿Está seguro de eliminar este artículo?" })) {
-        const success = await articulosStore.deleteArticulo(id);
-        if (!success) {
-            useToasts().error(
-                articulosStore.error || "No se pudo eliminar el artículo.",
-            );
-        }
+    const success = await articulosStore.deleteArticulo(id);
+    if (!success) {
+        useToasts().error(
+            articulosStore.error || "No se pudo eliminar el artículo.",
+        );
     }
 }
 </script>
 
 <template>
     <div class="articulos-page">
-        <div class="page-header">
-            <h1>Gestión de Artículos</h1>
+        <PageHeader title="Gestión de Artículos">
             <button
                 v-if="canCreateArticulo()"
                 @click="openCreateModal"
@@ -173,214 +180,135 @@ async function handleDelete(id: number) {
             >
                 Crear Artículo
             </button>
-        </div>
+        </PageHeader>
 
-        <div class="search-bar">
-            <input
-                v-model="searchQuery"
-                type="text"
-                placeholder="Buscar por código, artículo, categoría, subcategoría o proveedor..."
-                class="search-input"
-            />
-        </div>
-
-        <div
-            v-if="
-                articulosStore.loading ||
-                subCategoriasStore.loading ||
-                proveedoresStore.loading
-            "
-            class="loading"
-        >
-            Cargando...
-        </div>
+        <SearchBar
+            v-model="searchQuery"
+            placeholder="Buscar por código, artículo, categoría, subcategoría o proveedor..."
+        />
 
         <div v-if="articulosStore.error" class="error-banner">
             {{ articulosStore.error }}
         </div>
 
-        <div class="table-wrapper">
-        <table
-            v-if="
-                !(
-                    articulosStore.loading ||
-                    subCategoriasStore.loading ||
-                    proveedoresStore.loading
-                )
-            "
-            class="articulos-table"
+        <DataTable
+            :columns="['Código', 'Artículo', 'Categoría', 'Sub Categoría', 'Proveedor', 'Acciones']"
+            :loading="loading"
+            :count="filteredArticulos.length"
+            empty="No hay artículos que coincidan con la búsqueda"
         >
-            <thead>
-                <tr>
-                    <th>Código</th>
-                    <th>Artículo</th>
-                    <th>Categoría</th>
-                    <th>Sub Categoría</th>
-                    <th>Proveedor</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-for="art in filteredArticulos" :key="art.id">
-                    <td>{{ art.cod_articulo }}</td>
-                    <td>{{ art.articulo }}</td>
-                    <td>{{ art.categoriaNombre }}</td>
-                    <td>{{ art.subCategoriaNombre }}</td>
-                    <td>{{ art.proveedorNombre }}</td>
-                    <td class="actions">
-                        <button
-                            v-if="canUpdateArticulo()"
-                            @click="openEditModal(art)"
-                            class="btn-icon"
-                            title="Editar"
-                        >
-                            <img src="/svg/edit.svg" alt="Editar" />
-                        </button>
-                        <button
-                            v-if="canDeleteArticulo()"
-                            @click="handleDelete(art.id)"
-                            class="btn-icon btn-danger"
-                            title="Eliminar"
-                        >
-                            <img src="/svg/trash.svg" alt="Eliminar" />
-                        </button>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-        </div>
+            <tr v-for="art in filteredArticulos" :key="art.id">
+                <td>{{ art.cod_articulo }}</td>
+                <td>{{ art.articulo }}</td>
+                <td>{{ art.categoriaNombre }}</td>
+                <td>{{ art.subCategoriaNombre }}</td>
+                <td>{{ art.proveedorNombre }}</td>
+                <td class="actions">
+                    <button
+                        v-if="canUpdateArticulo()"
+                        @click="openEditModal(art)"
+                        class="btn-icon"
+                        title="Editar"
+                    >
+                        <img src="/svg/edit.svg" alt="Editar" />
+                    </button>
+                    <ConfirmButton
+                        v-if="canDeleteArticulo()"
+                        message="¿Está seguro de eliminar este artículo?"
+                        @confirmed="handleDelete(art.id)"
+                    />
+                </td>
+            </tr>
+        </DataTable>
 
-        <div v-if="filteredArticulos.length === 0" class="empty-state">
-            No hay artículos que coincidan con la búsqueda
-        </div>
-
-        <div
-            v-if="showCreateModal"
-            class="modal-overlay"
-            @click.self="showCreateModal = false"
+        <EntityFormModal
+            v-model="showCreateModal"
+            title="Crear Artículo"
+            :error="articulosStore.error"
+            submit-label="Crear"
+            :disable-submit="!newIdSubCategoria || !newIdProveedor"
+            @submit="handleCreate"
         >
-            <div class="modal">
-                <h2>Crear Artículo</h2>
-                <form @submit.prevent="handleCreate">
-                    <div class="form-group">
-                        <label>Código</label>
-                        <input v-model="newCodArticulo" type="text" required />
-                    </div>
-                    <div class="form-group">
-                        <label>Artículo</label>
-                        <input v-model="newArticulo" type="text" required />
-                    </div>
-                    <div class="form-group">
-                        <label>Sub Categoría</label>
-                        <select v-model="newIdSubCategoria" required>
-                            <option :value="null" disabled>
-                                Seleccione una sub categoría
-                            </option>
-                            <option
-                                v-for="sc in subCategoriasConCategoria"
-                                :key="sc.id"
-                                :value="sc.id"
-                            >
-                                {{ sc.label }}
-                            </option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Proveedor</label>
-                        <select v-model="newIdProveedor" required>
-                            <option :value="null" disabled>
-                                Seleccione un proveedor
-                            </option>
-                            <option
-                                v-for="prov in proveedoresStore.proveedores"
-                                :key="prov.id"
-                                :value="prov.id"
-                            >
-                                {{ prov.proveedor }}
-                            </option>
-                        </select>
-                    </div>
-                    <div v-if="articulosStore.error" class="error-message">
-                        {{ articulosStore.error }}
-                    </div>
-                    <div class="modal-actions">
-                        <button
-                            type="button"
-                            @click="showCreateModal = false"
-                            class="btn-secondary"
-                        >
-                            Cancelar
-                        </button>
-                        <button
-                            type="submit"
-                            class="btn-primary"
-                            :disabled="!newIdSubCategoria || !newIdProveedor"
-                        >
-                            Crear
-                        </button>
-                    </div>
-                </form>
+            <div class="form-group">
+                <label>Código</label>
+                <input v-model="newCodArticulo" type="text" required />
             </div>
-        </div>
-
-        <div
-            v-if="showEditModal"
-            class="modal-overlay"
-            @click.self="showEditModal = false"
-        >
-            <div class="modal">
-                <h2>Editar Artículo</h2>
-                <form @submit.prevent="handleUpdate">
-                    <div class="form-group">
-                        <label>Código</label>
-                        <input v-model="editCodArticulo" type="text" required />
-                    </div>
-                    <div class="form-group">
-                        <label>Artículo</label>
-                        <input v-model="editArticulo" type="text" required />
-                    </div>
-                    <div class="form-group">
-                        <label>Sub Categoría</label>
-                        <select v-model="editIdSubCategoria" required>
-                            <option
-                                v-for="sc in subCategoriasConCategoria"
-                                :key="sc.id"
-                                :value="sc.id"
-                            >
-                                {{ sc.label }}
-                            </option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Proveedor</label>
-                        <select v-model="editIdProveedor" required>
-                            <option
-                                v-for="prov in proveedoresStore.proveedores"
-                                :key="prov.id"
-                                :value="prov.id"
-                            >
-                                {{ prov.proveedor }}
-                            </option>
-                        </select>
-                    </div>
-                    <div v-if="articulosStore.error" class="error-message">
-                        {{ articulosStore.error }}
-                    </div>
-                    <div class="modal-actions">
-                        <button
-                            type="button"
-                            @click="showEditModal = false"
-                            class="btn-secondary"
-                        >
-                            Cancelar
-                        </button>
-                        <button type="submit" class="btn-primary">
-                            Guardar
-                        </button>
-                    </div>
-                </form>
+            <div class="form-group">
+                <label>Artículo</label>
+                <input v-model="newArticulo" type="text" required />
             </div>
-        </div>
+            <div class="form-group">
+                <label>Sub Categoría</label>
+                <select v-model="newIdSubCategoria" required>
+                    <option :value="null" disabled>
+                        Seleccione una sub categoría
+                    </option>
+                    <option
+                        v-for="sc in subCategoriasConCategoria"
+                        :key="sc.id"
+                        :value="sc.id"
+                    >
+                        {{ sc.label }}
+                    </option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Proveedor</label>
+                <select v-model="newIdProveedor" required>
+                    <option :value="null" disabled>
+                        Seleccione un proveedor
+                    </option>
+                    <option
+                        v-for="prov in proveedoresStore.proveedores"
+                        :key="prov.id"
+                        :value="prov.id"
+                    >
+                        {{ prov.proveedor }}
+                    </option>
+                </select>
+            </div>
+        </EntityFormModal>
+
+        <EntityFormModal
+            v-model="showEditModal"
+            title="Editar Artículo"
+            :error="articulosStore.error"
+            submit-label="Guardar"
+            @submit="handleUpdate"
+        >
+            <div class="form-group">
+                <label>Código</label>
+                <input v-model="editCodArticulo" type="text" required />
+            </div>
+            <div class="form-group">
+                <label>Artículo</label>
+                <input v-model="editArticulo" type="text" required />
+            </div>
+            <div class="form-group">
+                <label>Sub Categoría</label>
+                <select v-model="editIdSubCategoria" required>
+                    <option
+                        v-for="sc in subCategoriasConCategoria"
+                        :key="sc.id"
+                        :value="sc.id"
+                    >
+                        {{ sc.label }}
+                    </option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Proveedor</label>
+                <select v-model="editIdProveedor" required>
+                    <option
+                        v-for="prov in proveedoresStore.proveedores"
+                        :key="prov.id"
+                        :value="prov.id"
+                    >
+                        {{ prov.proveedor }}
+                    </option>
+                </select>
+            </div>
+        </EntityFormModal>
     </div>
 </template>
 
@@ -389,189 +317,5 @@ async function handleDelete(id: number) {
     padding: 2rem;
     background: var(--color-bg);
     min-height: 100%;
-}
-
-.page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-}
-
-.page-header h1 {
-    margin: 0;
-}
-
-.search-bar {
-    margin-bottom: 1.5rem;
-}
-
-.search-input {
-    width: 100%;
-    padding: 0.75rem 1rem;
-    border: 1px solid var(--color-border);
-    border-radius: 6px;
-    font-size: 1rem;
-    box-sizing: border-box;
-    background: var(--color-surface);
-    color: var(--color-text);
-}
-
-.search-input:focus {
-    outline: none;
-    border-color: var(--color-primary);
-}
-
-.btn-primary {
-    background: var(--color-primary);
-    color: white;
-    border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 6px;
-    cursor: pointer;
-}
-
-.btn-primary:hover:not(:disabled) {
-    background: var(--color-secondary);
-}
-
-.btn-primary:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-.btn-secondary {
-    background: var(--color-surface-2);
-    color: var(--color-text);
-    border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 6px;
-    cursor: pointer;
-}
-
-.table-wrapper {
-    overflow-x: auto;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.articulos-table {
-    width: 100%;
-    background: var(--color-surface);
-}
-
-.articulos-table th,
-.articulos-table td {
-    padding: 1rem;
-    text-align: left;
-}
-
-.articulos-table th {
-    background: var(--color-surface-2);
-    font-weight: 600;
-}
-
-.actions {
-    display: flex;
-    gap: 0.5rem;
-}
-
-.btn-icon {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0.25rem;
-}
-
-.btn-icon img {
-    width: 18px;
-    height: 18px;
-}
-
-.btn-danger:hover {
-    opacity: 0.7;
-}
-
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-}
-
-.modal {
-    background: var(--color-surface);
-    padding: 2rem;
-    border-radius: 12px;
-    width: 100%;
-    max-width: 500px;
-    max-height: 90vh;
-    overflow-y: auto;
-}
-
-.modal h2 {
-    margin: 0 0 1.5rem;
-}
-
-.form-group {
-    margin-bottom: 1rem;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-}
-
-.form-group input,
-.form-group select {
-    width: 100%;
-    padding: 0.75rem;
-    border: 1px solid var(--color-border);
-    border-radius: 6px;
-    box-sizing: border-box;
-    background: var(--color-surface);
-    color: var(--color-text);
-}
-
-.form-group select {
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>");
-    background-repeat: no-repeat;
-    background-position: right 0.75rem center;
-    padding-right: 2.5rem;
-}
-
-.modal-actions {
-    display: flex;
-    gap: 1rem;
-    justify-content: flex-end;
-    margin-top: 1.5rem;
-}
-
-.error-message {
-    color: var(--color-danger);
-    margin-bottom: 1rem;
-}
-
-.error-banner {
-    color: var(--color-danger);
-    background: rgba(229, 62, 62, 0.1);
-    border: 1px solid rgba(229, 62, 62, 0.3);
-    padding: 0.75rem 1rem;
-    border-radius: 6px;
-    margin-bottom: 1rem;
-}
-
-.loading,
-.empty-state {
-    text-align: center;
-    padding: 2rem;
-    color: var(--color-text-muted);
 }
 </style>
