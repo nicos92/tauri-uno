@@ -12,6 +12,7 @@ import {
 import { usePermissions } from "../composables/usePermissions";
 import { useToasts } from "../composables/useToasts";
 import { formatMoney } from "../utils/format";
+import { clienteLabel } from "../utils/cliente";
 import type {
   Cliente,
   CreateClienteRequest,
@@ -82,13 +83,6 @@ const nuevoClienteInvalido = computed(
     !nuevoEmail.value.trim() &&
     !nuevoDireccion.value.trim(),
 );
-
-function clienteLabel(cliente: Cliente): string {
-  const name = [cliente.nombre, cliente.apellido]
-    .filter(Boolean)
-    .join(" ");
-  return name || cliente.telefono || cliente.email || "Sin datos";
-}
 
 const clientesFiltrados = computed<Cliente[]>(() => {
   const query = clienteQuery.value.trim().toLowerCase();
@@ -880,7 +874,7 @@ function generarPdf() {
 }
 
 .dia-cerrado-banner {
-    color: #e53e3e;
+    color: var(--color-danger);
     background: rgba(229, 62, 62, 0.1);
     border: 1px solid rgba(229, 62, 62, 0.3);
     padding: 0.75rem 1rem;
@@ -986,7 +980,7 @@ function generarPdf() {
 }
 
 .descuento-monto {
-    color: #e53e3e;
+    color: var(--color-danger);
     font-size: 0.9rem;
 }
 
@@ -1060,12 +1054,12 @@ function generarPdf() {
 
 .stock-warning {
     display: block;
-    color: #e53e3e;
+    color: var(--color-danger);
     font-size: 0.8rem;
 }
 
 .btn-primary {
-    background: #3F2281;
+    background: var(--color-primary);
     color: white;
     border: none;
     padding: 0.75rem 1.5rem;
@@ -1074,7 +1068,7 @@ function generarPdf() {
 }
 
 .btn-primary:hover:not(:disabled) {
-    background: #3F2281;
+    background: var(--color-primary);
 }
 
 .btn-primary:disabled {
@@ -1099,7 +1093,7 @@ function generarPdf() {
 .btn-tertiary {
     background: transparent;
     color: var(--color-text);
-    border: 1px solid #e53e3e;
+    border: 1px solid var(--color-danger);
     padding: 0.75rem 1rem;
     border-radius: 6px;
     cursor: pointer;
@@ -1121,7 +1115,7 @@ function generarPdf() {
 }
 
 .btn-presupuesto:hover:not(:disabled) {
-    background: #3F2281;
+    background: var(--color-primary);
 }
 
 .btn-presupuesto:disabled {
@@ -1206,7 +1200,7 @@ function generarPdf() {
 }
 
 .error-banner {
-    color: #e53e3e;
+    color: var(--color-danger);
     background: rgba(229, 62, 62, 0.1);
     border: 1px solid rgba(229, 62, 62, 0.3);
     padding: 0.75rem 1rem;
@@ -1314,7 +1308,7 @@ function generarPdf() {
 }
 
 .cliente-limpiar:hover {
-    color: #e53e3e;
+    color: var(--color-danger);
 }
 
 .modal-overlay {
@@ -1363,7 +1357,7 @@ function generarPdf() {
 }
 
 .error-text {
-    color: #e53e3e;
+    color: var(--color-danger);
     margin-top: 0.5rem;
     font-size: 0.9rem;
 }

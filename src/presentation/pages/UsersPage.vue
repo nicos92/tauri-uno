@@ -479,7 +479,7 @@ async function removePermission(permissionId: number) {
 }
 
 .btn-primary {
-    background: #3F2281;
+    background: var(--color-primary);
     color: white;
     border: none;
     padding: 0.75rem 1.5rem;
@@ -488,7 +488,7 @@ async function removePermission(permissionId: number) {
 }
 
 .btn-primary:hover {
-    background: #5568d3;
+    background: var(--color-secondary);
 }
 
 .btn-secondary {
@@ -528,7 +528,7 @@ async function removePermission(permissionId: number) {
 }
 
 .status-inactive {
-    color: #e53e3e;
+    color: var(--color-danger);
     font-weight: 500;
 }
 
@@ -609,12 +609,12 @@ async function removePermission(permissionId: number) {
 }
 
 .error-message {
-    color: #e53e3e;
+    color: var(--color-danger);
     margin-bottom: 1rem;
 }
 
 .error-banner {
-    color: #e53e3e;
+    color: var(--color-danger);
     background: rgba(229, 62, 62, 0.1);
     border: 1px solid rgba(229, 62, 62, 0.3);
     padding: 0.75rem 1rem;
@@ -691,7 +691,7 @@ async function removePermission(permissionId: number) {
 }
 
 .btn-remove {
-    background: #e53e3e;
+    background: var(--color-danger);
     color: white;
     border: none;
     width: 24px;

@@ -476,7 +476,7 @@ async function handleAnular(presupuesto: PresupuestoWithDetalle) {
 }
 
 .status-anulado {
-    color: #e53e3e;
+    color: var(--color-danger);
 }
 
 .actions {
@@ -558,7 +558,7 @@ async function handleAnular(presupuesto: PresupuestoWithDetalle) {
 }
 
 .error-banner {
-    color: #e53e3e;
+    color: var(--color-danger);
     background: rgba(229, 62, 62, 0.1);
     border: 1px solid rgba(229, 62, 62, 0.3);
     padding: 0.75rem 1rem;

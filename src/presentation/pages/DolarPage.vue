@@ -4,16 +4,12 @@ import { useDolarStore } from "../stores";
 import { useToasts } from "../composables/useToasts";
 import { useConfirm } from "../composables/useConfirm";
 import { formatMoney } from "../utils/format";
+import { formatTimestamp } from "../utils/date";
 import type { DollarQuote } from "../../domain/entities";
 
 const dolarStore = useDolarStore();
 const { error: toastError, success: toastSuccess } = useToasts();
 const { confirm } = useConfirm();
-
-function formatTimestamp(timestamp: string): string {
-  const date = new Date(timestamp.replace(" ", "T") + "Z");
-  return isNaN(date.getTime()) ? timestamp : date.toLocaleString();
-}
 
 async function handleRefresh() {
   const ok = await dolarStore.fetchManual();
@@ -206,7 +202,7 @@ onMounted(async () => {
 }
 
 .btn-primary {
-    background: #3F2281;
+    background: var(--color-primary);
     color: white;
     border: none;
     padding: 0.75rem 1.5rem;
@@ -215,7 +211,7 @@ onMounted(async () => {
 }
 
 .btn-primary:hover:not(:disabled) {
-    background: #5568d3;
+    background: var(--color-secondary);
 }
 
 .btn-primary:disabled {
@@ -225,7 +221,7 @@ onMounted(async () => {
 
 .btn-delete {
     background: transparent;
-    color: #e53e3e;
+    color: var(--color-danger);
     border: 1px solid rgba(229, 62, 62, 0.4);
     padding: 0.4rem 0.9rem;
     border-radius: 6px;
@@ -329,7 +325,7 @@ onMounted(async () => {
 }
 
 .error-banner {
-    color: #e53e3e;
+    color: var(--color-danger);
     background: rgba(229, 62, 62, 0.1);
     border: 1px solid rgba(229, 62, 62, 0.3);
     padding: 0.75rem 1rem;

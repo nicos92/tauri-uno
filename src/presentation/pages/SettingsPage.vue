@@ -228,7 +228,7 @@ h1 {
 }
 
 .btn-danger {
-    background: #e53e3e;
+    background: var(--color-danger);
     color: white;
     border: none;
     padding: 0.75rem 1.5rem;
@@ -250,7 +250,7 @@ h1 {
 }
 
 .btn-primary {
-    background: #3F2281;
+    background: var(--color-primary);
     color: white;
     border: none;
     padding: 0.75rem 1.5rem;
@@ -259,7 +259,7 @@ h1 {
 }
 
 .btn-primary:hover:not(:disabled) {
-    background: #5568d3;
+    background: var(--color-secondary);
 }
 
 .btn-primary:disabled {
@@ -318,7 +318,7 @@ h1 {
 }
 
 .error-message {
-    color: #e53e3e;
+    color: var(--color-danger);
     margin-bottom: 1rem;
 }
 

@@ -1,39 +1,32 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { Articulo, CreateArticuloRequest, UpdateArticuloRequest } from "../../domain/entities";
+import { getCurrentUserId } from "../utils/currentUser";
 
 export class ArticuloApiRepository {
-  private getCurrentUserId(): number {
-    const stored = sessionStorage.getItem("currentUser");
-    if (stored) {
-      const user = JSON.parse(stored);
-      return user.id;
-    }
-    return 0;
-  }
 
   async getAllArticulos(): Promise<Articulo[]> {
     return await invoke<Articulo[]>("get_all_articulos", {
-      userId: this.getCurrentUserId(),
+      userId: getCurrentUserId(),
     });
   }
 
   async createArticulo(request: CreateArticuloRequest): Promise<Articulo> {
     return await invoke<Articulo>("create_articulo", {
-      userId: this.getCurrentUserId(),
+      userId: getCurrentUserId(),
       request,
     });
   }
 
   async updateArticulo(request: UpdateArticuloRequest): Promise<Articulo> {
     return await invoke<Articulo>("update_articulo", {
-      userId: this.getCurrentUserId(),
+      userId: getCurrentUserId(),
       request,
     });
   }
 
   async deleteArticulo(id: number): Promise<void> {
     return await invoke<void>("delete_articulo", {
-      userId: this.getCurrentUserId(),
+      userId: getCurrentUserId(),
       id,
     });
   }

@@ -70,6 +70,9 @@ html[data-theme="light"] {
   --color-text: #111827;
   --color-text-muted: #6b7280;
   --color-border: #e5e7eb;
+  --color-primary: #3f2281;
+  --color-secondary: var(--color-secondary);
+  --color-danger: var(--color-danger);
 }
 
 html[data-theme="dark"] {
@@ -80,6 +83,9 @@ html[data-theme="dark"] {
   --color-text: #e5e7eb;
   --color-text-muted: #94a3b8;
   --color-border: #1f2937;
+  --color-primary: #3f2281;
+  --color-secondary: var(--color-secondary);
+  --color-danger: var(--color-danger);
 }
 
 .print-area {

@@ -404,11 +404,11 @@ async function handleDelete(id: number) {
 
 .search-input:focus {
     outline: none;
-    border-color: #3F2281;
+    border-color: var(--color-primary);
 }
 
 .btn-primary {
-    background: #3F2281;
+    background: var(--color-primary);
     color: white;
     border: none;
     padding: 0.75rem 1.5rem;
@@ -417,7 +417,7 @@ async function handleDelete(id: number) {
 }
 
 .btn-primary:hover:not(:disabled) {
-    background: #5568d3;
+    background: var(--color-secondary);
 }
 
 .btn-primary:disabled {
@@ -545,17 +545,17 @@ async function handleDelete(id: number) {
     border-radius: 6px;
     text-align: center;
     font-weight: 500;
-    color: #3F2281;
+    color: var(--color-primary);
     margin-bottom: 1rem;
 }
 
 .error-message {
-    color: #e53e3e;
+    color: var(--color-danger);
     margin-bottom: 1rem;
 }
 
 .error-banner {
-    color: #e53e3e;
+    color: var(--color-danger);
     background: rgba(229, 62, 62, 0.1);
     border: 1px solid rgba(229, 62, 62, 0.3);
     padding: 0.75rem 1rem;

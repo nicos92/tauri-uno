@@ -279,7 +279,7 @@ select.filter-input {
 }
 
 .btn-primary {
-    background: #3F2281;
+    background: var(--color-primary);
     color: white;
     border: none;
     padding: 0.6rem 1.25rem;
@@ -288,7 +288,7 @@ select.filter-input {
 }
 
 .btn-primary:hover:not(:disabled) {
-    background: #5568d3;
+    background: var(--color-secondary);
 }
 
 .btn-secondary {
@@ -402,14 +402,14 @@ select.filter-input {
 }
 
 .page-btn.active {
-    background: #3F2281;
-    border-color: #3F2281;
+    background: var(--color-primary);
+    border-color: var(--color-primary);
     color: #fff;
     font-weight: 600;
 }
 
 .error-banner {
-    color: #e53e3e;
+    color: var(--color-danger);
     background: rgba(229, 62, 62, 0.1);
     border: 1px solid rgba(229, 62, 62, 0.3);
     padding: 0.75rem 1rem;

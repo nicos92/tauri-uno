@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { getCurrentUserId } from "../utils/currentUser";
 import type {
   CreateTipoVentaRequest,
   TipoVenta,
@@ -6,31 +7,23 @@ import type {
 } from "../../domain/entities";
 
 export class TipoVentaApiRepository {
-  private getCurrentUserId(): number {
-    const stored = sessionStorage.getItem("currentUser");
-    if (stored) {
-      const user = JSON.parse(stored);
-      return user.id;
-    }
-    return 0;
-  }
 
   async getAllTiposVenta(): Promise<TipoVenta[]> {
     return await invoke<TipoVenta[]>("get_all_tipos_venta", {
-      userId: this.getCurrentUserId(),
+      userId: getCurrentUserId(),
     });
   }
 
   async createTipoVenta(request: CreateTipoVentaRequest): Promise<TipoVenta> {
     return await invoke<TipoVenta>("create_tipo_venta", {
-      userId: this.getCurrentUserId(),
+      userId: getCurrentUserId(),
       request,
     });
   }
 
   async updateTipoVenta(request: UpdateTipoVentaRequest): Promise<TipoVenta> {
     return await invoke<TipoVenta>("update_tipo_venta", {
-      userId: this.getCurrentUserId(),
+      userId: getCurrentUserId(),
       id: request.id,
       request,
     });
@@ -38,7 +31,7 @@ export class TipoVentaApiRepository {
 
   async deleteTipoVenta(id: number): Promise<void> {
     return await invoke<void>("delete_tipo_venta", {
-      userId: this.getCurrentUserId(),
+      userId: getCurrentUserId(),
       id,
     });
   }

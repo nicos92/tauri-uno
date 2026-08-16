@@ -115,7 +115,7 @@ async function handleLogin() {
     font-size: 2.75rem;
     font-weight: 700;
     text-align: center;
-    color: #3F2281aa;
+    color: color-mix(in srgb, var(--color-primary) 67%, transparent);
 }
 
 .login-container::before {
@@ -174,13 +174,13 @@ input {
 
 input:focus {
     outline: none;
-    border-color: #3F2281;
+    border-color: var(--color-primary);
 }
 
 button {
     width: 100%;
     padding: 0.75rem;
-    background: #3F2281;
+    background: var(--color-primary);
     color: white;
     border: none;
     border-radius: 6px;
@@ -191,7 +191,7 @@ button {
 }
 
 button:hover:not(:disabled) {
-    background: #5568d3;
+    background: var(--color-secondary);
 }
 
 button:disabled {
@@ -200,7 +200,7 @@ button:disabled {
 }
 
 .error-message {
-    color: #e53e3e;
+    color: var(--color-danger);
     margin-bottom: 1rem;
     padding: 0.75rem;
     background: #fed7d7;

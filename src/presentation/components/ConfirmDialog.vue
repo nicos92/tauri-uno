@@ -107,11 +107,11 @@ onBeforeUnmount(() => {
 }
 
 .btn-primary:hover {
-  background: #5568d3;
+  background: var(--color-secondary);
 }
 
 .btn-primary.btn-danger {
-  background: #e53e3e;
+  background: var(--color-danger);
 }
 
 .btn-primary.btn-danger:hover {

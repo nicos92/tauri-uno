@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { getCurrentUserId } from "../utils/currentUser";
 import type {
   CambiarEstadoPresupuestoRequest,
   CreatePresupuestoRequest,
@@ -8,27 +9,19 @@ import type {
 } from "../../domain/entities";
 
 export class PresupuestoApiRepository {
-  private getCurrentUserId(): number {
-    const stored = sessionStorage.getItem("currentUser");
-    if (stored) {
-      const user = JSON.parse(stored);
-      return user.id;
-    }
-    return 0;
-  }
 
   async crearPresupuesto(
     request: CreatePresupuestoRequest,
   ): Promise<PresupuestoWithDetalle> {
     return await invoke<PresupuestoWithDetalle>("crear_presupuesto", {
-      userId: this.getCurrentUserId(),
+      userId: getCurrentUserId(),
       request,
     });
   }
 
   async getPresupuestoById(id: number): Promise<PresupuestoWithDetalle> {
     return await invoke<PresupuestoWithDetalle>("get_presupuesto_by_id", {
-      userId: this.getCurrentUserId(),
+      userId: getCurrentUserId(),
       id,
     });
   }
@@ -42,7 +35,7 @@ export class PresupuestoApiRepository {
     query?: string;
   }): Promise<PresupuestoPage> {
     return await invoke<PresupuestoPage>("get_all_presupuestos", {
-      userId: this.getCurrentUserId(),
+      userId: getCurrentUserId(),
       request: {
         limit: filters.limit,
         offset: filters.offset,
@@ -60,7 +53,7 @@ export class PresupuestoApiRepository {
   ): Promise<void> {
     const request: CambiarEstadoPresupuestoRequest = { id, estado };
     await invoke<void>("cambiar_estado_presupuesto", {
-      userId: this.getCurrentUserId(),
+      userId: getCurrentUserId(),
       request,
     });
   }

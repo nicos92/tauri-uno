@@ -5,20 +5,13 @@ import { usePermissions } from "../composables/usePermissions";
 import { useToasts } from "../composables/useToasts";
 import { useConfirm } from "../composables/useConfirm";
 import { formatMoney } from "../utils/format";
+import { todayLocal } from "../utils/date";
 import type { CierreWithTipos } from "../../domain/entities";
 
 const cierresStore = useCierresStore();
 const { canCreateCierre, canReabrirCierre } = usePermissions();
 const { error: toastError, success: toastSuccess } = useToasts();
 const { confirm } = useConfirm();
-
-function todayLocal(): string {
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = String(now.getMonth() + 1).padStart(2, "0");
-    const d = String(now.getDate()).padStart(2, "0");
-    return `${y}-${m}-${d}`;
-}
 
 const fecha = ref(todayLocal());
 const expanded = ref<Set<number>>(new Set());
@@ -338,11 +331,11 @@ select.filter-input {
 
 .date-input:focus {
     outline: none;
-    border-color: #3F2281;
+    border-color: var(--color-primary);
 }
 
 .btn-primary {
-    background: #3F2281;
+    background: var(--color-primary);
     color: white;
     border: none;
     padding: 0.75rem 1.5rem;
@@ -351,7 +344,7 @@ select.filter-input {
 }
 
 .btn-primary:hover:not(:disabled) {
-    background: #5568d3;
+    background: var(--color-secondary);
 }
 
 .btn-secondary {
@@ -418,7 +411,7 @@ select.filter-input {
 }
 
 .error-banner {
-    color: #e53e3e;
+    color: var(--color-danger);
     background: rgba(229, 62, 62, 0.1);
     border: 1px solid rgba(229, 62, 62, 0.3);
     padding: 0.75rem 1rem;
@@ -479,8 +472,8 @@ select.filter-input {
 }
 
 .page-btn.active {
-    background: #3F2281;
-    border-color: #3F2281;
+    background: var(--color-primary);
+    border-color: var(--color-primary);
     color: #fff;
     font-weight: 600;
 }

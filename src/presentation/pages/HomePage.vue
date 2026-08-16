@@ -552,7 +552,7 @@ p {
 }
 
 .card-link:hover {
-    background: #5568d3;
+    background: var(--color-secondary);
 }
 
 .empty-state {

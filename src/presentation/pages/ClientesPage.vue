@@ -4,6 +4,7 @@ import { useClientesStore } from "../stores";
 import { usePermissions } from "../composables/usePermissions";
 import { useToasts } from "../composables/useToasts";
 import { useConfirm } from "../composables/useConfirm";
+import { clienteLabel } from "../utils/cliente";
 import type {
     Cliente,
     CreateClienteRequest,
@@ -121,13 +122,6 @@ async function handleDelete(cliente: Cliente) {
             );
         }
     }
-}
-
-function clienteLabel(cliente: Cliente): string {
-    const name = [cliente.nombre, cliente.apellido]
-        .filter(Boolean)
-        .join(" ");
-    return name || cliente.telefono || cliente.email || "Sin datos";
 }
 </script>
 
@@ -339,7 +333,7 @@ function clienteLabel(cliente: Cliente): string {
 }
 
 .btn-primary {
-    background: #3F2281;
+    background: var(--color-primary);
     color: white;
     border: none;
     padding: 0.75rem 1.5rem;
@@ -348,7 +342,7 @@ function clienteLabel(cliente: Cliente): string {
 }
 
 .btn-primary:hover {
-    background: #5568d3;
+    background: var(--color-secondary);
 }
 
 .btn-primary:disabled {
@@ -483,12 +477,12 @@ function clienteLabel(cliente: Cliente): string {
 }
 
 .error-message {
-    color: #e53e3e;
+    color: var(--color-danger);
     margin-bottom: 1rem;
 }
 
 .error-banner {
-    color: #e53e3e;
+    color: var(--color-danger);
     background: rgba(229, 62, 62, 0.1);
     border: 1px solid rgba(229, 62, 62, 0.3);
     padding: 0.75rem 1rem;

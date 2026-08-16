@@ -38,7 +38,7 @@ const { toasts } = useToasts();
 }
 
 .toast.error {
-  background: #e53e3e;
+  background: var(--color-danger);
 }
 
 .toast.success {
