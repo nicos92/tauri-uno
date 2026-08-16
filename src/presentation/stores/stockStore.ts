@@ -80,10 +80,6 @@ export const useStockStore = defineStore("stock", () => {
     }
   }
 
-  function calcularPrecioVenta(costo: number, ganancia: number): number {
-    return costo * (1 + ganancia / 100);
-  }
-
   return {
     stocks,
     loading,
@@ -94,6 +90,5 @@ export const useStockStore = defineStore("stock", () => {
     updateStock,
     deleteStock,
     getPrecioVenta,
-    calcularPrecioVenta,
   };
 });

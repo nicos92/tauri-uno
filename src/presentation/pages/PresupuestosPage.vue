@@ -7,6 +7,7 @@ import { useToasts } from "../composables/useToasts";
 import { useConfirm } from "../composables/useConfirm";
 import { formatMoney } from "../utils/format";
 import type { PresupuestoEstado, PresupuestoWithDetalle } from "../../domain/entities";
+import { DEFAULT_CLIENT_LABEL } from "../../domain/entities";
 
 const router = useRouter();
 const presupuestosStore = usePresupuestosStore();
@@ -100,7 +101,7 @@ function clienteNombre(presupuesto: PresupuestoWithDetalle): string {
   const name = [presupuesto.cliente_nombre, presupuesto.cliente_apellido]
     .filter(Boolean)
     .join(" ");
-  return name || "Consumidor Final";
+  return name || DEFAULT_CLIENT_LABEL;
 }
 
 async function handleConvertir(presupuesto: PresupuestoWithDetalle) {

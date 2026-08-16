@@ -13,6 +13,10 @@ import type {
     CreateClienteRequest,
     UpdateClienteRequest,
 } from "../../domain/entities";
+import {
+    isDefaultClient,
+    DEFAULT_CLIENT_LABEL,
+} from "../../domain/entities";
 
 const clientesStore = useClientesStore();
 const { canCreateCliente, canUpdateCliente, canDeleteCliente } =
@@ -55,10 +59,6 @@ const editFormInvalid = computed(
 onMounted(async () => {
     await clientesStore.fetchClientes();
 });
-
-function isDefaultClient(cliente: Cliente): boolean {
-    return cliente.nombre === "Consumidor" && cliente.apellido === "Final";
-}
 
 function openCreateModal() {
     newNombre.value = "";
@@ -112,7 +112,7 @@ async function handleUpdate() {
 async function handleDelete(cliente: Cliente) {
     if (isDefaultClient(cliente)) {
         useToasts().error(
-            "No se puede eliminar el cliente 'Consumidor Final'.",
+            `No se puede eliminar el cliente '${DEFAULT_CLIENT_LABEL}'.`,
         );
         return;
     }

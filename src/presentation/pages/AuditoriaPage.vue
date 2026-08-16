@@ -3,6 +3,7 @@ import { ref, onMounted } from "vue";
 import { useAuditStore } from "../stores";
 import { usePagination } from "../composables/usePagination";
 import PaginationBar from "../components/PaginationBar.vue";
+import { dayStartToISO, dayEndToISO } from "../utils/date";
 import type { AuditLogFilters } from "../../domain/entities";
 
 const auditStore = useAuditStore();
@@ -36,8 +37,8 @@ function buildFilters(limit: number, offset: number): AuditLogFilters {
     };
     if (screen.value) filters.screen = screen.value;
     if (action.value) filters.action = action.value;
-    if (from.value) filters.from = `${from.value}T00:00:00.000Z`;
-    if (to.value) filters.to = `${to.value}T23:59:59.999Z`;
+    if (from.value) filters.from = dayStartToISO(from.value);
+    if (to.value) filters.to = dayEndToISO(to.value);
     return filters;
 }
 

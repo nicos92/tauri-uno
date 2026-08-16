@@ -13,6 +13,7 @@ import type {
     CreateStockRequest,
     UpdateStockRequest,
 } from "../../domain/entities";
+import { calcularPrecioVenta } from "../../domain/entities";
 
 const stockStore = useStockStore();
 const articulosStore = useArticulosStore();
@@ -50,7 +51,7 @@ const filteredStock = computed(() => {
 });
 
 const editPreviewPrecioVenta = computed(() => {
-    return stockStore.calcularPrecioVenta(editCosto.value, editGanancia.value);
+    return calcularPrecioVenta(editCosto.value, editGanancia.value);
 });
 
 const stockCompletos = computed(() => {
@@ -60,7 +61,7 @@ const stockCompletos = computed(() => {
         );
         const precioVenta =
             preciosVenta.value.get(s.id) ||
-            stockStore.calcularPrecioVenta(s.costo, s.ganancia);
+            calcularPrecioVenta(s.costo, s.ganancia);
         return {
             ...s,
             articuloNombre: articulo?.articulo || "Sin artículo",

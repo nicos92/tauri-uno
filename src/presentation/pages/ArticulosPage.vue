@@ -15,6 +15,9 @@ import EntityFormModal from "../components/ui/EntityFormModal.vue";
 import ConfirmButton from "../components/ui/ConfirmButton.vue";
 import type {
     Articulo,
+    Categoria,
+    Proveedor,
+    SubCategoria,
     CreateArticuloRequest,
     UpdateArticuloRequest,
 } from "../../domain/entities";
@@ -62,22 +65,40 @@ const filteredArticulos = computed(() => {
     );
 });
 
+const subCategoriaPorId = computed(() => {
+    const map = new Map<number, SubCategoria>();
+    for (const s of subCategoriasStore.subCategorias) {
+        map.set(s.id, s);
+    }
+    return map;
+});
+
+const categoriaPorId = computed(() => {
+    const map = new Map<number, Categoria>();
+    for (const c of categoriasStore.categorias) {
+        map.set(c.id, c);
+    }
+    return map;
+});
+
+const proveedorPorId = computed(() => {
+    const map = new Map<number, Proveedor>();
+    for (const p of proveedoresStore.proveedores) {
+        map.set(p.id, p);
+    }
+    return map;
+});
+
 const articulosCompletos = computed(() => {
     return articulosStore.articulos
         .slice()
         .sort((a, b) => b.cod_articulo.localeCompare(a.cod_articulo))
         .map((a) => {
-            const subCat = subCategoriasStore.subCategorias.find(
-                (s) => s.id === a.id_sub_categoria,
-            );
+            const subCat = subCategoriaPorId.value.get(a.id_sub_categoria);
             const cat = subCat
-                ? categoriasStore.categorias.find(
-                      (c) => c.id === subCat.id_categoria,
-                  )
-                : null;
-            const prov = proveedoresStore.proveedores.find(
-                (p) => p.id === a.id_proveedor,
-            );
+                ? categoriaPorId.value.get(subCat.id_categoria)
+                : undefined;
+            const prov = proveedorPorId.value.get(a.id_proveedor);
             return {
                 ...a,
                 subCategoriaNombre:
@@ -89,15 +110,10 @@ const articulosCompletos = computed(() => {
 });
 
 const subCategoriasConCategoria = computed(() => {
-    return subCategoriasStore.subCategorias.map((sc) => {
-        const cat = categoriasStore.categorias.find(
-            (c) => c.id === sc.id_categoria,
-        );
-        return {
-            ...sc,
-            label: `${cat?.categoria || ""} > ${sc.sub_categoria}`,
-        };
-    });
+    return subCategoriasStore.subCategorias.map((sc) => ({
+        ...sc,
+        label: `${categoriaPorId.value.get(sc.id_categoria)?.categoria || ""} > ${sc.sub_categoria}`,
+    }));
 });
 
 onMounted(async () => {

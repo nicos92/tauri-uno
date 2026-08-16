@@ -19,6 +19,7 @@ import type {
   CreatePresupuestoRequest,
   CreateVentaRequest,
 } from "../../domain/entities";
+import { calcularPrecioVenta } from "../../domain/entities";
 import ArticuloSearch from "../components/venta/ArticuloSearch.vue";
 import CartTable from "../components/venta/CartTable.vue";
 import ClienteSelector from "../components/venta/ClienteSelector.vue";
@@ -89,7 +90,7 @@ const articulosVendibles = computed<CartSourceItem[]>(() => {
       cod_articulo: articulo?.cod_articulo || "-",
       articulo: articulo?.articulo || "Sin artículo",
       stockDisponible: s.cantidad,
-      precioVenta: stockStore.calcularPrecioVenta(s.costo, s.ganancia),
+      precioVenta: calcularPrecioVenta(s.costo, s.ganancia),
     };
   });
 });

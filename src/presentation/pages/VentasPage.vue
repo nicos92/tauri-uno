@@ -7,6 +7,7 @@ import { useToasts } from "../composables/useToasts";
 import { useConfirm } from "../composables/useConfirm";
 import { formatMoney } from "../utils/format";
 import type { VentaWithDetalle } from "../../domain/entities";
+import { DEFAULT_CLIENT_LABEL } from "../../domain/entities";
 
 const router = useRouter();
 const ventasStore = useVentasStore();
@@ -91,7 +92,7 @@ function clienteNombre(venta: VentaWithDetalle): string {
     const name = [venta.cliente_nombre, venta.cliente_apellido]
         .filter(Boolean)
         .join(" ");
-    return name || "Consumidor Final";
+    return name || DEFAULT_CLIENT_LABEL;
 }
 </script>
 

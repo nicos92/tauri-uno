@@ -32,16 +32,20 @@ const loading = computed(
     () => subCategoriasStore.loading || categoriasStore.loading,
 );
 
+const categoriaPorId = computed(() => {
+    const map = new Map<number, string>();
+    for (const c of categoriasStore.categorias) {
+        map.set(c.id, c.categoria);
+    }
+    return map;
+});
+
 const subCategoriasConCategoria = computed(() => {
-    return subCategoriasStore.subCategorias.map((sc) => {
-        const cat = categoriasStore.categorias.find(
-            (c) => c.id === sc.id_categoria,
-        );
-        return {
-            ...sc,
-            categoriaNombre: cat?.categoria || "Sin categoría",
-        };
-    });
+    return subCategoriasStore.subCategorias.map((sc) => ({
+        ...sc,
+        categoriaNombre:
+            categoriaPorId.value.get(sc.id_categoria) || "Sin categoría",
+    }));
 });
 
 onMounted(async () => {

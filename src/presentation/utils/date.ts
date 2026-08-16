@@ -10,3 +10,11 @@ export function formatTimestamp(timestamp: string): string {
   const date = new Date(timestamp.replace(" ", "T") + "Z");
   return isNaN(date.getTime()) ? timestamp : date.toLocaleString();
 }
+
+export function dayStartToISO(date: string): string {
+  return `${date}T00:00:00.000Z`;
+}
+
+export function dayEndToISO(date: string): string {
+  return `${date}T23:59:59.999Z`;
+}
