@@ -5,8 +5,9 @@ import type {
   CreateClienteRequest,
   UpdateClienteRequest,
 } from "../../domain/entities";
+import type { IClienteRepository } from "../../domain/interfaces";
 
-export class ClienteApiRepository {
+export class ClienteApiRepository implements IClienteRepository {
 
   async getAllClientes(): Promise<Cliente[]> {
     return await invoke<Cliente[]>("get_all_clientes", {

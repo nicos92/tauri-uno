@@ -6,9 +6,7 @@ import type {
   UpdateClienteRequest,
 } from "../../domain/entities";
 import { toErrorMessage } from "../../infrastructure/api/errorHandler";
-import { ClienteApiRepository } from "../../infrastructure/api/clienteRepository";
-
-const clienteRepository = new ClienteApiRepository();
+import { clienteRepository } from "../../infrastructure/di";
 
 export const useClientesStore = defineStore("clientes", () => {
   const clientes = ref<Cliente[]>([]);

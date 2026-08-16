@@ -2,10 +2,8 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 import type { CreateVentaRequest, VentaWithDetalle } from "../../domain/entities";
 import { toErrorMessage } from "../../infrastructure/api/errorHandler";
-import { VentasApiRepository } from "../../infrastructure/api/ventaRepository";
+import { ventaRepository } from "../../infrastructure/di";
 import { useStockStore } from "./stockStore";
-
-const ventasRepository = new VentasApiRepository();
 
 export const useVentasStore = defineStore("ventas", () => {
   const ventas = ref<VentaWithDetalle[]>([]);
@@ -18,7 +16,7 @@ export const useVentasStore = defineStore("ventas", () => {
 
   async function checkDiaCerrado() {
     try {
-      diaCerrado.value = await ventasRepository.isDiaCerrado();
+      diaCerrado.value = await ventaRepository.isDiaCerrado();
     } catch {
       diaCerrado.value = false;
     }
@@ -28,7 +26,7 @@ export const useVentasStore = defineStore("ventas", () => {
     loading.value = true;
     error.value = null;
     try {
-      const page = await ventasRepository.getAllVentas({
+      const page = await ventaRepository.getAllVentas({
         limit: filters?.limit ?? limit.value,
         offset: filters?.offset ?? offset.value,
       });
@@ -45,7 +43,7 @@ export const useVentasStore = defineStore("ventas", () => {
 
   async function getVentaById(id: number): Promise<VentaWithDetalle | null> {
     try {
-      return await ventasRepository.getVentaById(id);
+      return await ventaRepository.getVentaById(id);
     } catch (e) {
       error.value = toErrorMessage(e);
       return null;
@@ -56,7 +54,7 @@ export const useVentasStore = defineStore("ventas", () => {
     clienteId: number,
   ): Promise<VentaWithDetalle[] | null> {
     try {
-      return await ventasRepository.getVentasPorCliente(clienteId);
+      return await ventaRepository.getVentasPorCliente(clienteId);
     } catch (e) {
       error.value = toErrorMessage(e);
       return null;
@@ -68,7 +66,7 @@ export const useVentasStore = defineStore("ventas", () => {
   ): Promise<VentaWithDetalle | null> {
     error.value = null;
     try {
-      const venta = await ventasRepository.createVenta(request);
+      const venta = await ventaRepository.createVenta(request);
       await fetchVentas({ limit: limit.value, offset: offset.value });
       await useStockStore().fetchStock();
       return venta;
@@ -81,7 +79,7 @@ export const useVentasStore = defineStore("ventas", () => {
   async function anularVenta(id: number): Promise<boolean> {
     error.value = null;
     try {
-      await ventasRepository.anularVenta(id);
+      await ventaRepository.anularVenta(id);
       await fetchVentas({ limit: limit.value, offset: offset.value });
       await useStockStore().fetchStock();
       return true;

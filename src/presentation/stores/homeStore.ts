@@ -2,9 +2,7 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 import type { HomeStats } from "../../domain/entities";
 import { toErrorMessage } from "../../infrastructure/api/errorHandler";
-import { HomeApiRepository } from "../../infrastructure/api/homeRepository";
-
-const homeRepository = new HomeApiRepository();
+import { homeRepository } from "../../infrastructure/di";
 
 export const useHomeStore = defineStore("home", () => {
   const stats = ref<HomeStats | null>(null);

@@ -2,10 +2,10 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 import type { Permission, UserPermission } from "../../domain/entities";
 import { toErrorMessage } from "../../infrastructure/api/errorHandler";
-import { UserApiRepository } from "../../infrastructure/api";
+import { userRepository } from "../../infrastructure/di";
 import { ManagePermissionsUseCase } from "../../application/usecases";
 
-const repository = new UserApiRepository();
+const repository = userRepository;
 
 export const usePermissionsStore = defineStore("permissions", () => {
   const allPermissions = ref<Permission[]>([]);

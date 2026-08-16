@@ -2,10 +2,10 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 import type { User, ChangePasswordRequest } from "../../domain/entities";
 import { toErrorMessage } from "../../infrastructure/api/errorHandler";
-import { UserApiRepository } from "../../infrastructure/api";
+import { userRepository } from "../../infrastructure/di";
 import { LoginUseCase, ChangePasswordUseCase } from "../../application/usecases";
 
-const repository = new UserApiRepository();
+const repository = userRepository;
 
 export const useAuthStore = defineStore("auth", () => {
   const user = ref<User | null>(null);

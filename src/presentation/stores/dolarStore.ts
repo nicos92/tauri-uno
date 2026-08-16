@@ -2,9 +2,7 @@ import { defineStore } from "pinia";
 import { computed, ref } from "vue";
 import type { DollarQuote } from "../../domain/entities";
 import { toErrorMessage } from "../../infrastructure/api/errorHandler";
-import { DollarApiRepository } from "../../infrastructure/api/dollarRepository";
-
-const dollarRepository = new DollarApiRepository();
+import { dollarRepository } from "../../infrastructure/di";
 
 export const useDolarStore = defineStore("dolar", () => {
   const quotes = ref<DollarQuote[]>([]);

@@ -2,9 +2,7 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 import type { Categoria, CreateCategoriaRequest, UpdateCategoriaRequest } from "../../domain/entities";
 import { toErrorMessage } from "../../infrastructure/api/errorHandler";
-import { CategoriaApiRepository } from "../../infrastructure/api/CategoriaRepository";
-
-const categoriaRepository = new CategoriaApiRepository();
+import { categoriaRepository } from "../../infrastructure/di";
 
 export const useCategoriasStore = defineStore("categorias", () => {
   const categorias = ref<Categoria[]>([]);

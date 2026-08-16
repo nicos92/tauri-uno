@@ -1,8 +1,9 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { Proveedor, CreateProveedorRequest, UpdateProveedorRequest } from "../../domain/entities";
+import type { IProveedorRepository } from "../../domain/interfaces";
 import { getCurrentUserId } from "../utils/currentUser";
 
-export class ProveedorApiRepository {
+export class ProveedorApiRepository implements IProveedorRepository {
 
   async getAllProveedores(): Promise<Proveedor[]> {
     return await invoke<Proveedor[]>("get_all_proveedores", {

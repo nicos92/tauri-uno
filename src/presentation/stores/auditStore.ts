@@ -2,9 +2,7 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 import type { AuditLog, AuditLogFilters } from "../../domain/entities";
 import { toErrorMessage } from "../../infrastructure/api/errorHandler";
-import { AuditApiRepository } from "../../infrastructure/api/auditRepository";
-
-const auditRepository = new AuditApiRepository();
+import { auditRepository } from "../../infrastructure/di";
 
 export const useAuditStore = defineStore("audit", () => {
   const logs = ref<AuditLog[]>([]);

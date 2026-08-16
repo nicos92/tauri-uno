@@ -2,9 +2,7 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 import type { SubCategoria, CreateSubCategoriaRequest, UpdateSubCategoriaRequest } from "../../domain/entities";
 import { toErrorMessage } from "../../infrastructure/api/errorHandler";
-import { SubCategoriaApiRepository } from "../../infrastructure/api/subCategoriaRepository";
-
-const subCategoriaRepository = new SubCategoriaApiRepository();
+import { subCategoriaRepository } from "../../infrastructure/di";
 
 export const useSubCategoriasStore = defineStore("subCategorias", () => {
   const subCategorias = ref<SubCategoria[]>([]);

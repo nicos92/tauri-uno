@@ -6,6 +6,7 @@ export interface LoginResponse {
 }
 
 export interface IUserRepository {
+  ensureDbReady(): Promise<void>;
   login(request: LoginRequest): Promise<LoginResponse>;
   createUser(request: CreateUserRequest): Promise<User>;
   getAllUsers(): Promise<User[]>;

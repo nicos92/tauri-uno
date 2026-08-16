@@ -5,13 +5,11 @@ import type {
   CierreWithTipos,
   CrearCierreRequest,
 } from "../../domain/entities";
+import type { ICierreRepository, CierreQuery } from "../../domain/interfaces";
 
-export class CierresApiRepository {
+export class CierresApiRepository implements ICierreRepository {
 
-  async getAllCierres(filters: {
-    limit: number;
-    offset: number;
-  }): Promise<CierrePage> {
+  async getAllCierres(filters: CierreQuery): Promise<CierrePage> {
     return await invoke<CierrePage>("get_all_cierres", {
       userId: getCurrentUserId(),
       request: { limit: filters.limit, offset: filters.offset },

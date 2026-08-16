@@ -1,8 +1,9 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { DollarQuote } from "../../domain/entities";
+import type { IDollarRepository } from "../../domain/interfaces";
 import { getCurrentUserId } from "../utils/currentUser";
 
-export class DollarApiRepository {
+export class DollarApiRepository implements IDollarRepository {
 
   async getQuotes(): Promise<DollarQuote[]> {
     return await invoke<DollarQuote[]>("get_dollar_quotes", {

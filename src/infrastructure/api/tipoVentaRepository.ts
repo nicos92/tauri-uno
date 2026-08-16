@@ -5,8 +5,9 @@ import type {
   TipoVenta,
   UpdateTipoVentaRequest,
 } from "../../domain/entities";
+import type { ITipoVentaRepository } from "../../domain/interfaces";
 
-export class TipoVentaApiRepository {
+export class TipoVentaApiRepository implements ITipoVentaRepository {
 
   async getAllTiposVenta(): Promise<TipoVenta[]> {
     return await invoke<TipoVenta[]>("get_all_tipos_venta", {
@@ -25,7 +26,10 @@ export class TipoVentaApiRepository {
     return await invoke<TipoVenta>("update_tipo_venta", {
       userId: getCurrentUserId(),
       id: request.id,
-      request,
+      request: {
+        nombre: request.nombre,
+        hacia_donde: request.hacia_donde,
+      },
     });
   }
 

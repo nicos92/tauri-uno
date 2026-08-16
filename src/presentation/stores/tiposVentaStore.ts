@@ -6,9 +6,7 @@ import type {
   UpdateTipoVentaRequest,
 } from "../../domain/entities";
 import { toErrorMessage } from "../../infrastructure/api/errorHandler";
-import { TipoVentaApiRepository } from "../../infrastructure/api/tipoVentaRepository";
-
-const tipoVentaRepository = new TipoVentaApiRepository();
+import { tipoVentaRepository } from "../../infrastructure/di";
 
 export const useTiposVentaStore = defineStore("tiposVenta", () => {
   const tipos = ref<TipoVenta[]>([]);

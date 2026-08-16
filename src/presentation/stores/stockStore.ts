@@ -2,9 +2,7 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 import type { Stock, CreateStockRequest, UpdateStockRequest } from "../../domain/entities";
 import { toErrorMessage } from "../../infrastructure/api/errorHandler";
-import { StockApiRepository } from "../../infrastructure/api/stockRepository";
-
-const stockRepository = new StockApiRepository();
+import { stockRepository } from "../../infrastructure/di";
 
 export const useStockStore = defineStore("stock", () => {
   const stocks = ref<Stock[]>([]);

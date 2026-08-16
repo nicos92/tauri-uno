@@ -6,9 +6,7 @@ import type {
   PresupuestoWithDetalle,
 } from "../../domain/entities";
 import { toErrorMessage } from "../../infrastructure/api/errorHandler";
-import { PresupuestoApiRepository } from "../../infrastructure/api/presupuestoRepository";
-
-const presupuestoRepository = new PresupuestoApiRepository();
+import { presupuestoRepository } from "../../infrastructure/di";
 
 export const usePresupuestosStore = defineStore("presupuestos", () => {
   const presupuestos = ref<PresupuestoWithDetalle[]>([]);

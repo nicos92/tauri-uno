@@ -2,9 +2,7 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 import type { Proveedor, CreateProveedorRequest, UpdateProveedorRequest } from "../../domain/entities";
 import { toErrorMessage } from "../../infrastructure/api/errorHandler";
-import { ProveedorApiRepository } from "../../infrastructure/api/proveedorRepository";
-
-const proveedorRepository = new ProveedorApiRepository();
+import { proveedorRepository } from "../../infrastructure/di";
 
 export const useProveedoresStore = defineStore("proveedores", () => {
   const proveedores = ref<Proveedor[]>([]);

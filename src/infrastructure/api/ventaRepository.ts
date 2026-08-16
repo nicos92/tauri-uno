@@ -5,13 +5,11 @@ import type {
   VentaPage,
   VentaWithDetalle,
 } from "../../domain/entities";
+import type { IVentaRepository, VentaQuery } from "../../domain/interfaces";
 
-export class VentasApiRepository {
+export class VentasApiRepository implements IVentaRepository {
 
-  async getAllVentas(filters: {
-    limit: number;
-    offset: number;
-  }): Promise<VentaPage> {
+  async getAllVentas(filters: VentaQuery): Promise<VentaPage> {
     return await invoke<VentaPage>("get_all_ventas", {
       userId: getCurrentUserId(),
       request: { limit: filters.limit, offset: filters.offset },

@@ -1,8 +1,9 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { Stock, CreateStockRequest, UpdateStockRequest } from "../../domain/entities";
+import type { IStockRepository } from "../../domain/interfaces";
 import { getCurrentUserId } from "../utils/currentUser";
 
-export class StockApiRepository {
+export class StockApiRepository implements IStockRepository {
 
   async getAllStock(): Promise<Stock[]> {
     return await invoke<Stock[]>("get_all_stock", {

@@ -2,9 +2,7 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 import type { CierreWithTipos } from "../../domain/entities";
 import { toErrorMessage } from "../../infrastructure/api/errorHandler";
-import { CierresApiRepository } from "../../infrastructure/api/cierreRepository";
-
-const cierresRepository = new CierresApiRepository();
+import { cierreRepository } from "../../infrastructure/di";
 
 export const useCierresStore = defineStore("cierres", () => {
   const cierres = ref<CierreWithTipos[]>([]);
@@ -22,7 +20,7 @@ export const useCierresStore = defineStore("cierres", () => {
         limit.value = filters.limit;
         offset.value = filters.offset;
       }
-      const page = await cierresRepository.getAllCierres({
+      const page = await cierreRepository.getAllCierres({
         limit: limit.value,
         offset: offset.value,
       });
@@ -38,7 +36,7 @@ export const useCierresStore = defineStore("cierres", () => {
   async function crearCierre(fecha: string): Promise<boolean> {
     error.value = null;
     try {
-      const cierre = await cierresRepository.crearCierre({ fecha });
+      const cierre = await cierreRepository.crearCierre({ fecha });
       cierres.value.unshift(cierre);
       return true;
     } catch (e) {
@@ -50,7 +48,7 @@ export const useCierresStore = defineStore("cierres", () => {
   async function reabrirCierre(fecha: string): Promise<boolean> {
     error.value = null;
     try {
-      await cierresRepository.reabrirCierre(fecha);
+      await cierreRepository.reabrirCierre(fecha);
       cierres.value = cierres.value.filter((c) => c.fecha !== fecha);
       return true;
     } catch (e) {

@@ -366,22 +366,6 @@ export interface PresupuestoPage {
   offset: number;
 }
 
-export interface PresupuestoFilter {
-  estado?: PresupuestoEstado;
-  fecha_desde?: string;
-  fecha_hasta?: string;
-  query?: string;
-}
-
-export interface GetPresupuestosRequest {
-  limit: number;
-  offset: number;
-  estado?: PresupuestoEstado;
-  fecha_desde?: string;
-  fecha_hasta?: string;
-  query?: string;
-}
-
 export interface CambiarEstadoPresupuestoRequest {
   id: number;
   estado: PresupuestoEstado;

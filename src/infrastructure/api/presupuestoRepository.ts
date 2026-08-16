@@ -7,8 +7,12 @@ import type {
   PresupuestoPage,
   PresupuestoWithDetalle,
 } from "../../domain/entities";
+import type {
+  IPresupuestoRepository,
+  PresupuestoQuery,
+} from "../../domain/interfaces";
 
-export class PresupuestoApiRepository {
+export class PresupuestoApiRepository implements IPresupuestoRepository {
 
   async crearPresupuesto(
     request: CreatePresupuestoRequest,
@@ -26,14 +30,7 @@ export class PresupuestoApiRepository {
     });
   }
 
-  async getAllPresupuestos(filters: {
-    limit: number;
-    offset: number;
-    estado?: PresupuestoEstado;
-    fecha_desde?: string;
-    fecha_hasta?: string;
-    query?: string;
-  }): Promise<PresupuestoPage> {
+  async getAllPresupuestos(filters: PresupuestoQuery): Promise<PresupuestoPage> {
     return await invoke<PresupuestoPage>("get_all_presupuestos", {
       userId: getCurrentUserId(),
       request: {

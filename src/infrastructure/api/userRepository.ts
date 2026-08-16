@@ -1,12 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { User, Permission, UserPermission, LoginRequest, CreateUserRequest, UpdateUserRequest, AddPermissionRequest, ChangePasswordRequest } from "../../domain/entities";
-import type { IUserRepository } from "../../domain/interfaces";
+import type { IUserRepository, LoginResponse } from "../../domain/interfaces";
 import { getCurrentUserId } from "../utils/currentUser";
-
-export interface LoginResponse {
-  user: User;
-  permissions: string[];
-}
 
 export class UserApiRepository implements IUserRepository {
 

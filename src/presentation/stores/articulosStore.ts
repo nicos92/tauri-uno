@@ -2,9 +2,7 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 import type { Articulo, CreateArticuloRequest, UpdateArticuloRequest } from "../../domain/entities";
 import { toErrorMessage } from "../../infrastructure/api/errorHandler";
-import { ArticuloApiRepository } from "../../infrastructure/api/articuloRepository";
-
-const articuloRepository = new ArticuloApiRepository();
+import { articuloRepository } from "../../infrastructure/di";
 
 export const useArticulosStore = defineStore("articulos", () => {
   const articulos = ref<Articulo[]>([]);

@@ -1,8 +1,9 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { SubCategoria, CreateSubCategoriaRequest, UpdateSubCategoriaRequest } from "../../domain/entities";
+import type { ISubCategoriaRepository } from "../../domain/interfaces";
 import { getCurrentUserId } from "../utils/currentUser";
 
-export class SubCategoriaApiRepository {
+export class SubCategoriaApiRepository implements ISubCategoriaRepository {
 
   async getAllSubCategorias(): Promise<SubCategoria[]> {
     return await invoke<SubCategoria[]>("get_all_sub_categorias", {
