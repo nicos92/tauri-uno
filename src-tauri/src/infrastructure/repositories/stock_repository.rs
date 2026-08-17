@@ -1,6 +1,6 @@
 use rusqlite::params;
 
-use crate::domain::entities::Stock;
+use crate::domain::entities::{Stock, StockPreview};
 use crate::domain::repositories::StockRepository;
 use crate::infrastructure::database::DB;
 use crate::infrastructure::error::AppError;
@@ -115,6 +115,88 @@ impl StockRepository for SqliteStockRepository {
         )?;
 
         Ok(count > 0)
+    }
+
+    fn find_filtered_with_preview(
+        &self,
+        porcentaje: f64,
+        id_categoria: Option<i64>,
+        id_sub_categoria: Option<i64>,
+        id_proveedor: Option<i64>,
+    ) -> Result<Vec<StockPreview>, AppError> {
+        let conn = DB.lock().map_err(|e| AppError::Internal(e.to_string()))?;
+
+        let mut stmt = conn.prepare(
+            "SELECT s.id, s.id_articulo, a.cod_articulo, a.articulo,
+                    c.categoria, sc.sub_categoria, p.proveedor,
+                    s.costo, s.ganancia,
+                    ROUND(s.costo * (1.0 + ?1 / 100.0), 2) AS costo_nuevo,
+                    s.cantidad
+             FROM stock s
+             INNER JOIN articulos a ON s.id_articulo = a.id
+             INNER JOIN sub_categorias sc ON a.id_sub_categoria = sc.id
+             INNER JOIN categorias c ON sc.id_categoria = c.id
+             INNER JOIN proveedores p ON a.id_proveedor = p.id
+             WHERE (?2 IS NULL OR c.id = ?2)
+               AND (?3 IS NULL OR sc.id = ?3)
+               AND (?4 IS NULL OR p.id = ?4)
+             ORDER BY a.articulo",
+        )?;
+
+        let mut previews = Vec::new();
+        let mut rows = stmt.query(params![
+            porcentaje,
+            id_categoria,
+            id_sub_categoria,
+            id_proveedor
+        ])?;
+
+        while let Some(row) = rows.next()? {
+            previews.push(StockPreview {
+                id_stock: row.get(0)?,
+                id_articulo: row.get(1)?,
+                cod_articulo: row.get(2)?,
+                articulo: row.get(3)?,
+                categoria: row.get(4)?,
+                sub_categoria: row.get(5)?,
+                proveedor: row.get(6)?,
+                costo_actual: row.get(7)?,
+                ganancia: row.get(8)?,
+                costo_nuevo: row.get(9)?,
+                cantidad: row.get(10)?,
+            });
+        }
+
+        Ok(previews)
+    }
+
+    fn apply_costo_percentage(
+        &self,
+        porcentaje: f64,
+        id_categoria: Option<i64>,
+        id_sub_categoria: Option<i64>,
+        id_proveedor: Option<i64>,
+    ) -> Result<i64, AppError> {
+        let conn = DB.lock().map_err(|e| AppError::Internal(e.to_string()))?;
+
+        let affected = conn.execute(
+            "UPDATE stock
+             SET costo = ROUND(costo * (1.0 + ?1 / 100.0), 2)
+             WHERE id IN (
+                 SELECT s.id
+                 FROM stock s
+                 INNER JOIN articulos a ON s.id_articulo = a.id
+                 INNER JOIN sub_categorias sc ON a.id_sub_categoria = sc.id
+                 INNER JOIN categorias c ON sc.id_categoria = c.id
+                 INNER JOIN proveedores p ON a.id_proveedor = p.id
+                 WHERE (?2 IS NULL OR c.id = ?2)
+                   AND (?3 IS NULL OR sc.id = ?3)
+                   AND (?4 IS NULL OR p.id = ?4)
+             )",
+            params![porcentaje, id_categoria, id_sub_categoria, id_proveedor],
+        )?;
+
+        Ok(affected as i64)
     }
 }
 
@@ -289,5 +371,165 @@ mod tests {
 
         assert!(!repo.has_ventas(articulo.id).unwrap());
         assert!(!repo.has_ventas(99999).unwrap());
+    }
+
+    fn create_articulo_with_names(cat_name: &str, sub_name: &str, prov_code: &str) -> Articulo {
+        let cat_repo = SqliteCategoriaRepository::new();
+        let cat = cat_repo
+            .create(&Categoria::new(cat_name.to_string()))
+            .unwrap();
+        let sub_repo = SqliteSubCategoriaRepository::new();
+        let sub = sub_repo
+            .create(&SubCategoria::new(sub_name.to_string(), cat.id))
+            .unwrap();
+        let prov_repo = SqliteProveedorRepository::new();
+        let prov = prov_repo
+            .create(&Proveedor::new(
+                prov_code.to_string(),
+                prov_code.to_string(),
+                None,
+                None,
+                None,
+                None,
+            ))
+            .unwrap();
+        SqliteArticuloRepository::new()
+            .create(&Articulo::new(
+                format!("Art {}", prov_code),
+                format!("COD-{}", prov_code),
+                sub.id,
+                prov.id,
+            ))
+            .unwrap()
+    }
+
+    #[test]
+    fn find_filtered_with_preview_no_filter_returns_all() {
+        let _guard = fresh_db();
+        let art1 = create_articulo_with_names("Cat A", "Sub A", "P1");
+        let art2 = create_articulo_with_names("Cat B", "Sub B", "P2");
+        let repo = SqliteStockRepository::new();
+
+        repo.create(&Stock::new(art1.id, 10.0, 100.0, 25.0))
+            .unwrap();
+        repo.create(&Stock::new(art2.id, 5.0, 200.0, 30.0))
+            .unwrap();
+
+        let cat_repo = SqliteCategoriaRepository::new();
+        let cats = cat_repo.find_all().unwrap();
+        let cat_a = cats.iter().find(|c| c.categoria == "Cat A").unwrap();
+        let cat_b = cats.iter().find(|c| c.categoria == "Cat B").unwrap();
+
+        let preview_a = repo
+            .find_filtered_with_preview(20.0, Some(cat_a.id), None, None)
+            .unwrap();
+        assert_eq!(preview_a.len(), 1);
+        assert!((preview_a[0].costo_nuevo - 120.0).abs() < 0.01);
+
+        let preview_b = repo
+            .find_filtered_with_preview(20.0, Some(cat_b.id), None, None)
+            .unwrap();
+        assert_eq!(preview_b.len(), 1);
+        assert!((preview_b[0].costo_nuevo - 240.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn find_filtered_with_preview_matches_category_filter() {
+        let _guard = fresh_db();
+        let art1 = create_articulo_with_names("Cat Cable", "Sub Cable", "P1");
+        let art2 = create_articulo_with_names("Cat Otro", "Sub Otro", "P2");
+        let repo = SqliteStockRepository::new();
+
+        repo.create(&Stock::new(art1.id, 10.0, 1000.0, 20.0))
+            .unwrap();
+        repo.create(&Stock::new(art2.id, 5.0, 500.0, 30.0))
+            .unwrap();
+
+        let cat_repo = SqliteCategoriaRepository::new();
+        let cats = cat_repo.find_all().unwrap();
+        let cat_cable = cats.iter().find(|c| c.categoria == "Cat Cable").unwrap();
+
+        let previews = repo
+            .find_filtered_with_preview(10.0, Some(cat_cable.id), None, None)
+            .unwrap();
+        assert_eq!(previews.len(), 1);
+        assert_eq!(previews[0].articulo, "Art P1");
+        assert!((previews[0].costo_nuevo - 1100.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn apply_costo_percentage_increases_all() {
+        let _guard = fresh_db();
+        let art1 = create_articulo_with_names("Cat X", "Sub X", "PX1");
+        let art2 = create_articulo_with_names("Cat Y", "Sub Y", "PX2");
+        let repo = SqliteStockRepository::new();
+
+        repo.create(&Stock::new(art1.id, 10.0, 1000.0, 20.0))
+            .unwrap();
+        repo.create(&Stock::new(art2.id, 5.0, 2000.0, 30.0))
+            .unwrap();
+
+        let cat_repo = SqliteCategoriaRepository::new();
+        let cats = cat_repo.find_all().unwrap();
+        let cat_x = cats.iter().find(|c| c.categoria == "Cat X").unwrap();
+        let cat_y = cats.iter().find(|c| c.categoria == "Cat Y").unwrap();
+
+        let affected_x = repo
+            .apply_costo_percentage(20.0, Some(cat_x.id), None, None)
+            .unwrap();
+        assert_eq!(affected_x, 1);
+
+        let affected_y = repo
+            .apply_costo_percentage(20.0, Some(cat_y.id), None, None)
+            .unwrap();
+        assert_eq!(affected_y, 1);
+
+        let s1 = repo.find_by_articulo(art1.id).unwrap().unwrap();
+        let s2 = repo.find_by_articulo(art2.id).unwrap().unwrap();
+        assert!((s1.costo - 1200.0).abs() < 0.01);
+        assert!((s2.costo - 2400.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn apply_costo_percentage_with_category_filter() {
+        let _guard = fresh_db();
+        let art1 = create_articulo_with_names("Cat Filter", "Sub Filter", "PF1");
+        let art2 = create_articulo_with_names("Cat Other", "Sub Other", "PF2");
+        let repo = SqliteStockRepository::new();
+
+        repo.create(&Stock::new(art1.id, 10.0, 1000.0, 20.0))
+            .unwrap();
+        repo.create(&Stock::new(art2.id, 5.0, 2000.0, 30.0))
+            .unwrap();
+
+        let cat_repo = SqliteCategoriaRepository::new();
+        let cats = cat_repo.find_all().unwrap();
+        let cat_filter = cats.iter().find(|c| c.categoria == "Cat Filter").unwrap();
+
+        let affected = repo
+            .apply_costo_percentage(10.0, Some(cat_filter.id), None, None)
+            .unwrap();
+        assert_eq!(affected, 1);
+
+        let s1 = repo.find_by_articulo(art1.id).unwrap().unwrap();
+        let s2 = repo.find_by_articulo(art2.id).unwrap().unwrap();
+        assert!((s1.costo - 1100.0).abs() < 0.01);
+        assert!((s2.costo - 2000.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn apply_costo_percentage_no_filter_returns_zero_when_no_stock() {
+        let _guard = fresh_db();
+        let _art = create_articulo_with_names("Cat Empty", "Sub Empty", "EMPTY1");
+        let repo = SqliteStockRepository::new();
+
+        let cat_repo = SqliteCategoriaRepository::new();
+        let cats = cat_repo.find_all().unwrap();
+        let cat = cats.iter().find(|c| c.categoria == "Cat Empty").unwrap();
+
+        let affected = repo
+            .apply_costo_percentage(20.0, Some(cat.id), None, None)
+            .unwrap();
+        assert_eq!(affected, 0);
     }
 }

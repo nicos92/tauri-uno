@@ -11,6 +11,7 @@ pub mod permission_code;
 pub mod presupuesto;
 pub mod proveedor;
 pub mod stock;
+pub mod stock_preview;
 pub mod sub_categoria;
 pub mod tipo_venta;
 pub mod user;
@@ -32,6 +33,7 @@ pub use presupuesto::{
 };
 pub use proveedor::Proveedor;
 pub use stock::Stock;
+pub use stock_preview::StockPreview;
 pub use sub_categoria::SubCategoria;
 pub use tipo_venta::TipoVenta;
 pub use user::User;

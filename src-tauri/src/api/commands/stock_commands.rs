@@ -3,7 +3,7 @@ use tauri::State;
 
 use crate::application::services::{log_audit, StockService};
 use crate::api::commands::permissions::check_permission;
-use crate::domain::entities::{AuditAction, AuditScreen, PermissionCode, Stock};
+use crate::domain::entities::{AuditAction, AuditScreen, PermissionCode, Stock, StockPreview};
 use crate::infrastructure::error::AppError;
 
 pub struct StockAppState {
@@ -159,4 +159,73 @@ pub fn get_precio_venta(
         .map_err(|e| AppError::Internal(e.to_string()))?;
     check_permission(user_id, PermissionCode::ViewStock)?;
     service.get_precio_venta(id)
+}
+
+#[derive(serde::Deserialize)]
+pub struct GetPreviewCostoRequest {
+    pub porcentaje: f64,
+    pub id_categoria: Option<i64>,
+    pub id_sub_categoria: Option<i64>,
+    pub id_proveedor: Option<i64>,
+}
+
+#[derive(serde::Deserialize)]
+pub struct ApplyCostoPercentageRequest {
+    pub porcentaje: f64,
+    pub id_categoria: Option<i64>,
+    pub id_sub_categoria: Option<i64>,
+    pub id_proveedor: Option<i64>,
+}
+
+#[derive(serde::Serialize)]
+pub struct ApplyCostoPercentageResult {
+    pub updated_count: i64,
+}
+
+#[tauri::command(async)]
+pub fn get_stock_preview_costo(
+    user_id: i64,
+    porcentaje: f64,
+    id_categoria: Option<i64>,
+    id_sub_categoria: Option<i64>,
+    id_proveedor: Option<i64>,
+    state: State<StockAppState>,
+) -> Result<Vec<StockPreview>, AppError> {
+    let service = state
+        .stock_service
+        .lock()
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+    check_permission(user_id, PermissionCode::ViewStock)?;
+    service.get_preview(porcentaje, id_categoria, id_sub_categoria, id_proveedor)
+}
+
+#[tauri::command(async)]
+pub fn apply_costo_percentage_stock(
+    user_id: i64,
+    request: ApplyCostoPercentageRequest,
+    state: State<StockAppState>,
+) -> Result<ApplyCostoPercentageResult, AppError> {
+    let service = state
+        .stock_service
+        .lock()
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+    check_permission(user_id, PermissionCode::UpdateStock)?;
+    let count = service.apply_costo_percentage(
+        request.porcentaje,
+        request.id_categoria,
+        request.id_sub_categoria,
+        request.id_proveedor,
+    )?;
+    log_audit(
+        user_id,
+        AuditScreen::Stock,
+        AuditAction::Update,
+        Some(format!(
+            "Actualización masiva de costos: {}% ({} artículos)",
+            request.porcentaje, count
+        )),
+    )?;
+    Ok(ApplyCostoPercentageResult {
+        updated_count: count,
+    })
 }

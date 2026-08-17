@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::domain::entities::Stock;
+use crate::domain::entities::{Stock, StockPreview};
 use crate::domain::repositories::StockRepository;
 use crate::infrastructure::error::AppError;
 use crate::infrastructure::repositories::SqliteStockRepository;
@@ -91,6 +91,46 @@ impl StockService {
         let stock = self.get_by_id(id)?;
         let precio_venta = stock.costo * (1.0 + stock.ganancia / 100.0);
         Ok(precio_venta)
+    }
+
+    pub fn get_preview(
+        &self,
+        porcentaje: f64,
+        id_categoria: Option<i64>,
+        id_sub_categoria: Option<i64>,
+        id_proveedor: Option<i64>,
+    ) -> Result<Vec<StockPreview>, AppError> {
+        if !porcentaje.is_finite() || porcentaje == 0.0 || porcentaje < -100.0 {
+            return Err(AppError::BulkUpdateInvalidPorcentaje);
+        }
+        self.repository.find_filtered_with_preview(
+            porcentaje,
+            id_categoria,
+            id_sub_categoria,
+            id_proveedor,
+        )
+    }
+
+    pub fn apply_costo_percentage(
+        &self,
+        porcentaje: f64,
+        id_categoria: Option<i64>,
+        id_sub_categoria: Option<i64>,
+        id_proveedor: Option<i64>,
+    ) -> Result<i64, AppError> {
+        if !porcentaje.is_finite() || porcentaje == 0.0 || porcentaje < -100.0 {
+            return Err(AppError::BulkUpdateInvalidPorcentaje);
+        }
+        let affected = self.repository.apply_costo_percentage(
+            porcentaje,
+            id_categoria,
+            id_sub_categoria,
+            id_proveedor,
+        )?;
+        if affected == 0 {
+            return Err(AppError::BulkUpdateNoMatches);
+        }
+        Ok(affected)
     }
 }
 
@@ -194,5 +234,202 @@ mod tests {
             service.get_by_id(stock.id),
             Err(AppError::StockNotFound)
         ));
+    }
+
+    fn create_articulo_with_names(cat_name: &str, sub_name: &str, prov_code: &str) -> Articulo {
+        let cat_repo = SqliteCategoriaRepository::new();
+        let cat = cat_repo
+            .create(&Categoria::new(cat_name.to_string()))
+            .unwrap();
+        let sub_repo = SqliteSubCategoriaRepository::new();
+        let sub = sub_repo
+            .create(&SubCategoria::new(sub_name.to_string(), cat.id))
+            .unwrap();
+        let prov_repo = SqliteProveedorRepository::new();
+        let prov = prov_repo
+            .create(&Proveedor::new(
+                prov_code.to_string(),
+                prov_code.to_string(),
+                None,
+                None,
+                None,
+                None,
+            ))
+            .unwrap();
+        SqliteArticuloRepository::new()
+            .create(&Articulo::new(
+                format!("Art {}", prov_code),
+                format!("COD-{}", prov_code),
+                sub.id,
+                prov.id,
+            ))
+            .unwrap()
+    }
+
+    #[test]
+    fn apply_costo_percentage_rejects_zero() {
+        let _guard = fresh_db();
+        let service = StockService::new();
+        let err = service
+            .apply_costo_percentage(0.0, None, None, None)
+            .unwrap_err();
+        assert!(matches!(err, AppError::BulkUpdateInvalidPorcentaje));
+    }
+
+    #[test]
+    fn apply_costo_percentage_rejects_below_minus_100() {
+        let _guard = fresh_db();
+        let service = StockService::new();
+        let err = service
+            .apply_costo_percentage(-101.0, None, None, None)
+            .unwrap_err();
+        assert!(matches!(err, AppError::BulkUpdateInvalidPorcentaje));
+    }
+
+    #[test]
+    fn apply_costo_percentage_rejects_nan() {
+        let _guard = fresh_db();
+        let service = StockService::new();
+        let err = service
+            .apply_costo_percentage(f64::NAN, None, None, None)
+            .unwrap_err();
+        assert!(matches!(err, AppError::BulkUpdateInvalidPorcentaje));
+    }
+
+    #[test]
+    fn apply_costo_percentage_rejects_infinity() {
+        let _guard = fresh_db();
+        let service = StockService::new();
+        let err = service
+            .apply_costo_percentage(f64::INFINITY, None, None, None)
+            .unwrap_err();
+        assert!(matches!(err, AppError::BulkUpdateInvalidPorcentaje));
+    }
+
+    #[test]
+    fn apply_costo_percentage_increases_cost() {
+        let _guard = fresh_db();
+        let art = create_articulo_with_names("Cat Bulk", "Sub Bulk", "BULK1");
+        let service = StockService::new();
+        let stock = service.create(art.id, 10.0, 1000.0, 25.0).unwrap();
+
+        let cat_repo = SqliteCategoriaRepository::new();
+        let cats = cat_repo.find_all().unwrap();
+        let cat = cats.iter().find(|c| c.categoria == "Cat Bulk").unwrap();
+
+        let count = service
+            .apply_costo_percentage(20.0, Some(cat.id), None, None)
+            .unwrap();
+        assert_eq!(count, 1);
+
+        let updated = service.get_by_id(stock.id).unwrap();
+        assert!((updated.costo - 1200.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn apply_costo_percentage_no_filter_updates_all() {
+        let _guard = fresh_db();
+        let art1 = create_articulo_with_names("Cat All", "Sub All", "BALL1");
+        let art2 = create_articulo_with_names("Cat All2", "Sub All2", "BALL2");
+        let service = StockService::new();
+        let s1 = service.create(art1.id, 5.0, 500.0, 10.0).unwrap();
+        let s2 = service.create(art2.id, 3.0, 300.0, 20.0).unwrap();
+
+        let cat_repo = SqliteCategoriaRepository::new();
+        let cats = cat_repo.find_all().unwrap();
+        let cat1 = cats.iter().find(|c| c.categoria == "Cat All").unwrap();
+        let cat2 = cats.iter().find(|c| c.categoria == "Cat All2").unwrap();
+
+        let count1 = service
+            .apply_costo_percentage(-10.0, Some(cat1.id), None, None)
+            .unwrap();
+        let count2 = service
+            .apply_costo_percentage(-10.0, Some(cat2.id), None, None)
+            .unwrap();
+        assert_eq!(count1, 1);
+        assert_eq!(count2, 1);
+
+        let updated1 = service.get_by_id(s1.id).unwrap();
+        let updated2 = service.get_by_id(s2.id).unwrap();
+        assert!((updated1.costo - 450.0).abs() < 0.01);
+        assert!((updated2.costo - 270.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn apply_costo_percentage_rejects_when_no_matches() {
+        let _guard = fresh_db();
+        let service = StockService::new();
+        let err = service
+            .apply_costo_percentage(20.0, Some(99999), None, None)
+            .unwrap_err();
+        assert!(matches!(err, AppError::BulkUpdateNoMatches));
+    }
+
+    #[test]
+    fn get_preview_rejects_invalid_porcentaje() {
+        let _guard = fresh_db();
+        let service = StockService::new();
+        assert!(matches!(
+            service.get_preview(0.0, None, None, None),
+            Err(AppError::BulkUpdateInvalidPorcentaje)
+        ));
+    }
+
+    #[test]
+    fn get_preview_returns_preview() {
+        let _guard = fresh_db();
+        let art = create_articulo_with_names("Cat Prev", "Sub Prev", "PREV1");
+        let service = StockService::new();
+        service.create(art.id, 10.0, 1000.0, 25.0).unwrap();
+
+        let cat_repo = SqliteCategoriaRepository::new();
+        let cats = cat_repo.find_all().unwrap();
+        let cat = cats.iter().find(|c| c.categoria == "Cat Prev").unwrap();
+
+        let previews = service
+            .get_preview(20.0, Some(cat.id), None, None)
+            .unwrap();
+        assert_eq!(previews.len(), 1);
+        assert!((previews[0].costo_actual - 1000.0).abs() < 0.01);
+        assert!((previews[0].costo_nuevo - 1200.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn apply_costo_percentage_with_category_filter() {
+        let _guard = fresh_db();
+        let art1 = create_articulo_with_names("Cat Filt", "Sub Filt", "FILT1");
+        let art2 = create_articulo_with_names("Cat NoFilt", "Sub NoFilt", "FILT2");
+        let service = StockService::new();
+        service.create(art1.id, 10.0, 1000.0, 20.0).unwrap();
+        service.create(art2.id, 5.0, 2000.0, 30.0).unwrap();
+
+        let cat_repo = SqliteCategoriaRepository::new();
+        let cats = cat_repo.find_all().unwrap();
+        let cat = cats.iter().find(|c| c.categoria == "Cat Filt").unwrap();
+
+        let count = service
+            .apply_costo_percentage(10.0, Some(cat.id), None, None)
+            .unwrap();
+        assert_eq!(count, 1);
+    }
+
+    #[test]
+    fn apply_costo_percentage_negative_reduces_cost() {
+        let _guard = fresh_db();
+        let art = create_articulo_with_names("Cat Neg", "Sub Neg", "NEG1");
+        let service = StockService::new();
+        let stock = service.create(art.id, 10.0, 1000.0, 25.0).unwrap();
+
+        let cat_repo = SqliteCategoriaRepository::new();
+        let cats = cat_repo.find_all().unwrap();
+        let cat = cats.iter().find(|c| c.categoria == "Cat Neg").unwrap();
+
+        let count = service
+            .apply_costo_percentage(-50.0, Some(cat.id), None, None)
+            .unwrap();
+        assert_eq!(count, 1);
+
+        let updated = service.get_by_id(stock.id).unwrap();
+        assert!((updated.costo - 500.0).abs() < 0.01);
     }
 }

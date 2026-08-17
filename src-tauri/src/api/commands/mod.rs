@@ -50,8 +50,9 @@ pub use proveedor_commands::{
     ProveedorAppState,
 };
 pub use stock_commands::{
-    create_stock, delete_stock, get_all_stock, get_precio_venta, get_stock_by_articulo,
-    get_stock_by_id, update_stock, StockAppState,
+    apply_costo_percentage_stock, create_stock, delete_stock, get_all_stock, get_precio_venta,
+    get_stock_by_articulo, get_stock_by_id, get_stock_preview_costo, update_stock,
+    ApplyCostoPercentageResult, StockAppState,
 };
 pub use sub_categoria_commands::{
     create_sub_categoria, delete_sub_categoria, get_all_sub_categorias,

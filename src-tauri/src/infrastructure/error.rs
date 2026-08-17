@@ -161,6 +161,12 @@ pub enum AppError {
 
     #[error("Internal error: {0}")]
     Internal(String),
+
+    #[error("Porcentaje inválido para actualización masiva")]
+    BulkUpdateInvalidPorcentaje,
+
+    #[error("No se encontraron artículos con los filtros seleccionados")]
+    BulkUpdateNoMatches,
 }
 
 impl From<rusqlite::Error> for AppError {
@@ -242,6 +248,8 @@ impl AppError {
             AppError::DollarFetchError(_) => "dollar_fetch_error",
             AppError::DollarQuoteNotFound => "dollar_quote_not_found",
             AppError::Internal(_) => "internal_error",
+            AppError::BulkUpdateInvalidPorcentaje => "bulk_update_invalid_porcentaje",
+            AppError::BulkUpdateNoMatches => "bulk_update_no_matches",
         }
     }
 
@@ -377,6 +385,12 @@ impl AppError {
             AppError::Internal(_) => {
                 "Ocurrió un error inesperado. Intente nuevamente.".to_string()
             }
+            AppError::BulkUpdateInvalidPorcentaje => {
+                "El porcentaje ingresado es inválido.".to_string()
+            }
+            AppError::BulkUpdateNoMatches => {
+                "No se encontraron artículos con los filtros seleccionados.".to_string()
+            }
         }
     }
 }
@@ -429,6 +443,14 @@ mod tests {
             "presupuesto_estado_invalido"
         );
         assert_eq!(AppError::Internal("x".to_string()).code(), "internal_error");
+        assert_eq!(
+            AppError::BulkUpdateInvalidPorcentaje.code(),
+            "bulk_update_invalid_porcentaje"
+        );
+        assert_eq!(
+            AppError::BulkUpdateNoMatches.code(),
+            "bulk_update_no_matches"
+        );
     }
 
     #[test]
@@ -448,6 +470,12 @@ mod tests {
         assert!(AppError::Internal("boom".to_string())
             .user_message()
             .contains("inesperado"));
+        assert!(AppError::BulkUpdateInvalidPorcentaje
+            .user_message()
+            .contains("inválido"));
+        assert!(AppError::BulkUpdateNoMatches
+            .user_message()
+            .contains("No se encontraron"));
     }
 
     #[test]

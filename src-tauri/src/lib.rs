@@ -4,7 +4,8 @@ pub mod domain;
 pub mod infrastructure;
 
 use api::commands::{
-    actualizar_cliente, add_permission_to_user, anular_venta, cambiar_estado_presupuesto,
+    actualizar_cliente, add_permission_to_user, anular_venta, apply_costo_percentage_stock,
+    cambiar_estado_presupuesto,
     change_password, crear_cierre,
     crear_cliente, crear_presupuesto, create_articulo, create_categoria,
     create_permission, create_proveedor, create_stock, create_sub_categoria, create_tipo_venta,
@@ -16,7 +17,7 @@ use api::commands::{
     get_all_sub_categorias, get_all_tipos_venta, get_all_users, get_all_ventas,
     get_audit_logs, get_cliente_by_id, get_cliente_defecto, get_dollar_quotes, get_home_stats,
     get_precio_venta,
-    get_presupuesto_by_id,
+    get_presupuesto_by_id, get_stock_preview_costo,
     get_proveedor_by_id, get_stock_by_articulo,
     get_stock_by_id, get_sub_categorias_by_categoria, get_user_permissions, get_venta_by_id,
     get_ventas_por_cliente, is_dia_cerrado, login, reabrir_cierre, remove_permission_from_user, update_articulo, update_categoria, update_proveedor,
@@ -87,6 +88,8 @@ pub fn run() {
             update_stock,
             delete_stock,
             get_precio_venta,
+            get_stock_preview_costo,
+            apply_costo_percentage_stock,
             get_audit_logs,
             create_venta,
             get_all_ventas,
