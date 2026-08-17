@@ -1,5 +1,12 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { Stock, CreateStockRequest, UpdateStockRequest } from "../../domain/entities";
+import type {
+  Stock,
+  CreateStockRequest,
+  UpdateStockRequest,
+  StockPreview,
+  ApplyCostoPercentageRequest,
+  ApplyCostoPercentageResult,
+} from "../../domain/entities";
 import type { IStockRepository } from "../../domain/interfaces";
 import { getCurrentUserId } from "../utils/currentUser";
 
@@ -51,5 +58,29 @@ export class StockApiRepository implements IStockRepository {
       userId: getCurrentUserId(),
       id,
     });
+  }
+
+  async getStockPreviewCosto(
+    porcentaje: number,
+    idCategoria: number | null,
+    idSubCategoria: number | null,
+    idProveedor: number | null,
+  ): Promise<StockPreview[]> {
+    return await invoke<StockPreview[]>("get_stock_preview_costo", {
+      userId: getCurrentUserId(),
+      porcentaje,
+      idCategoria,
+      idSubCategoria,
+      idProveedor,
+    });
+  }
+
+  async applyCostoPercentage(
+    request: ApplyCostoPercentageRequest,
+  ): Promise<ApplyCostoPercentageResult> {
+    return await invoke<ApplyCostoPercentageResult>(
+      "apply_costo_percentage_stock",
+      { userId: getCurrentUserId(), request },
+    );
   }
 }

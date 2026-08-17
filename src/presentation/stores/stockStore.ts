@@ -1,6 +1,13 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
-import type { Stock, CreateStockRequest, UpdateStockRequest } from "../../domain/entities";
+import type {
+  Stock,
+  CreateStockRequest,
+  UpdateStockRequest,
+  StockPreview,
+  ApplyCostoPercentageRequest,
+  ApplyCostoPercentageResult,
+} from "../../domain/entities";
 import { toErrorMessage } from "../../infrastructure/api/errorHandler";
 import { stockRepository } from "../../infrastructure/di";
 import { StockUseCase } from "../../application/usecases";
@@ -80,6 +87,41 @@ export const useStockStore = defineStore("stock", () => {
     }
   }
 
+  async function getStockPreviewCosto(
+    porcentaje: number,
+    idCategoria: number | null,
+    idSubCategoria: number | null,
+    idProveedor: number | null,
+  ): Promise<StockPreview[]> {
+    loading.value = true;
+    error.value = null;
+    try {
+      return await stockUseCase.getStockPreviewCosto(
+        porcentaje,
+        idCategoria,
+        idSubCategoria,
+        idProveedor,
+      );
+    } catch (e) {
+      error.value = toErrorMessage(e);
+      return [];
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function applyCostoPercentage(
+    request: ApplyCostoPercentageRequest,
+  ): Promise<ApplyCostoPercentageResult | null> {
+    error.value = null;
+    try {
+      return await stockUseCase.applyCostoPercentage(request);
+    } catch (e) {
+      error.value = toErrorMessage(e);
+      return null;
+    }
+  }
+
   return {
     stocks,
     loading,
@@ -90,5 +132,7 @@ export const useStockStore = defineStore("stock", () => {
     updateStock,
     deleteStock,
     getPrecioVenta,
+    getStockPreviewCosto,
+    applyCostoPercentage,
   };
 });

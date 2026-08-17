@@ -62,6 +62,12 @@ const routes = [
         meta: { permission: PERMISSIONS.VIEW_STOCK },
       },
       {
+        path: "stock/actualizar-costo",
+        name: "actualizar-costo",
+        component: () => import("../pages/ActualizarCostoPage.vue"),
+        meta: { permission: PERMISSIONS.UPDATE_STOCK },
+      },
+      {
         path: "ventas",
         name: "ventas",
         component: () => import("../pages/VentasPage.vue"),

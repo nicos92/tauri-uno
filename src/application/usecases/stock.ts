@@ -2,6 +2,9 @@ import type {
   Stock,
   CreateStockRequest,
   UpdateStockRequest,
+  StockPreview,
+  ApplyCostoPercentageRequest,
+  ApplyCostoPercentageResult,
 } from "../../domain/entities";
 import type { IStockRepository } from "../../domain/interfaces";
 
@@ -30,5 +33,25 @@ export class StockUseCase {
 
   async getPrecioVenta(id: number): Promise<number> {
     return await this.repository.getPrecioVenta(id);
+  }
+
+  async getStockPreviewCosto(
+    porcentaje: number,
+    idCategoria: number | null,
+    idSubCategoria: number | null,
+    idProveedor: number | null,
+  ): Promise<StockPreview[]> {
+    return await this.repository.getStockPreviewCosto(
+      porcentaje,
+      idCategoria,
+      idSubCategoria,
+      idProveedor,
+    );
+  }
+
+  async applyCostoPercentage(
+    request: ApplyCostoPercentageRequest,
+  ): Promise<ApplyCostoPercentageResult> {
+    return await this.repository.applyCostoPercentage(request);
   }
 }

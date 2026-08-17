@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
 import { useStockStore, useArticulosStore } from "../stores";
 import { usePermissions } from "../composables/usePermissions";
 import { useToasts } from "../composables/useToasts";
@@ -17,6 +18,7 @@ import { calcularPrecioVenta } from "../../domain/entities";
 
 const stockStore = useStockStore();
 const articulosStore = useArticulosStore();
+const router = useRouter();
 const { canCreateStock, canUpdateStock, canDeleteStock } = usePermissions();
 
 const showCreateModal = ref(false);
@@ -155,6 +157,13 @@ async function handleDelete(id: number) {
 <template>
     <div class="stock-page">
         <PageHeader title="Gestión de Stock">
+            <button
+                v-if="canUpdateStock()"
+                @click="router.push({ name: 'actualizar-costo' })"
+                class="btn-secondary"
+            >
+                Actualizar Precios de Costo
+            </button>
             <button
                 v-if="canCreateStock()"
                 @click="openCreateModal"

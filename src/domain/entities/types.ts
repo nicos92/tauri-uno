@@ -446,3 +446,28 @@ export interface HomeStats {
   stock_bajo: StockBajoItem[];
   categorias: CategoriaConSub[];
 }
+
+export interface StockPreview {
+  id_stock: number;
+  id_articulo: number;
+  cod_articulo: string;
+  articulo: string;
+  categoria: string;
+  sub_categoria: string;
+  proveedor: string;
+  costo_actual: number;
+  ganancia: number;
+  costo_nuevo: number;
+  cantidad: number;
+}
+
+export interface ApplyCostoPercentageRequest {
+  porcentaje: number;
+  id_categoria: number | null;
+  id_sub_categoria: number | null;
+  id_proveedor: number | null;
+}
+
+export interface ApplyCostoPercentageResult {
+  updated_count: number;
+}

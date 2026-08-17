@@ -2,6 +2,9 @@ import type {
   Stock,
   CreateStockRequest,
   UpdateStockRequest,
+  StockPreview,
+  ApplyCostoPercentageRequest,
+  ApplyCostoPercentageResult,
 } from "../../domain/entities";
 
 export interface IStockRepository {
@@ -12,4 +15,13 @@ export interface IStockRepository {
   updateStock(request: UpdateStockRequest): Promise<Stock>;
   deleteStock(id: number): Promise<void>;
   getPrecioVenta(id: number): Promise<number>;
+  getStockPreviewCosto(
+    porcentaje: number,
+    idCategoria: number | null,
+    idSubCategoria: number | null,
+    idProveedor: number | null,
+  ): Promise<StockPreview[]>;
+  applyCostoPercentage(
+    request: ApplyCostoPercentageRequest,
+  ): Promise<ApplyCostoPercentageResult>;
 }
