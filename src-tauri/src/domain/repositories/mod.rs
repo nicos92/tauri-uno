@@ -1,5 +1,6 @@
 pub mod articulo_repository;
 pub mod audit_log_repository;
+pub mod cost_update_repository;
 pub mod pagination;
 pub mod categoria_repository;
 pub mod cierre_repository;
@@ -15,6 +16,9 @@ pub mod presupuesto_repository;
 
 pub use articulo_repository::ArticuloRepository;
 pub use audit_log_repository::{AuditLogFilter, AuditLogRepository};
+pub use cost_update_repository::{
+    CostUpdateApplyResult, CostUpdateRepository, CostUpdateUndoResult,
+};
 pub use pagination::Page;
 pub use categoria_repository::CategoriaRepository;
 pub use cierre_repository::CierreRepository;

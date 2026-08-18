@@ -13,6 +13,7 @@ pub mod audit_log_commands;
 pub mod categoria_commands;
 pub mod cierre_commands;
 pub mod cliente_commands;
+pub mod cost_update_commands;
 pub mod dollar_commands;
 pub mod home_commands;
 pub mod permissions;
@@ -49,10 +50,14 @@ pub use proveedor_commands::{
     create_proveedor, delete_proveedor, get_all_proveedores, get_proveedor_by_id, update_proveedor,
     ProveedorAppState,
 };
+pub use cost_update_commands::{
+    apply_costo_percentage_stock, get_last_undoable_cost_update, get_stock_preview_costo,
+    undo_cost_update, CostUpdateAppState,
+};
 pub use stock_commands::{
-    apply_costo_percentage_stock, create_stock, delete_stock, get_all_stock, get_precio_venta,
-    get_stock_by_articulo, get_stock_by_id, get_stock_preview_costo, update_stock,
-    ApplyCostoPercentageResult, StockAppState,
+    create_stock, delete_stock, get_all_stock, get_precio_venta,
+    get_stock_by_articulo, get_stock_by_id, update_stock,
+    StockAppState,
 };
 pub use sub_categoria_commands::{
     create_sub_categoria, delete_sub_categoria, get_all_sub_categorias,

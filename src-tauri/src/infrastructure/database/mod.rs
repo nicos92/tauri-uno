@@ -45,6 +45,8 @@ pub fn reset_test_db() -> Result<(), rusqlite::Error> {
     let conn = DB.lock().expect("test database lock");
     conn.execute_batch(
         "PRAGMA foreign_keys = OFF;
+         DROP TABLE IF EXISTS cost_update_items;
+         DROP TABLE IF EXISTS cost_update_operations;
          DROP TABLE IF EXISTS detalle_presupuestos;
          DROP TABLE IF EXISTS presupuestos;
          DROP TABLE IF EXISTS cierre_tipos;
@@ -332,6 +334,38 @@ fn apply_schema(conn: &Connection) -> Result<(), rusqlite::Error> {
          );
 
          CREATE INDEX IF NOT EXISTS idx_dollar_quotes_timestamp ON dollar_quotes(timestamp, id);
+
+        CREATE TABLE IF NOT EXISTS cost_update_operations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            porcentaje REAL NOT NULL,
+            filtro_categoria INTEGER,
+            filtro_sub_categoria INTEGER,
+            filtro_proveedor INTEGER,
+            affected_count INTEGER NOT NULL DEFAULT 0,
+            estado TEXT NOT NULL DEFAULT 'aplicada'
+                CHECK (estado IN ('aplicada', 'deshecha')),
+            created_at TEXT NOT NULL,
+            undone_at TEXT,
+            FOREIGN KEY (user_id) REFERENCES users(id),
+            FOREIGN KEY (filtro_categoria) REFERENCES categorias(id),
+            FOREIGN KEY (filtro_sub_categoria) REFERENCES sub_categorias(id),
+            FOREIGN KEY (filtro_proveedor) REFERENCES proveedores(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS cost_update_items (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            operation_id INTEGER NOT NULL,
+            id_stock INTEGER NOT NULL,
+            costo_anterior REAL NOT NULL,
+            costo_nuevo REAL NOT NULL,
+            FOREIGN KEY (operation_id) REFERENCES cost_update_operations(id) ON DELETE CASCADE,
+            FOREIGN KEY (id_stock) REFERENCES stock(id)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_cuo_estado ON cost_update_operations(estado);
+        CREATE INDEX IF NOT EXISTS idx_cuo_created_at ON cost_update_operations(created_at);
+        CREATE INDEX IF NOT EXISTS idx_cui_operation_id ON cost_update_items(operation_id);
          ",
     )?;
 

@@ -167,6 +167,15 @@ pub enum AppError {
 
     #[error("No se encontraron artículos con los filtros seleccionados")]
     BulkUpdateNoMatches,
+
+    #[error("No se encontró la operación de actualización de costos")]
+    CostUpdateNotFound,
+
+    #[error("La operación ya fue deshecha")]
+    CostUpdateAlreadyUndone,
+
+    #[error("No se puede deshacer: {0} artículo(s) fueron modificados después de la operación")]
+    CostUpdateModifiedAfter(i64),
 }
 
 impl From<rusqlite::Error> for AppError {
@@ -250,6 +259,9 @@ impl AppError {
             AppError::Internal(_) => "internal_error",
             AppError::BulkUpdateInvalidPorcentaje => "bulk_update_invalid_porcentaje",
             AppError::BulkUpdateNoMatches => "bulk_update_no_matches",
+            AppError::CostUpdateNotFound => "cost_update_not_found",
+            AppError::CostUpdateAlreadyUndone => "cost_update_already_undone",
+            AppError::CostUpdateModifiedAfter(_) => "cost_update_modified_after",
         }
     }
 
@@ -391,6 +403,18 @@ impl AppError {
             AppError::BulkUpdateNoMatches => {
                 "No se encontraron artículos con los filtros seleccionados.".to_string()
             }
+            AppError::CostUpdateNotFound => {
+                "No se encontró la operación de actualización de costos.".to_string()
+            }
+            AppError::CostUpdateAlreadyUndone => {
+                "La operación ya fue deshecha.".to_string()
+            }
+            AppError::CostUpdateModifiedAfter(count) => {
+                format!(
+                    "No se puede deshacer: {} artículo(s) fueron modificados después de la operación.",
+                    count
+                )
+            }
         }
     }
 }
@@ -451,6 +475,18 @@ mod tests {
             AppError::BulkUpdateNoMatches.code(),
             "bulk_update_no_matches"
         );
+        assert_eq!(
+            AppError::CostUpdateNotFound.code(),
+            "cost_update_not_found"
+        );
+        assert_eq!(
+            AppError::CostUpdateAlreadyUndone.code(),
+            "cost_update_already_undone"
+        );
+        assert_eq!(
+            AppError::CostUpdateModifiedAfter(0).code(),
+            "cost_update_modified_after"
+        );
     }
 
     #[test]
@@ -476,6 +512,15 @@ mod tests {
         assert!(AppError::BulkUpdateNoMatches
             .user_message()
             .contains("No se encontraron"));
+        assert!(AppError::CostUpdateNotFound
+            .user_message()
+            .contains("No se encontró"));
+        assert!(AppError::CostUpdateAlreadyUndone
+            .user_message()
+            .contains("ya fue deshecha"));
+        assert!(AppError::CostUpdateModifiedAfter(3)
+            .user_message()
+            .contains("3 artículo(s) fueron modificados"));
     }
 
     #[test]

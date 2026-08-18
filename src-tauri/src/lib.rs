@@ -16,14 +16,16 @@ use api::commands::{
     get_all_presupuestos, get_all_proveedores, get_all_stock,
     get_all_sub_categorias, get_all_tipos_venta, get_all_users, get_all_ventas,
     get_audit_logs, get_cliente_by_id, get_cliente_defecto, get_dollar_quotes, get_home_stats,
+    get_last_undoable_cost_update,
     get_precio_venta,
     get_presupuesto_by_id, get_stock_preview_costo,
     get_proveedor_by_id, get_stock_by_articulo,
     get_stock_by_id, get_sub_categorias_by_categoria, get_user_permissions, get_venta_by_id,
-    get_ventas_por_cliente, is_dia_cerrado, login, reabrir_cierre, remove_permission_from_user, update_articulo, update_categoria, update_proveedor,
+    get_ventas_por_cliente, is_dia_cerrado, login, reabrir_cierre, remove_permission_from_user, undo_cost_update, update_articulo, update_categoria, update_proveedor,
     update_stock, update_sub_categoria, update_tipo_venta, update_user,
     AppState,
     ArticuloAppState, AuditLogAppState, CategoriaAppState, CierreAppState, ClienteAppState,
+    CostUpdateAppState,
     DollarAppState,
     HomeStatsAppState,
     PresupuestoAppState,
@@ -43,6 +45,7 @@ pub fn run() {
         .manage(SubCategoriaAppState::new())
         .manage(ArticuloAppState::new())
         .manage(StockAppState::new())
+        .manage(CostUpdateAppState::new())
         .manage(VentaAppState::new())
         .manage(PresupuestoAppState::new())
         .manage(TipoVentaAppState::new())
@@ -90,6 +93,8 @@ pub fn run() {
             get_precio_venta,
             get_stock_preview_costo,
             apply_costo_percentage_stock,
+            get_last_undoable_cost_update,
+            undo_cost_update,
             get_audit_logs,
             create_venta,
             get_all_ventas,
