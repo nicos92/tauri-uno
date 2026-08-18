@@ -51,7 +51,8 @@ pub use proveedor_commands::{
     ProveedorAppState,
 };
 pub use cost_update_commands::{
-    apply_costo_percentage_stock, get_last_undoable_cost_update, get_stock_preview_costo,
+    apply_costo_percentage_stock, cleanup_cost_update_operations,
+    get_last_undoable_cost_update, get_stock_preview_costo,
     undo_cost_update, CostUpdateAppState,
 };
 pub use stock_commands::{

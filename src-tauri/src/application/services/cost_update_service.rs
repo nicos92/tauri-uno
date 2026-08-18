@@ -65,6 +65,10 @@ impl CostUpdateService {
     pub fn undo_operation(&self, operation_id: i64) -> Result<CostUpdateUndoResult, AppError> {
         self.cost_update_repository.undo_operation(operation_id)
     }
+
+    pub fn cleanup_old_operations(&self) -> Result<i64, AppError> {
+        self.cost_update_repository.cleanup_old_operations()
+    }
 }
 
 #[cfg(test)]

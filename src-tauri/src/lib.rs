@@ -6,7 +6,7 @@ pub mod infrastructure;
 use api::commands::{
     actualizar_cliente, add_permission_to_user, anular_venta, apply_costo_percentage_stock,
     cambiar_estado_presupuesto,
-    change_password, crear_cierre,
+    change_password, cleanup_cost_update_operations, crear_cierre,
     crear_cliente, crear_presupuesto, create_articulo, create_categoria,
     create_permission, create_proveedor, create_stock, create_sub_categoria, create_tipo_venta,
     create_user, create_venta, delete_articulo, delete_categoria, delete_proveedor, delete_stock,
@@ -95,6 +95,7 @@ pub fn run() {
             apply_costo_percentage_stock,
             get_last_undoable_cost_update,
             undo_cost_update,
+            cleanup_cost_update_operations,
             get_audit_logs,
             create_venta,
             get_all_ventas,

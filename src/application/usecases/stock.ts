@@ -64,4 +64,8 @@ export class StockUseCase {
   async undoCostUpdate(operationId: number): Promise<UndoOperationResult> {
     return await this.repository.undoCostUpdate(operationId);
   }
+
+  async cleanupCostUpdateOperations(): Promise<number> {
+    return await this.repository.cleanupCostUpdateOperations();
+  }
 }

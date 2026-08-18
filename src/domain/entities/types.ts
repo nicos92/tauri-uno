@@ -182,6 +182,7 @@ export interface Stock {
   cantidad: number;
   costo: number;
   ganancia: number;
+  updated_at?: string;
 }
 
 export interface CreateStockRequest {

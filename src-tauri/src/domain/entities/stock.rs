@@ -7,6 +7,8 @@ pub struct Stock {
     pub cantidad: f64,
     pub costo: f64,
     pub ganancia: f64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub updated_at: Option<String>,
 }
 
 impl Stock {
@@ -17,6 +19,7 @@ impl Stock {
             cantidad,
             costo,
             ganancia,
+            updated_at: None,
         }
     }
 }
@@ -33,6 +36,7 @@ mod tests {
         assert_eq!(s.cantidad, 50.5);
         assert_eq!(s.costo, 100.0);
         assert_eq!(s.ganancia, 30.0);
+        assert!(s.updated_at.is_none());
     }
 
     #[test]
@@ -41,17 +45,33 @@ mod tests {
         assert_eq!(s.cantidad, 0.0);
         assert_eq!(s.costo, 0.0);
         assert_eq!(s.ganancia, 0.0);
+        assert!(s.updated_at.is_none());
     }
 
     #[test]
     fn json_round_trip() {
-        let s = Stock::new(12, 50.5, 100.0, 30.0);
+        let s = Stock {
+            id: 12,
+            id_articulo: 5,
+            cantidad: 50.5,
+            costo: 100.0,
+            ganancia: 30.0,
+            updated_at: Some("2026-01-01T00:00:00Z".to_string()),
+        };
         let json = serde_json::to_string(&s).unwrap();
         let back: Stock = serde_json::from_str(&json).unwrap();
-        assert_eq!(back.id_articulo, 12);
+        assert_eq!(back.id_articulo, 5);
         assert_eq!(back.cantidad, 50.5);
         assert_eq!(back.costo, 100.0);
         assert_eq!(back.ganancia, 30.0);
-        assert_eq!(back.id, 0);
+        assert_eq!(back.id, 12);
+        assert_eq!(back.updated_at.as_deref(), Some("2026-01-01T00:00:00Z"));
+    }
+
+    #[test]
+    fn json_omits_updated_at_when_none() {
+        let s = Stock::new(1, 10.0, 100.0, 25.0);
+        let json = serde_json::to_string(&s).unwrap();
+        assert!(!json.contains("updated_at"));
     }
 }

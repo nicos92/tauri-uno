@@ -130,6 +130,9 @@ export const useStockStore = defineStore("stock", () => {
   async function fetchLastUndoable() {
     try {
       lastOperation.value = await stockUseCase.getLastUndoableCostUpdate();
+      if (!lastOperation.value) {
+        await stockUseCase.cleanupCostUpdateOperations();
+      }
     } catch (e) {
       error.value = toErrorMessage(e);
     }
@@ -141,9 +144,16 @@ export const useStockStore = defineStore("stock", () => {
     try {
       const result = await stockUseCase.undoCostUpdate(lastOperation.value.id);
       lastOperation.value = null;
+      await fetchLastUndoable();
       return result;
     } catch (e) {
       error.value = toErrorMessage(e);
+      try {
+        await stockUseCase.cleanupCostUpdateOperations();
+      } catch {
+        // cleanup best-effort
+      }
+      lastOperation.value = null;
       return null;
     }
   }

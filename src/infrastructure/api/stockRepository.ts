@@ -99,4 +99,12 @@ export class StockApiRepository implements IStockRepository {
       { userId: getCurrentUserId(), operationId },
     );
   }
+
+  async cleanupCostUpdateOperations(): Promise<number> {
+    const result = await invoke<{ deleted_count: number }>(
+      "cleanup_cost_update_operations",
+      { userId: getCurrentUserId() },
+    );
+    return result.deleted_count;
+  }
 }

@@ -1,3 +1,4 @@
+use chrono::Utc;
 use rusqlite::params;
 
 use crate::domain::entities::{Stock, StockPreview};
@@ -22,20 +23,23 @@ impl SqliteStockRepository {
 impl StockRepository for SqliteStockRepository {
     fn create(&self, stock: &Stock) -> Result<Stock, AppError> {
         let conn = DB.lock().map_err(|e| AppError::Internal(e.to_string()))?;
+        let now = Utc::now().to_rfc3339();
 
         conn.execute(
-            "INSERT INTO stock (id_articulo, cantidad, costo, ganancia) VALUES (?1, ?2, ?3, ?4)",
+            "INSERT INTO stock (id_articulo, cantidad, costo, ganancia, updated_at) VALUES (?1, ?2, ?3, ?4, ?5)",
             params![
                 stock.id_articulo,
                 stock.cantidad,
                 stock.costo,
-                stock.ganancia
+                stock.ganancia,
+                now
             ],
         )?;
 
         let id = conn.last_insert_rowid();
         Ok(Stock {
             id,
+            updated_at: Some(now),
             ..stock.clone()
         })
     }
@@ -44,7 +48,7 @@ impl StockRepository for SqliteStockRepository {
         let conn = DB.lock().map_err(|e| AppError::Internal(e.to_string()))?;
 
         let mut stmt = conn.prepare(
-            "SELECT id, id_articulo, cantidad, costo, ganancia FROM stock WHERE id = ?1",
+            "SELECT id, id_articulo, cantidad, costo, ganancia, updated_at FROM stock WHERE id = ?1",
         )?;
 
         let mut rows = stmt.query(params![id])?;
@@ -60,7 +64,7 @@ impl StockRepository for SqliteStockRepository {
         let conn = DB.lock().map_err(|e| AppError::Internal(e.to_string()))?;
 
         let mut stmt = conn.prepare(
-            "SELECT id, id_articulo, cantidad, costo, ganancia FROM stock WHERE id_articulo = ?1",
+            "SELECT id, id_articulo, cantidad, costo, ganancia, updated_at FROM stock WHERE id_articulo = ?1",
         )?;
 
         let mut rows = stmt.query(params![id_articulo])?;
@@ -76,7 +80,7 @@ impl StockRepository for SqliteStockRepository {
         let conn = DB.lock().map_err(|e| AppError::Internal(e.to_string()))?;
 
         let mut stmt = conn
-            .prepare("SELECT id, id_articulo, cantidad, costo, ganancia FROM stock ORDER BY id")?;
+            .prepare("SELECT id, id_articulo, cantidad, costo, ganancia, updated_at FROM stock ORDER BY id")?;
 
         let mut stocks = Vec::new();
         let mut rows = stmt.query([])?;
@@ -90,13 +94,17 @@ impl StockRepository for SqliteStockRepository {
 
     fn update(&self, stock: &Stock) -> Result<Stock, AppError> {
         let conn = DB.lock().map_err(|e| AppError::Internal(e.to_string()))?;
+        let now = Utc::now().to_rfc3339();
 
         conn.execute(
-            "UPDATE stock SET cantidad = ?1, costo = ?2, ganancia = ?3 WHERE id = ?4",
-            params![stock.cantidad, stock.costo, stock.ganancia, stock.id],
+            "UPDATE stock SET cantidad = ?1, costo = ?2, ganancia = ?3, updated_at = ?4 WHERE id = ?5",
+            params![stock.cantidad, stock.costo, stock.ganancia, now, stock.id],
         )?;
 
-        Ok(stock.clone())
+        Ok(Stock {
+            updated_at: Some(now),
+            ..stock.clone()
+        })
     }
 
     fn delete(&self, id: i64) -> Result<(), AppError> {
@@ -178,10 +186,12 @@ impl StockRepository for SqliteStockRepository {
         id_proveedor: Option<i64>,
     ) -> Result<i64, AppError> {
         let conn = DB.lock().map_err(|e| AppError::Internal(e.to_string()))?;
+        let now = Utc::now().to_rfc3339();
 
         let affected = conn.execute(
             "UPDATE stock
-             SET costo = ROUND(costo * (1.0 + ?1 / 100.0), 2)
+             SET costo = ROUND(costo * (1.0 + ?1 / 100.0), 2),
+                 updated_at = ?5
              WHERE id IN (
                  SELECT s.id
                  FROM stock s
@@ -193,7 +203,7 @@ impl StockRepository for SqliteStockRepository {
                    AND (?3 IS NULL OR sc.id = ?3)
                    AND (?4 IS NULL OR p.id = ?4)
              )",
-            params![porcentaje, id_categoria, id_sub_categoria, id_proveedor],
+            params![porcentaje, id_categoria, id_sub_categoria, id_proveedor, now],
         )?;
 
         Ok(affected as i64)
@@ -208,6 +218,7 @@ impl SqliteStockRepository {
             cantidad: row.get(2)?,
             costo: row.get(3)?,
             ganancia: row.get(4)?,
+            updated_at: row.get(5)?,
         })
     }
 }

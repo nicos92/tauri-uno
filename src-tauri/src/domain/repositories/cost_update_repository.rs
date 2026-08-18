@@ -31,4 +31,6 @@ pub trait CostUpdateRepository: Send + Sync {
     ) -> Result<Vec<CostUpdateItem>, AppError>;
 
     fn undo_operation(&self, operation_id: i64) -> Result<CostUpdateUndoResult, AppError>;
+
+    fn cleanup_old_operations(&self) -> Result<i64, AppError>;
 }

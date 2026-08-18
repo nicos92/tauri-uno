@@ -109,8 +109,8 @@ impl VentaRepository for SqliteVentaRepository {
             )?;
 
             tx.execute(
-                "UPDATE stock SET cantidad = cantidad - ?1 WHERE id_articulo = ?2",
-                params![item.cantidad, item.id_articulo],
+                "UPDATE stock SET cantidad = cantidad - ?1, updated_at = ?3 WHERE id_articulo = ?2",
+                params![item.cantidad, item.id_articulo, now],
             )?;
         }
 
@@ -238,6 +238,7 @@ impl VentaRepository for SqliteVentaRepository {
     fn anular(&self, id: i64) -> Result<(), AppError> {
         let mut conn = DB.lock().map_err(|e| AppError::Internal(e.to_string()))?;
         let tx = conn.transaction()?;
+        let now = chrono::Utc::now().to_rfc3339();
 
         let (anulada, fecha): (bool, String) = tx
             .query_row(
@@ -268,8 +269,8 @@ impl VentaRepository for SqliteVentaRepository {
                 let cantidad: f64 = row.get(1)?;
 
                 let updated = tx.execute(
-                    "UPDATE stock SET cantidad = cantidad + ?1 WHERE id_articulo = ?2",
-                    params![cantidad, id_articulo],
+                    "UPDATE stock SET cantidad = cantidad + ?1, updated_at = ?3 WHERE id_articulo = ?2",
+                    params![cantidad, id_articulo, now],
                 )?;
                 if updated == 0 {
                     return Err(AppError::ArticuloWithoutStock);

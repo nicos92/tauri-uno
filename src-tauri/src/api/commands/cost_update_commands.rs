@@ -169,6 +169,27 @@ pub fn undo_cost_update(
     })
 }
 
+#[derive(serde::Serialize)]
+pub struct CleanupResult {
+    pub deleted_count: i64,
+}
+
+#[tauri::command(async)]
+pub fn cleanup_cost_update_operations(
+    user_id: i64,
+    state: State<CostUpdateAppState>,
+) -> Result<CleanupResult, AppError> {
+    let service = state
+        .cost_update_service
+        .lock()
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+    check_permission(user_id, PermissionCode::UpdateStock)?;
+    let count = service.cleanup_old_operations()?;
+    Ok(CleanupResult {
+        deleted_count: count,
+    })
+}
+
 type FilterNames = (Option<String>, Option<String>, Option<String>);
 
 fn resolve_filter_names(

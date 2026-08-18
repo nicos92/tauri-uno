@@ -369,6 +369,17 @@ fn apply_schema(conn: &Connection) -> Result<(), rusqlite::Error> {
          ",
     )?;
 
+    ensure_column(conn, "stock", "updated_at", "TEXT")?;
+    let stock_count: i64 =
+        conn.query_row("SELECT COUNT(*) FROM stock", [], |row| row.get(0))?;
+    if stock_count > 0 {
+        let now = chrono::Utc::now().to_rfc3339();
+        conn.execute(
+            "UPDATE stock SET updated_at = ?1 WHERE updated_at IS NULL",
+            rusqlite::params![now],
+        )?;
+    }
+
     ensure_column(conn, "ventas", "descuento", "REAL NOT NULL DEFAULT 0")?;
     ensure_column(
         conn,
@@ -1035,10 +1046,10 @@ fn seed_demo_data(conn: &Connection) -> Result<(), rusqlite::Error> {
             |row| row.get(0),
         )?;
         conn.execute(
-            "INSERT INTO stock (id_articulo, cantidad, costo, ganancia)
-             SELECT ?1, ?2, ?3, ?4
+            "INSERT INTO stock (id_articulo, cantidad, costo, ganancia, updated_at)
+             SELECT ?1, ?2, ?3, ?4, ?5
              WHERE NOT EXISTS (SELECT 1 FROM stock WHERE id_articulo = ?1)",
-            rusqlite::params![id_articulo, cantidad, costo, ganancia],
+            rusqlite::params![id_articulo, cantidad, costo, ganancia, now],
         )?;
     }
 

@@ -28,4 +28,5 @@ export interface IStockRepository {
   ): Promise<ApplyCostoPercentageResult>;
   getLastUndoableCostUpdate(): Promise<CostUpdateOperationResponse | null>;
   undoCostUpdate(operationId: number): Promise<UndoOperationResult>;
+  cleanupCostUpdateOperations(): Promise<number>;
 }
