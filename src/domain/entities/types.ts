@@ -471,3 +471,17 @@ export interface ApplyCostoPercentageRequest {
 export interface ApplyCostoPercentageResult {
   updated_count: number;
 }
+
+export interface CostUpdateOperationResponse {
+  id: number;
+  porcentaje: number;
+  affected_count: number;
+  categoria_nombre: string | null;
+  sub_categoria_nombre: string | null;
+  proveedor_nombre: string | null;
+  created_at: string;
+}
+
+export interface UndoOperationResult {
+  restored_count: number;
+}

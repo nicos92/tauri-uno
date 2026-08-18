@@ -5,6 +5,8 @@ import type {
   StockPreview,
   ApplyCostoPercentageRequest,
   ApplyCostoPercentageResult,
+  CostUpdateOperationResponse,
+  UndoOperationResult,
 } from "../../domain/entities";
 
 export interface IStockRepository {
@@ -24,4 +26,6 @@ export interface IStockRepository {
   applyCostoPercentage(
     request: ApplyCostoPercentageRequest,
   ): Promise<ApplyCostoPercentageResult>;
+  getLastUndoableCostUpdate(): Promise<CostUpdateOperationResponse | null>;
+  undoCostUpdate(operationId: number): Promise<UndoOperationResult>;
 }

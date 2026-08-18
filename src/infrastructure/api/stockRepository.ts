@@ -6,6 +6,8 @@ import type {
   StockPreview,
   ApplyCostoPercentageRequest,
   ApplyCostoPercentageResult,
+  CostUpdateOperationResponse,
+  UndoOperationResult,
 } from "../../domain/entities";
 import type { IStockRepository } from "../../domain/interfaces";
 import { getCurrentUserId } from "../utils/currentUser";
@@ -81,6 +83,20 @@ export class StockApiRepository implements IStockRepository {
     return await invoke<ApplyCostoPercentageResult>(
       "apply_costo_percentage_stock",
       { userId: getCurrentUserId(), request },
+    );
+  }
+
+  async getLastUndoableCostUpdate(): Promise<CostUpdateOperationResponse | null> {
+    return await invoke<CostUpdateOperationResponse | null>(
+      "get_last_undoable_cost_update",
+      { userId: getCurrentUserId() },
+    );
+  }
+
+  async undoCostUpdate(operationId: number): Promise<UndoOperationResult> {
+    return await invoke<UndoOperationResult>(
+      "undo_cost_update",
+      { userId: getCurrentUserId(), operationId },
     );
   }
 }

@@ -61,6 +61,7 @@ onMounted(async () => {
         categoriasStore.fetchCategorias(),
         subCategoriasStore.fetchSubCategorias(),
         proveedoresStore.fetchProveedores(),
+        stockStore.fetchLastUndoable(),
     ]);
 });
 
@@ -138,6 +139,34 @@ async function handleApply() {
 
 function goBack() {
     router.push({ name: "stock" });
+}
+
+const undoing = ref(false);
+
+async function handleUndo() {
+    if (!stockStore.lastOperation) return;
+
+    const confirmed = await confirm({
+        title: "Deshacer actualización",
+        message: `¿Está seguro de deshacer la actualización del ${stockStore.lastOperation.porcentaje}% (${stockStore.lastOperation.affected_count} artículos)? Se restaurarán los precios de costo anteriores.`,
+        confirmText: "Deshacer",
+        variant: "danger",
+    });
+
+    if (!confirmed) return;
+
+    undoing.value = true;
+    try {
+        const result = await stockStore.undoCostUpdate();
+        if (result) {
+            toasts.success(
+                `Se restauraron ${result.restored_count} artículos correctamente.`,
+            );
+            await stockStore.fetchStock();
+        }
+    } finally {
+        undoing.value = false;
+    }
 }
 </script>
 
@@ -238,6 +267,14 @@ function goBack() {
                 @click="handleApply"
             >
                 {{ applying ? "Aplicando..." : "Aplicar Cambios" }}
+            </button>
+            <button
+                v-if="stockStore.lastOperation"
+                class="btn-undo"
+                :disabled="undoing"
+                @click="handleUndo"
+            >
+                {{ undoing ? "Deshaciendo..." : "Deshacer última actualización" }}
             </button>
             <span v-if="applied" class="applied-message">
                 Cambios aplicados correctamente.
@@ -416,5 +453,27 @@ function goBack() {
 .applied-message {
     color: #22c55e;
     font-weight: 500;
+}
+
+.btn-undo {
+    padding: 0.5rem 1rem;
+    border: 1px solid #f59e0b;
+    border-radius: 6px;
+    background: transparent;
+    color: #f59e0b;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+
+.btn-undo:hover:not(:disabled) {
+    background: #f59e0b;
+    color: #fff;
+}
+
+.btn-undo:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 </style>

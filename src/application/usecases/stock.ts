@@ -5,6 +5,8 @@ import type {
   StockPreview,
   ApplyCostoPercentageRequest,
   ApplyCostoPercentageResult,
+  CostUpdateOperationResponse,
+  UndoOperationResult,
 } from "../../domain/entities";
 import type { IStockRepository } from "../../domain/interfaces";
 
@@ -53,5 +55,13 @@ export class StockUseCase {
     request: ApplyCostoPercentageRequest,
   ): Promise<ApplyCostoPercentageResult> {
     return await this.repository.applyCostoPercentage(request);
+  }
+
+  async getLastUndoableCostUpdate(): Promise<CostUpdateOperationResponse | null> {
+    return await this.repository.getLastUndoableCostUpdate();
+  }
+
+  async undoCostUpdate(operationId: number): Promise<UndoOperationResult> {
+    return await this.repository.undoCostUpdate(operationId);
   }
 }

@@ -7,6 +7,8 @@ import type {
   StockPreview,
   ApplyCostoPercentageRequest,
   ApplyCostoPercentageResult,
+  CostUpdateOperationResponse,
+  UndoOperationResult,
 } from "../../domain/entities";
 import { toErrorMessage } from "../../infrastructure/api/errorHandler";
 import { stockRepository } from "../../infrastructure/di";
@@ -17,6 +19,7 @@ export const useStockStore = defineStore("stock", () => {
   const stocks = ref<Stock[]>([]);
   const loading = ref(false);
   const error = ref<string | null>(null);
+  const lastOperation = ref<CostUpdateOperationResponse | null>(null);
 
   async function fetchStock() {
     loading.value = true;
@@ -115,7 +118,30 @@ export const useStockStore = defineStore("stock", () => {
   ): Promise<ApplyCostoPercentageResult | null> {
     error.value = null;
     try {
-      return await stockUseCase.applyCostoPercentage(request);
+      const result = await stockUseCase.applyCostoPercentage(request);
+      await fetchLastUndoable();
+      return result;
+    } catch (e) {
+      error.value = toErrorMessage(e);
+      return null;
+    }
+  }
+
+  async function fetchLastUndoable() {
+    try {
+      lastOperation.value = await stockUseCase.getLastUndoableCostUpdate();
+    } catch (e) {
+      error.value = toErrorMessage(e);
+    }
+  }
+
+  async function undoCostUpdate(): Promise<UndoOperationResult | null> {
+    if (!lastOperation.value) return null;
+    error.value = null;
+    try {
+      const result = await stockUseCase.undoCostUpdate(lastOperation.value.id);
+      lastOperation.value = null;
+      return result;
     } catch (e) {
       error.value = toErrorMessage(e);
       return null;
@@ -126,6 +152,7 @@ export const useStockStore = defineStore("stock", () => {
     stocks,
     loading,
     error,
+    lastOperation,
     fetchStock,
     getStockByArticulo,
     createStock,
@@ -134,5 +161,7 @@ export const useStockStore = defineStore("stock", () => {
     getPrecioVenta,
     getStockPreviewCosto,
     applyCostoPercentage,
+    fetchLastUndoable,
+    undoCostUpdate,
   };
 });
