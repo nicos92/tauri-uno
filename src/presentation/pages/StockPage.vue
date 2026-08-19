@@ -21,18 +21,15 @@ const articulosStore = useArticulosStore();
 const router = useRouter();
 const { canCreateStock, canUpdateStock, canDeleteStock } = usePermissions();
 
-const showCreateModal = ref(false);
-const showEditModal = ref(false);
+const showModal = ref(false);
+const modalMode = ref<"create" | "edit">("create");
 const selectedStock = ref<Stock | null>(null);
 
-const newIdArticulo = ref<number | null>(null);
-const newCantidad = ref(0);
-const newCosto = ref(0);
-const newGanancia = ref(0);
-
-const editCantidad = ref(0);
-const editCosto = ref(0);
-const editGanancia = ref(0);
+const formIdArticulo = ref<number | null>(null);
+const formArticuloNombre = ref("");
+const formCantidad = ref(0);
+const formCosto = ref(0);
+const formGanancia = ref(0);
 
 const preciosVenta = ref<Map<number, number>>(new Map());
 
@@ -52,8 +49,8 @@ const filteredStock = computed(() => {
     );
 });
 
-const editPreviewPrecioVenta = computed(() => {
-    return calcularPrecioVenta(editCosto.value, editGanancia.value);
+const formPreviewPrecioVenta = computed(() => {
+    return calcularPrecioVenta(formCosto.value, formGanancia.value);
 });
 
 const stockCompletos = computed(() => {
@@ -96,32 +93,37 @@ onMounted(async () => {
 });
 
 function openCreateModal() {
-    newIdArticulo.value = null;
-    newCantidad.value = 0;
-    newCosto.value = 0;
-    newGanancia.value = 0;
-    showCreateModal.value = true;
+    modalMode.value = "create";
+    selectedStock.value = null;
+    formIdArticulo.value = null;
+    formCantidad.value = 0;
+    formCosto.value = 0;
+    formGanancia.value = 0;
+    showModal.value = true;
 }
 
 function openEditModal(stock: (typeof stockCompletos.value)[0]) {
+    modalMode.value = "edit";
     selectedStock.value = stock;
-    editCantidad.value = stock.cantidad;
-    editCosto.value = stock.costo;
-    editGanancia.value = stock.ganancia;
-    showEditModal.value = true;
+    formIdArticulo.value = stock.id_articulo;
+    formArticuloNombre.value = stock.articuloNombre;
+    formCantidad.value = stock.cantidad;
+    formCosto.value = stock.costo;
+    formGanancia.value = stock.ganancia;
+    showModal.value = true;
 }
 
 async function handleCreate() {
-    if (!newIdArticulo.value) return;
+    if (!formIdArticulo.value) return;
     const request: CreateStockRequest = {
-        id_articulo: newIdArticulo.value,
-        cantidad: newCantidad.value,
-        costo: newCosto.value,
-        ganancia: newGanancia.value,
+        id_articulo: formIdArticulo.value,
+        cantidad: formCantidad.value,
+        costo: formCosto.value,
+        ganancia: formGanancia.value,
     };
     const success = await stockStore.createStock(request);
     if (success) {
-        showCreateModal.value = false;
+        showModal.value = false;
         await articulosStore.fetchArticulos();
     }
 }
@@ -130,17 +132,17 @@ async function handleUpdate() {
     if (!selectedStock.value) return;
     const request: UpdateStockRequest = {
         id: selectedStock.value.id,
-        cantidad: editCantidad.value,
-        costo: editCosto.value,
-        ganancia: editGanancia.value,
+        cantidad: formCantidad.value,
+        costo: formCosto.value,
+        ganancia: formGanancia.value,
     };
     const success = await stockStore.updateStock(request);
     if (success) {
         preciosVenta.value.set(
             selectedStock.value.id,
-            editPreviewPrecioVenta.value,
+            formPreviewPrecioVenta.value,
         );
-        showEditModal.value = false;
+        showModal.value = false;
     }
 }
 
@@ -214,16 +216,16 @@ async function handleDelete(id: number) {
         </DataTable>
 
         <EntityFormModal
-            v-model="showCreateModal"
-            title="Crear Stock"
+            v-model="showModal"
+            :title="modalMode === 'create' ? 'Crear Stock' : 'Editar Stock'"
             :error="stockStore.error"
-            submit-label="Crear"
-            :disable-submit="!newIdArticulo"
-            @submit="handleCreate"
+            :submit-label="modalMode === 'create' ? 'Crear' : 'Guardar'"
+            :disable-submit="modalMode === 'create' && !formIdArticulo"
+            @submit="modalMode === 'create' ? handleCreate() : handleUpdate()"
         >
-            <div class="form-group">
+            <div v-if="modalMode === 'create'" class="form-group">
                 <label>Artículo</label>
-                <select v-model="newIdArticulo" required>
+                <select v-model="formIdArticulo" required>
                     <option :value="null" disabled>
                         Seleccione un artículo
                     </option>
@@ -236,48 +238,19 @@ async function handleDelete(id: number) {
                     </option>
                 </select>
             </div>
-            <div class="form-group">
-                <label>Cantidad</label>
+            <div v-if="modalMode === 'edit'" class="form-group">
+                <label>Artículo</label>
                 <input
-                    v-model.number="newCantidad"
-                    type="number"
-                    step="0.01"
-                    required
+                    type="text"
+                    :value="formArticuloNombre"
+                    disabled
                 />
-            </div>
-            <div class="form-group">
-                <label>Costo</label>
-                <input
-                    v-model.number="newCosto"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    required
-                />
-            </div>
-            <div class="form-group">
-                <label>Ganancia (%)</label>
-                <input
-                    v-model.number="newGanancia"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    required
-                />
-            </div>
-        </EntityFormModal>
 
-        <EntityFormModal
-            v-model="showEditModal"
-            title="Editar Stock"
-            :error="stockStore.error"
-            submit-label="Guardar"
-            @submit="handleUpdate"
-        >
+            </div>
             <div class="form-group">
                 <label>Cantidad</label>
                 <input
-                    v-model.number="editCantidad"
+                    v-model.number="formCantidad"
                     type="number"
                     step="0.01"
                     required
@@ -286,7 +259,7 @@ async function handleDelete(id: number) {
             <div class="form-group">
                 <label>Costo</label>
                 <input
-                    v-model.number="editCosto"
+                    v-model.number="formCosto"
                     type="number"
                     step="0.01"
                     min="0"
@@ -296,7 +269,7 @@ async function handleDelete(id: number) {
             <div class="form-group">
                 <label>Ganancia (%)</label>
                 <input
-                    v-model.number="editGanancia"
+                    v-model.number="formGanancia"
                     type="number"
                     step="0.01"
                     min="0"
@@ -306,7 +279,7 @@ async function handleDelete(id: number) {
             <template #extra>
                 <div class="preview-precio">
                     Precio de Venta: ${{
-                        editPreviewPrecioVenta.toFixed(2)
+                        formPreviewPrecioVenta.toFixed(2)
                     }}
                 </div>
             </template>
@@ -327,7 +300,7 @@ async function handleDelete(id: number) {
     border-radius: 6px;
     text-align: center;
     font-weight: 500;
-    color: var(--color-primary);
+    color: var(--color-text);
     margin-bottom: 1rem;
 }
 </style>
